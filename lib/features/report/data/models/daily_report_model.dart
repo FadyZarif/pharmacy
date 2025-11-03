@@ -43,8 +43,8 @@ enum ExpenseType {
   @JsonValue('delivery')
   delivery, // ديلفري
 
-  @JsonValue('ahmedAboghnima')
-  ahmedAboghnima, // أحمد أبوغنيمة
+  @JsonValue('ahmedAboghonima')
+  ahmedAboghonima, // أحمد أبوغنيمة
 
   @JsonValue('companyCollection')
   companyCollection, // تحصيل شركات
@@ -273,7 +273,7 @@ class ExpenseItem {
         return 'أدوية (بديل نقدي)';
       case ExpenseType.delivery:
         return 'ديلفري - ${deliveryArea ?? "غير محدد"}';
-      case ExpenseType.ahmedAboghnima:
+      case ExpenseType.ahmedAboghonima:
         return 'أحمد أبوغنيمة';
       case ExpenseType.companyCollection:
         return 'تحصيل شركات - ${companyName ?? "غير محدد"}';

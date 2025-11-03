@@ -11,6 +11,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   name: json['name'] as String,
   phone: json['phone'] as String,
   email: json['email'] as String,
+  printCode: json['printCode'] as String?,
   branchId: json['branchId'] as String,
   branchName: json['branchName'] as String,
   vocationBalanceHours: (json['vocationBalanceHours'] as num).toInt(),
@@ -26,6 +27,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'name': instance.name,
   'phone': instance.phone,
   'email': instance.email,
+  'printCode': instance.printCode,
   'branchId': instance.branchId,
   'branchName': instance.branchName,
   'vocationBalanceHours': instance.vocationBalanceHours,
@@ -38,7 +40,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
 
 const _$RoleEnumMap = {
   Role.admin: 'admin',
-  Role.subAdmin: 'subAdmin',
   Role.manager: 'manager',
+  Role.subManager: 'subManager',
   Role.staff: 'staff',
 };

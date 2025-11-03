@@ -5,36 +5,48 @@ import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
-import 'package:pharmacy/features/report/logic/shift_report_cubit.dart';
-import 'package:pharmacy/features/report/logic/shift_report_state.dart';
+import 'package:pharmacy/features/report/logic/edit_report_cubit.dart';
+import 'package:pharmacy/features/report/logic/edit_report_state.dart';
 import 'package:pharmacy/features/report/ui/widgets/shift_report_widgets.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 
-import '../../employee/logic/employee_layout_cubit.dart';
-import 'view_reports_screen.dart';
+class EditShiftReportScreen extends StatefulWidget {
+  final ShiftReportModel report;
+  final String date;
 
-class AddShiftReportScreen extends StatefulWidget {
-  const AddShiftReportScreen({super.key});
+  const EditShiftReportScreen({
+    super.key,
+    required this.report,
+    required this.date,
+  });
 
   @override
-  State<AddShiftReportScreen> createState() => _AddShiftReportScreenState();
+  State<EditShiftReportScreen> createState() => _EditShiftReportScreenState();
 }
 
-class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
+class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // Controllers
-  final TextEditingController _drawerAmountController = TextEditingController();
-  final TextEditingController _computerDifferenceController = TextEditingController();
-  final TextEditingController _electronicWalletController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
+  late TextEditingController _drawerAmountController;
+  late TextEditingController _computerDifferenceController;
+  late TextEditingController _electronicWalletController;
+  late TextEditingController _notesController;
 
-  // Selected values
-  ShiftType? _selectedShiftType;
-  ComputerDifferenceType? _computerDifferenceType;
+  late ComputerDifferenceType _computerDifferenceType;
+  late List<ExpenseItem> _expenses;
 
-  // Expenses list
-  final List<ExpenseItem> _expenses = [];
+  bool _isEditMode = false; // Preview mode by default
+
+  @override
+  void initState() {
+    super.initState();
+    _drawerAmountController = TextEditingController(text: widget.report.drawerAmount.toString());
+    _computerDifferenceController = TextEditingController(text: widget.report.computerDifference.toString());
+    _electronicWalletController = TextEditingController(text: widget.report.electronicWalletAmount.toString());
+    _notesController = TextEditingController(text: widget.report.notes ?? '');
+    _computerDifferenceType = widget.report.computerDifferenceType ?? ComputerDifferenceType.none;
+    _expenses = List.from(widget.report.expenses);
+  }
 
   @override
   void dispose() {
@@ -48,78 +60,50 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<ShiftReportCubit>()..loadMyTodayShift(),
-      child: BlocConsumer<ShiftReportCubit, ShiftReportState>(
+      create: (context) => getIt<EditReportCubit>(),
+      child: BlocConsumer<EditReportCubit, EditReportState>(
         listener: (context, state) {
-          if (state is ShiftReportSubmitted) {
+          if (state is EditReportSuccess) {
             defToast2(
               context: context,
-              msg: 'Report submitted successfully',
+              msg: 'Report updated successfully',
               dialogType: DialogType.success,
             ).then((_) {
               if (!context.mounted) return;
-              getIt<EmployeeLayoutCubit>().changeBottomNav(2);
+              Navigator.pop(context);
             });
-          } else if (state is ShiftReportError) {
+          } else if (state is EditReportError) {
             defToast2(
               context: context,
               msg: state.message,
               dialogType: DialogType.error,
             );
-          } else if (state is ShiftReportValidationError) {
-            defToast2(
-              context: context,
-              msg: state.message,
-              dialogType: DialogType.warning,
-            );
-          } else if (state is ShiftAlreadyExists) {
-            // Shift already submitted - show read-only view or go back
-            defToast2(
-              context: context,
-              msg: 'This shift has already been submitted and cannot be edited',
-              dialogType: DialogType.info,
-            ).then((_) {
-              if (!context.mounted) return;
-              Navigator.pop(context);
-            });
-          } else if (state is ShiftReportLoaded) {
-            // Load existing data into controllers
-            _drawerAmountController.text = state.report.drawerAmount.toString();
-            _computerDifferenceController.text = state.report.computerDifference.toString();
-            _electronicWalletController.text = state.report.electronicWalletAmount.toString();
-            _notesController.text = state.report.notes ?? '';
-            setState(() {
-              _selectedShiftType = state.report.shiftType;
-              _computerDifferenceType = state.report.computerDifferenceType;
-              _expenses.clear();
-              _expenses.addAll(state.report.expenses);
-            });
-          } else if (state is ExpenseAdded || state is ExpenseRemoved) {
-            setState(() {
-              // Refresh UI
-            });
           }
         },
         builder: (context, state) {
-          final cubit = context.read<ShiftReportCubit>();
-          final isLoading = state is ShiftReportLoading;
+          final isLoading = state is EditReportLoading;
 
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
             appBar: AppBar(
-              title: const Text(
-                'Shift Report',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              foregroundColor: Colors.white,
+              title: Text(
+                _isEditMode ? 'Edit Shift Report' : 'View Shift Report',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.assessment, color: Colors.white),
-                  onPressed: () {
-                    navigateTo(context, ViewReportsScreen());
-                  },
-                ),
+                if (!_isEditMode)
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        _isEditMode = true;
+                      });
+                    },
+                    tooltip: 'Edit Report',
+                  ),
               ],
             ),
             body: Stack(
@@ -127,26 +111,20 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                 Form(
                   key: _formKey,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // معلومات ثابتة (غير قابلة للتعديل)
                         ShiftReportWidgets.buildInfoSection(
-                          branchName: currentUser.branchName,
-                          date: DateTime.now(),
+                          branchName: widget.report.branchName,
+                          date: DateTime.parse(widget.date),
+                          employeeName: widget.report.employeeName,
+                          shiftType: _getShiftLabel(widget.report.shiftType),
                         ),
-
                         const SizedBox(height: 24),
-
-                        // اختيار نوع الوردية
-                        _buildShiftTypeSelector(cubit),
-
-                        const SizedBox(height: 20),
-
-                        // إدخال الدرج
                         ShiftReportWidgets.buildDrawerAmountField(
                           controller: _drawerAmountController,
+                          readOnly: !_isEditMode,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter drawer amount';
@@ -157,24 +135,18 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                             return null;
                           },
                         ),
-
                         const SizedBox(height: 20),
-
-                        // إدخال فرق الكمبيوتر
                         ShiftReportWidgets.buildComputerDifferenceSection(
-                          selectedType: _computerDifferenceType ?? ComputerDifferenceType.none,
+                          selectedType: _computerDifferenceType,
                           controller: _computerDifferenceController,
                           onTypeChanged: (type) {
                             setState(() {
                               _computerDifferenceType = type;
-                              if (type == ComputerDifferenceType.none) {
-                                _computerDifferenceController.clear();
-                              }
                             });
                           },
+                          readOnly: !_isEditMode,
                           validator: (value) {
-                            if (_computerDifferenceType != null &&
-                                _computerDifferenceType != ComputerDifferenceType.none) {
+                            if (_computerDifferenceType != ComputerDifferenceType.none) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter the amount';
                               }
@@ -185,43 +157,34 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                             return null;
                           },
                         ),
-
                         const SizedBox(height: 20),
-
-                        // المحفظة الإلكترونية
                         ShiftReportWidgets.buildElectronicWalletField(
                           controller: _electronicWalletController,
+                          readOnly: !_isEditMode,
                         ),
-
                         const SizedBox(height: 20),
-
-                        // الملاحظات
                         ShiftReportWidgets.buildNotesField(
                           controller: _notesController,
+                          readOnly: !_isEditMode,
                         ),
-
                         const SizedBox(height: 24),
-
-                        // قسم المصاريف
                         ShiftReportWidgets.buildExpensesSection(
                           expenses: _expenses,
-                          onAddExpense: _showAddExpenseDialog,
+                          onAddExpense: _isEditMode ? _addExpense : null,
                           onDeleteExpense: (expense) {
                             setState(() {
                               _expenses.remove(expense);
                             });
                           },
+                          isEditMode: _isEditMode,
                         ),
-
                         const SizedBox(height: 32),
-
-                        // زر الحفظ
-                        ShiftReportWidgets.buildSubmitButton(
-                          label: 'Submit Report',
-                          onPressed: () => _handleSubmit(cubit),
-                          isLoading: isLoading,
-                        ),
-
+                        if (_isEditMode)
+                          ShiftReportWidgets.buildSubmitButton(
+                            label: 'Save Changes',
+                            onPressed: () => _saveReport(context),
+                            isLoading: isLoading,
+                          ),
                         const SizedBox(height: 20),
                       ],
                     ),
@@ -230,9 +193,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                 if (isLoading)
                   Container(
                     color: Colors.black.withValues(alpha: 0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: const Center(child: CircularProgressIndicator()),
                   ),
               ],
             ),
@@ -242,156 +203,20 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
     );
   }
 
-
-
-  Widget _buildShiftTypeSelector(ShiftReportCubit cubit) {
-    // Get available shifts (not submitted yet)
-    final availableShifts = ShiftType.values
-        .where((shift) => !cubit.submittedShifts.contains(shift))
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text(
-              'Shift Type *',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (cubit.submittedShifts.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade200),
-                ),
-                child: Text(
-                  '${cubit.submittedShifts.length} shift(s) already submitted',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.orange.shade700,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        if (availableShifts.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.shade200),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.red.shade700, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'All shifts for today have been submitted',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.red.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _selectedShiftType == null ? Colors.grey.shade300 : ColorsManger.primary,
-                width: 1.5,
-              ),
-            ),
-            child: DropdownButtonFormField<ShiftType>(
-              isExpanded: true,
-              value: _selectedShiftType,
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: InputBorder.none,
-                hintText: 'Select shift type',
-              ),
-              items: availableShifts.map((type) {
-                String label;
-                IconData icon;
-                switch (type) {
-                  case ShiftType.midnight:
-                    label = 'Midnight (12 AM - 8 AM)';
-                    icon = Icons.bedtime;
-                    break;
-                  case ShiftType.morning:
-                    label = 'Morning (8 AM - 4 PM)';
-                    icon = Icons.wb_sunny_outlined;
-                    break;
-                  case ShiftType.afternoon:
-                    label = 'Afternoon (4 PM - 12 AM)';
-                    icon = Icons.wb_twilight;
-                    break;
-                  case ShiftType.evening:
-                    label = 'Evening (8 PM - 4 AM)';
-                    icon = Icons.dark_mode_outlined;
-                    break;
-                }
-
-                return DropdownMenuItem<ShiftType>(
-                  value: type,
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 20, color: ColorsManger.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          label,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedShiftType = value;
-                });
-              },
-              validator: (value) {
-                if (value == null && availableShifts.isNotEmpty) {
-                  return 'Please select shift type';
-                }
-                return null;
-              },
-            ),
-          ),
-      ],
-    );
+  String _getShiftLabel(ShiftType type) {
+    switch (type) {
+      case ShiftType.midnight:
+        return 'Midnight';
+      case ShiftType.morning:
+        return 'Morning';
+      case ShiftType.afternoon:
+        return 'Afternoon';
+      case ShiftType.evening:
+        return 'Evening';
+    }
   }
 
-
-
-
-
-
-
-
-
-  void _showAddExpenseDialog() {
+  void _addExpense() {
     ExpenseType? selectedType;
     final amountController = TextEditingController();
     final notesController = TextEditingController();
@@ -732,33 +557,19 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
     );
   }
 
-  void _handleSubmit(ShiftReportCubit cubit) {
-    if (_formKey.currentState!.validate()) {
-      // Update cubit with current values
-      if (_selectedShiftType != null) {
-        cubit.updateShiftType(_selectedShiftType!);
-      }
+  void _saveReport(BuildContext context) {
+    if (!_formKey.currentState!.validate()) return;
 
-      final drawerAmount = double.tryParse(_drawerAmountController.text) ?? 0.0;
-      cubit.updateDrawerAmount(drawerAmount);
+    final updatedReport = widget.report.copyWith(
+      drawerAmount: double.parse(_drawerAmountController.text),
+      computerDifference: double.tryParse(_computerDifferenceController.text),
+      computerDifferenceType: _computerDifferenceType,
+      electronicWalletAmount: double.tryParse(_electronicWalletController.text),
+      notes: _notesController.text.isEmpty ? null : _notesController.text,
+      expenses: _expenses,
+    );
 
-      final computerDiff = double.tryParse(_computerDifferenceController.text) ?? 0.0;
-      cubit.updateComputerDifference(_computerDifferenceType, computerDiff);
-
-      final walletAmount = double.tryParse(_electronicWalletController.text) ?? 0.0;
-      cubit.updateElectronicWallet(walletAmount);
-
-      cubit.updateNotes(_notesController.text.isEmpty ? null : _notesController.text);
-
-      // Clear and add all expenses from local list
-      cubit.expenses.clear();
-      for (var expense in _expenses) {
-        cubit.expenses.add(expense);
-      }
-
-      // Submit
-      cubit.submitShiftReport();
-    }
+    context.read<EditReportCubit>().updateReport(updatedReport, widget.date);
   }
 }
 

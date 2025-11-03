@@ -113,6 +113,7 @@ class _AddAnnualRequestScreenState extends State<AddAnnualRequestScreen> {
                       context: context,
                       firstDate: DateTime.now().add(Duration(days: 1)),
                       lastDate: DateTime(2100),
+                      initialEntryMode: DatePickerEntryMode.calendarOnly,
                     ).then((selectedDateRange) {
                       if (selectedDateRange != null) {
                         setState(() {

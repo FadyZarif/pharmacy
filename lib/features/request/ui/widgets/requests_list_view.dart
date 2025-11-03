@@ -111,8 +111,20 @@ class RequestsListView extends StatelessWidget {
                       // شمال = حذف
                       // onDeleteRequest(request);
                       // TODO: اكتب منطق الحذف (ممكن تعرض Dialog تأكيد)
+                      AwesomeDialog(
+                        context: context,
+                        dialogType: DialogType.question,
+                        headerAnimationLoop: false,
+                        animType: AnimType.bottomSlide,
+                        title: 'Sure Delete?',
+                        desc: 'Are you sure you want to delete this request?',
+                        btnCancelOnPress: () {},
+                        btnOkOnPress: () {
+                          // نفذ الحذف
+                          context.read<RequestCubit>().deleteRequest(request.id);
+                        },
+                      ).show();
                     }
-
                     // رجّع false علشان العنصر ما يتمسحش تلقائيًا من الليست
                     return false;
                   },

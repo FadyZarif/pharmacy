@@ -108,6 +108,13 @@ class ProfileScreen extends StatelessWidget {
                       prefixIcon: Icon(Icons.schedule),
                       readOnly: true,
                     ),
+                    /// print code
+                    AppTextFormField(
+                      controller: TextEditingController(text: user.printCode??'N/A',),
+                      labelText: 'Print Code',
+                      prefixIcon: Icon(Icons.fingerprint),
+                      readOnly: true,
+                    ),
                   ],
                 ),
               ),

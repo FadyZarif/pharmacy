@@ -30,7 +30,6 @@ class EmployeeLayout extends StatelessWidget {
                       .screensList[employeeLayoutCubit.currentIndex],
                   bottomNavigationBar: BottomNavigationBar(
                     type: BottomNavigationBarType.shifting,
-                    // 👈 الحل
                     unselectedItemColor: Colors.grey,
                     selectedItemColor: ColorsManger.primary,
                     items: employeeLayoutCubit.bottomNavItems,

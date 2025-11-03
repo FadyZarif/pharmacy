@@ -83,6 +83,17 @@ class RequestCubit extends Cubit<RequestState> {
       emit(AddRequestFailure(error: e.toString()));
     }
   }
+  deleteRequest(String requestId) async {
+    emit(DeleteRequestLoading());
+    try {
+      // Simulate deleting request logic
+      // On success:
+      await _db.collection('requests').doc(requestId).delete();
+      emit(DeleteRequestSuccess());
+    } catch (e) {
+      emit(DeleteRequestFailure(error: e.toString()));
+    }
+  }
 
 
   ///Fetch Requests for month

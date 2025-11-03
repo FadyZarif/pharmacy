@@ -7,6 +7,7 @@ class UserModel {
   final String name;
   final String phone;
   final String email;
+  final String? printCode;
   final String branchId;
   final String branchName;
   final int vocationBalanceHours;
@@ -16,11 +17,12 @@ class UserModel {
   final String? photoUrl;
   final bool isActive;
 
-  UserModel({
+  UserModel( {
     required this.uid,
     required this.name,
     required this.phone,
     required this.email,
+    this.printCode,
     required this.branchId,
     required this.branchName,
     required this.vocationBalanceHours,
@@ -50,11 +52,12 @@ enum Role {
   @JsonValue('admin')
   admin,
 
-  @JsonValue('subAdmin')
-  subAdmin,
-
   @JsonValue('manager')
   manager,
+
+
+  @JsonValue('subManager')
+  subManager,
 
   @JsonValue('staff')
   staff,

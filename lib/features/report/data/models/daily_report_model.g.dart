@@ -124,7 +124,7 @@ Map<String, dynamic> _$ExpenseItemToJson(ExpenseItem instance) =>
 const _$ExpenseTypeEnumMap = {
   ExpenseType.medicines: 'medicines',
   ExpenseType.delivery: 'delivery',
-  ExpenseType.ahmedAboghnima: 'ahmedAboghnima',
+  ExpenseType.ahmedAboghonima: 'ahmedAboghonima',
   ExpenseType.companyCollection: 'companyCollection',
   ExpenseType.warehouseCollection: 'warehouseCollection',
   ExpenseType.electronicPayment: 'electronicPayment',

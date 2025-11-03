@@ -10,6 +10,13 @@ final class AddRequestFailure extends RequestState {
     AddRequestFailure({required this.error});
 }
 
+final class DeleteRequestLoading extends RequestState {}
+final class DeleteRequestSuccess extends RequestState {}
+final class DeleteRequestFailure extends RequestState {
+  final String error;
+    DeleteRequestFailure({required this.error});
+}
+
 final class FetchRequestsLoading extends RequestState {}
 final class FetchRequestsSuccess extends RequestState {}
 final class FetchRequestsFailure extends RequestState {
