@@ -67,7 +67,7 @@ class EmployeeDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        currentUser.branchName,
+                        currentUser.currentBranch.name,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w300,

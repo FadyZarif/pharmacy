@@ -133,7 +133,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                       children: [
                         // معلومات ثابتة (غير قابلة للتعديل)
                         ShiftReportWidgets.buildInfoSection(
-                          branchName: currentUser.branchName,
+                          branchName: currentUser.currentBranch.name,
                           date: DateTime.now(),
                         ),
 

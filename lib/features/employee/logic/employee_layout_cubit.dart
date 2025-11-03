@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/employee/ui/employee_dashboard_screen.dart';
-import 'package:pharmacy/features/login/data/models/user_model.dart';
 import 'package:pharmacy/features/repair/ui/repair_report_screen.dart';
 import 'package:pharmacy/features/user/ui/profile_screen.dart';
 
 import '../../report/ui/add_shift_report_screen.dart';
-import '../../report/ui/view_reports_screen.dart';
 import '../../salary/ui/salary_screen.dart';
 import 'employee_layout_state.dart';
 

@@ -160,8 +160,8 @@ class _RepairReportScreenState extends State<RepairReportScreen> {
                                 deviceName: deviceName!,
                                 notes: notesController.text,
                                 createdAt: null,
-                                branchId: currentUser.branchId,
-                                branchName: currentUser.branchName,
+                                branchId: currentUser.currentBranch.id,
+                                branchName: currentUser.currentBranch.name,
                                 employeeId: currentUser.uid,
                                 employeeName: currentUser.name
                               );

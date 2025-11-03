@@ -195,8 +195,8 @@ class _AddPermissionRequestScreenState extends State<AddPermissionRequestScreen>
                     employeeId: currentUser.uid,
                     employeeName: currentUser.name,
                     employeePhone: currentUser.phone,
-                    employeeBranchId: currentUser.branchId,
-                    employeeBranchName: currentUser.branchName,
+                    employeeBranchId: currentUser.currentBranch.id,
+                    employeeBranchName: currentUser.currentBranch.name,
                     employeePhoto: currentUser.photoUrl,
                   );
                   getIt<RequestCubit>().addRequest(request: request, docRef: docRef);

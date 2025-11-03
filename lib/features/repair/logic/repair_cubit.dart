@@ -23,7 +23,7 @@ class RepairCubit extends Cubit<RepairState> {
       // 1) هات كل الاجهزه
       final branchSnap = await FirebaseFirestore.instance
           .collection('branches')
-          .doc(currentUser.branchId)
+          .doc(currentUser.currentBranch.id)
           .get();
 
       final branch = BranchModel.fromJson(branchSnap.data()!);

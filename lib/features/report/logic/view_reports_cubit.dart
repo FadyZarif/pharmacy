@@ -20,7 +20,7 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
           .collection('daily_reports')
           .doc(dateKey)
           .collection('branches')
-          .doc(currentUser.branchId)
+          .doc(currentUser.currentBranch.id)
           .collection('shifts')
           .get();
 

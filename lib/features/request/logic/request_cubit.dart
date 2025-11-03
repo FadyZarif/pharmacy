@@ -8,9 +8,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/branch/data/branch_model.dart';
-import 'package:pharmacy/features/login/data/models/user_model.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
 
+import '../../user/data/models/user_model.dart';
 import 'request_state.dart';
 
 
@@ -231,7 +231,7 @@ class RequestCubit extends Cubit<RequestState> {
       // 2) جمِّع الـ users حسب branchId (O(n))
       final Map<String, List<UserModel>> usersByBranchId = {};
       for (final u in users) {
-        final bid = u.branchId; // اعملها nullable-safe لو لزم
+        final bid = u.currentBranch.id; // اعملها nullable-safe لو لزم
         (usersByBranchId[bid] ??= <UserModel>[]).add(u);
       }
 

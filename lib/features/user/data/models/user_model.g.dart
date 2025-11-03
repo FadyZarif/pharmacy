@@ -12,8 +12,9 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   phone: json['phone'] as String,
   email: json['email'] as String,
   printCode: json['printCode'] as String?,
-  branchId: json['branchId'] as String,
-  branchName: json['branchName'] as String,
+  branches: (json['branches'] as List<dynamic>)
+      .map((e) => Branch.fromJson(e as Map<String, dynamic>))
+      .toList(),
   vocationBalanceHours: (json['vocationBalanceHours'] as num).toInt(),
   overTimeHours: (json['overTimeHours'] as num).toInt(),
   shiftHours: (json['shiftHours'] as num).toInt(),
@@ -28,8 +29,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'phone': instance.phone,
   'email': instance.email,
   'printCode': instance.printCode,
-  'branchId': instance.branchId,
-  'branchName': instance.branchName,
+  'branches': instance.branches,
   'vocationBalanceHours': instance.vocationBalanceHours,
   'overTimeHours': instance.overTimeHours,
   'shiftHours': instance.shiftHours,
@@ -43,4 +43,12 @@ const _$RoleEnumMap = {
   Role.manager: 'manager',
   Role.subManager: 'subManager',
   Role.staff: 'staff',
+};
+
+Branch _$BranchFromJson(Map<String, dynamic> json) =>
+    Branch(id: json['id'] as String, name: json['name'] as String);
+
+Map<String, dynamic> _$BranchToJson(Branch instance) => <String, dynamic>{
+  'id': instance.id,
+  'name': instance.name,
 };

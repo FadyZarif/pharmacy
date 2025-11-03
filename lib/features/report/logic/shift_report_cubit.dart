@@ -30,7 +30,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     try {
       final shifts = await ReportFirestoreHelper.getBranchShifts(
         currentDate,
-        currentUser.branchId,
+        currentUser.currentBranch.id,
       );
 
       submittedShifts.clear();
@@ -49,7 +49,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       final existingShift = await ReportFirestoreHelper.getShift(
         currentDate,
-        currentUser.branchId,
+        currentUser.currentBranch.id,
         shiftType,
       );
 
@@ -179,7 +179,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       final fileName = DateTime.now().millisecondsSinceEpoch.toString();
       final storageRef = FirebaseStorage.instance.ref().child(
-            'shift_reports/${currentUser.branchId}/$fileName',
+            'shift_reports/${currentUser.currentBranch.id}/$fileName',
           );
 
       final uploadTask = await storageRef.putFile(file);
@@ -232,9 +232,9 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       // Create report model
       final report = ShiftReportModel(
-        id: '${currentUser.branchId}_${_formatDate(currentDate)}_${selectedShiftType!.name}',
-        branchId: currentUser.branchId,
-        branchName: currentUser.branchName,
+        id: '${currentUser.currentBranch.id}_${_formatDate(currentDate)}_${selectedShiftType!.name}',
+        branchId: currentUser.currentBranch.id,
+        branchName: currentUser.currentBranch.name,
         shiftType: selectedShiftType!,
         employeeId: currentUser.uid,
         employeeName: currentUser.name,
@@ -253,7 +253,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
       // Save to Firestore
       await ReportFirestoreHelper.saveShift(
         currentDate,
-        currentUser.branchId,
+        currentUser.currentBranch.id,
         report,
       );
 
@@ -277,9 +277,9 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       // Create updated report model
       final report = ShiftReportModel(
-        id: '${currentUser.branchId}_${_formatDate(currentDate)}_${selectedShiftType!.name}',
-        branchId: currentUser.branchId,
-        branchName: currentUser.branchName,
+        id: '${currentUser.currentBranch.id}_${_formatDate(currentDate)}_${selectedShiftType!.name}',
+        branchId: currentUser.currentBranch.id,
+        branchName: currentUser.currentBranch.name,
         shiftType: selectedShiftType!,
         employeeId: currentUser.uid,
         employeeName: currentUser.name,
@@ -297,7 +297,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
       // Update in Firestore
       await ReportFirestoreHelper.saveShift(
         currentDate,
-        currentUser.branchId,
+        currentUser.currentBranch.id,
         report,
       );
 

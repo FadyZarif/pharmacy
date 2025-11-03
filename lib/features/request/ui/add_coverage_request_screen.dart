@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/features/branch/data/branch_model.dart';
-import 'package:pharmacy/features/login/data/models/user_model.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_state.dart';
 
@@ -12,6 +11,7 @@ import '../../../core/helpers/server_timestamp_helper.dart';
 import '../../../core/themes/colors.dart';
 import '../../../core/widgets/app_dropdown_button_form_field.dart';
 import '../../../core/widgets/app_text_form_field.dart';
+import '../../user/data/models/user_model.dart';
 import '../data/models/request_model.dart';
 
 class AddCoverageRequestScreen extends StatefulWidget {
@@ -292,8 +292,8 @@ class _AddCoverageRequestScreenState extends State<AddCoverageRequestScreen> {
                       employeeId: currentUser.uid,
                       employeeName: currentUser.name,
                       employeePhone: currentUser.phone,
-                      employeeBranchId: currentUser.branchId,
-                      employeeBranchName: currentUser.branchName,
+                      employeeBranchId: currentUser.currentBranch.id,
+                      employeeBranchName: currentUser.currentBranch.name,
                       employeePhoto: currentUser.photoUrl,
                     );
                     getIt<RequestCubit>().addRequest(request: request, docRef: docRef);

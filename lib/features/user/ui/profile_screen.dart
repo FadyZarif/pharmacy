@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
-import 'package:pharmacy/features/login/data/models/user_model.dart';
 
 import '../../../core/widgets/profile_circle.dart';
+import '../data/models/user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   final UserModel user;
@@ -64,7 +64,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     /// branch
                     Text(
-                      user.branchName,
+                      '[${user.branches.map((e) => e.name).join(', ')}]',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,

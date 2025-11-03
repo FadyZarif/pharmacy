@@ -8,8 +8,9 @@ class UserModel {
   final String phone;
   final String email;
   final String? printCode;
-  final String branchId;
-  final String branchName;
+  final List<Branch> branches;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  Branch currentBranch = Branch(id: '', name: '');
   final int vocationBalanceHours;
   final int overTimeHours;
   final int shiftHours;
@@ -23,8 +24,7 @@ class UserModel {
     required this.phone,
     required this.email,
     this.printCode,
-    required this.branchId,
-    required this.branchName,
+    required this.branches,
     required this.vocationBalanceHours,
     required this.overTimeHours,
     required this.shiftHours,
@@ -34,8 +34,14 @@ class UserModel {
   });
 
   /// fromJson & toJson
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    final user = _$UserModelFromJson(json);
+    if(user.role == Role.staff || user.role == Role.subManager){
+      user.currentBranch = user.branches.first;
+    }
+
+    return user;
+  }
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
@@ -61,4 +67,20 @@ enum Role {
 
   @JsonValue('staff')
   staff,
+}
+
+@JsonSerializable()
+class Branch {
+  final String id;
+    final String name;
+
+
+  Branch({
+    required this.id,
+    required this.name,
+  });
+  /// fromJson & toJson
+  factory Branch.fromJson(Map<String, dynamic> json) => _$BranchFromJson(json);
+  Map<String, dynamic> toJson() => _$BranchToJson(this);
+
 }
