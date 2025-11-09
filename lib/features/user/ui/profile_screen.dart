@@ -37,7 +37,7 @@ class ProfileScreen extends StatelessWidget {
                   spacing: 10,
                   children: [
                     /// profile photo
-                    ProfileCircle(photoUrl: user.photoUrl,size: 100,),
+                    ProfileCircle(photoUrl: user.photoUrl,size: 75,),
                     /// name
                     Text(
                       user.name,

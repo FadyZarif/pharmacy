@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/salary/data/models/employee_monthly_salary.dart';
 import 'package:pharmacy/features/salary/data/models/month_salary_model.dart';
@@ -32,8 +33,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SalaryCubit()..fetchSalaryByMonthKey(_monthKey),
+    return BlocProvider.value(
+      value:  getIt<SalaryCubit>()..fetchSalaryByMonthKey(_monthKey),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Salary'),

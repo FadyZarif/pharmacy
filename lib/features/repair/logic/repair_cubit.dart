@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
@@ -42,6 +41,32 @@ class RepairCubit extends Cubit<RepairState> {
       emit(AddRepairReportSuccess());
     } catch (e) {
       emit(AddRepairReportError(e.toString()));
+    }
+  }
+
+  /// Fetch repairs by branch and date
+  fetchRepairsByBranchAndDate({required String branchId, required DateTime date}) async {
+    emit(FetchRepairsLoading());
+    try {
+      // Parse date to get start and end of day
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('repair_reports')
+          .where('branchId', isEqualTo: branchId)
+          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('createdAt', isLessThanOrEqualTo:Timestamp.fromDate(endOfDay) )
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final repairs = snapshot.docs
+          .map((doc) => RepairModel.fromJson(doc.data()))
+          .toList();
+
+      emit(FetchRepairsSuccess(repairs));
+    } catch (e) {
+      emit(FetchRepairsError('Fetch Repairs Error: $e'));
     }
   }
 

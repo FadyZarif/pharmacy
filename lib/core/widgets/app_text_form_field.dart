@@ -56,7 +56,7 @@ class AppTextFormField extends StatelessWidget {
       textInputAction: textInputAction,
       keyboardType: keyboardType,
       maxLength: maxLength,
-      maxLines: maxLines,
+      maxLines: obscureText == true ? 1 : maxLines,
       autofillHints: autofillHints,
       inputFormatters: inputFormatters,
       textDirection: isArabic == true ? TextDirection.rtl : TextDirection.ltr,

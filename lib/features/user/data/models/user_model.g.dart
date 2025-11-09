@@ -29,7 +29,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'phone': instance.phone,
   'email': instance.email,
   'printCode': instance.printCode,
-  'branches': instance.branches,
+  'branches': instance.branches.map((e) => e.toJson()).toList(),
   'vocationBalanceHours': instance.vocationBalanceHours,
   'overTimeHours': instance.overTimeHours,
   'shiftHours': instance.shiftHours,

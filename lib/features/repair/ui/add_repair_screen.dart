@@ -13,14 +13,14 @@ import '../../../core/themes/colors.dart';
 import '../../../core/widgets/app_dropdown_button_form_field.dart';
 import '../../../core/widgets/app_text_form_field.dart';
 
-class RepairReportScreen extends StatefulWidget {
-  const RepairReportScreen({super.key});
+class AddRepairScreen extends StatefulWidget {
+  const AddRepairScreen({super.key});
 
   @override
-  State<RepairReportScreen> createState() => _RepairReportScreenState();
+  State<AddRepairScreen> createState() => _AddRepairScreenState();
 }
 
-class _RepairReportScreenState extends State<RepairReportScreen> {
+class _AddRepairScreenState extends State<AddRepairScreen> {
   GlobalKey<FormState> formKey = GlobalKey();
   String? deviceName;
   TextEditingController notesController = TextEditingController();

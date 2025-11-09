@@ -7,6 +7,9 @@ import 'package:pharmacy/features/report/logic/shift_report_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
 
+import '../../features/salary/logic/salary_cubit.dart';
+import '../../features/user/logic/users_cubit.dart';
+
 
 
 final getIt = GetIt.instance;
@@ -26,12 +29,18 @@ Future setupGetIt() async{
   ///Repair
   getIt.registerLazySingleton<RepairCubit>(()=>RepairCubit());
 
+  ///Salary
+  getIt.registerLazySingleton<SalaryCubit>(()=>SalaryCubit());
+
   ///Shift Report
   getIt.registerFactory<ShiftReportCubit>(()=>ShiftReportCubit());
 
   ///View Reports (SubManager)
   getIt.registerFactory<ViewReportsCubit>(()=>ViewReportsCubit());
   getIt.registerFactory<EditReportCubit>(()=>EditReportCubit());
+
+  ///User
+  getIt.registerLazySingleton<UsersCubit>(()=>UsersCubit());
 
 
 

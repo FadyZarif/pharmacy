@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/features/branch/ui/branch_selection_screen.dart';
 import 'package:pharmacy/features/employee/ui/employee_layout.dart';
 import 'package:pharmacy/features/login/ui/login_screen.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
+import 'package:pharmacy/features/user/data/models/user_model.dart';
 
 import 'core/di/dependency_injection.dart';
 import 'core/helpers/bloc_observer.dart';
@@ -36,7 +38,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: ColorsManger.cardColor),
         useMaterial3: true,
       ),
-      home: isLogged? EmployeeLayout(): LoginScreen(),
+      home: isLogged? currentUser.role == Role.manager? BranchSelectionScreen()
+          : EmployeeLayout(): LoginScreen(),
     );
   }
 }

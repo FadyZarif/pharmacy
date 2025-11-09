@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/widgets/profile_circle.dart';
 import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
@@ -30,7 +31,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
             appBar: AppBar(
-              title: const Text('Daily Reports'),
+              title: Text('Daily Reports [${currentUser.currentBranch.name}]',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
               foregroundColor: Colors.white,
@@ -135,8 +136,84 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       ),
     );
   }
-
   Widget _buildDateSelector(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorsManger.primary,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.2),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Previous Day
+          IconButton(
+            icon: const Icon(Icons.chevron_left,color: Colors.white,),
+            onPressed: () {
+              setState(() {
+                _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+              });
+              context.read<ViewReportsCubit>().fetchDailyReports(_formattedDate);
+            },
+          ),
+
+          // Date Display
+          InkWell(
+            onTap: () async {
+              _selectDate(context);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMM dd, yyyy').format(_selectedDate),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Next Day
+          IconButton(
+            icon: const Icon(Icons.chevron_right,color: Colors.white,),
+            onPressed: _selectedDate.isBefore(
+              DateTime.now().subtract(const Duration(days: 1)),
+            )
+                ? () {
+              setState(() {
+                _selectedDate = _selectedDate.add(const Duration(days: 1));
+              });
+              context.read<ViewReportsCubit>().fetchDailyReports(_formattedDate);
+
+            }
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+/*  Widget _buildDateSelector(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -174,7 +251,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
         ],
       ),
     );
-  }
+  }*/
 
   Future<void> _selectDate(BuildContext context) async {
     final cubit = context.read<ViewReportsCubit>();

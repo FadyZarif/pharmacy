@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/features/branch/ui/branch_selection_screen.dart';
 import 'package:pharmacy/features/employee/ui/employee_layout.dart';
 import 'package:pharmacy/features/login/logic/login_cubit.dart';
 import 'package:pharmacy/features/login/logic/login_states.dart';
@@ -11,6 +12,7 @@ import '../../../core/di/dependency_injection.dart';
 import '../../../core/helpers/app_regex.dart';
 import '../../../core/helpers/constants.dart';
 import '../../../core/widgets/loading_button.dart';
+import '../../user/data/models/user_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,7 +50,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ).then((value) {
                   if (!context.mounted) return;
                   // navigateToReplacement(context,currentUser.role == Role.superVisor?SupervisorLayout(): AdminLayout());
-                  navigateToReplacement(context, EmployeeLayout());
+                  switch (currentUser.role) {
+                    case Role.admin:
+                    case Role.manager:
+                      navigateToReplacement(context, BranchSelectionScreen());
+                      break;
+                    case Role.subManager:
+                    case Role.staff:
+                      navigateToReplacement(context, EmployeeLayout());
+                      break;
+                  }
                 });
               }
               if(state is LoginErrorState){
