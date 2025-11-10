@@ -39,4 +39,15 @@ class UpdateUserError extends UsersState {
   UpdateUserError(this.error);
 }
 
+// Delete User States
+class DeleteUserLoading extends UsersState {}
+
+class DeleteUserSuccess extends UsersState {}
+
+class DeleteUserError extends UsersState {
+  final String error;
+
+  DeleteUserError(this.error);
+}
+
 

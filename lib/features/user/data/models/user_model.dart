@@ -51,6 +51,10 @@ class UserModel {
     final remainingHours = hours % shiftHours;
     return '${days}d ${remainingHours}h';
   }
+
+  bool get isManagement{
+    return role == Role.admin || role == Role.manager;
+  }
 }
 
 @JsonEnum(alwaysCreate: true)

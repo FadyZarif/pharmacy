@@ -7,7 +7,7 @@ import 'package:pharmacy/core/widgets/profile_circle.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
 import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_state.dart';
-import 'package:pharmacy/features/user/ui/user_details_screen.dart';
+import 'package:pharmacy/features/user/ui/profile_screen.dart';
 import 'package:pharmacy/features/user/ui/add_user_screen.dart';
 
 class UsersManagementScreen extends StatefulWidget {
@@ -208,7 +208,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => UserDetailsScreen(user: user),
+              builder: (context) => ProfileScreen(user: user),
             ),
           );
         },

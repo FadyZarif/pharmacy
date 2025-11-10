@@ -195,7 +195,6 @@ class UsersCubit extends Cubit<UsersState> {
     required String phone,
     String? printCode,
     required int shiftHours,
-    required int vocationBalanceHours,
     required Role role,
     required bool isActive,
     File? imageFile,
@@ -220,19 +219,6 @@ class UsersCubit extends Cubit<UsersState> {
       // Step 2: Upload new image if provided
       if (imageFile != null) {
         newPhotoUrl = await uploadUserImage(imageFile, uid);
-
-        // Delete old photo if exists and new one uploaded successfully
-        if (oldPhotoUrl != null && oldPhotoUrl.isNotEmpty) {
-          try {
-            await FirebaseStorage.instance
-                .ref()
-                .child('profile')
-                .child('$uid.jpg')
-                .delete();
-          } catch (_) {
-            // تجاهل خطأ حذف الصورة القديمة
-          }
-        }
       }
 
       // Step 3: Update user document
@@ -240,7 +226,6 @@ class UsersCubit extends Cubit<UsersState> {
         'name': name.trim(),
         'phone': phone.trim(),
         'printCode': printCode?.trim(),
-        'vocationBalanceHours': vocationBalanceHours,
         'shiftHours': shiftHours,
         'role': role.name,
         'isActive': isActive,
@@ -255,6 +240,22 @@ class UsersCubit extends Cubit<UsersState> {
           .collection('users')
           .doc(uid)
           .update(updatedData);
+
+      // Step 4: Delete old photo AFTER successful update
+      // حذف الصورة القديمة بعد نجاح التحديث فقط
+      if (imageFile != null && oldPhotoUrl != null && oldPhotoUrl.isNotEmpty) {
+        try {
+          // Extract filename from old URL to delete it
+          final oldFileName = Uri.parse(oldPhotoUrl).pathSegments.last.split('?').first;
+          await FirebaseStorage.instance
+              .ref()
+              .child('profile')
+              .child(oldFileName)
+              .delete();
+        } catch (_) {
+          // تجاهل خطأ حذف الصورة القديمة
+        }
+      }
 
       emit(UpdateUserSuccess());
     } catch (e) {
@@ -272,6 +273,53 @@ class UsersCubit extends Cubit<UsersState> {
       }
 
       emit(UpdateUserError('Failed to update user: $e'));
+    }
+  }
+
+  /// Delete user
+  Future<void> deleteUser(String uid) async {
+    emit(DeleteUserLoading());
+
+    try {
+      // Step 1: Get user data to check photo
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      String? photoUrl;
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        photoUrl = userData?['photoUrl'];
+      }
+
+      // Step 2: Delete user document from Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .delete();
+
+      // Step 3: Delete profile photo if exists
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        try {
+          await FirebaseStorage.instance
+              .ref()
+              .child('profile')
+              .child('$uid.jpg')
+              .delete();
+        } catch (_) {
+          // تجاهل خطأ حذف الصورة
+        }
+      }
+
+      // Step 4: Delete from Firebase Auth
+      // ملحوظة: لا يمكن حذف مستخدم آخر من Auth مباشرة
+      // يحتاج Cloud Function أو المستخدم نفسه يحذف حسابه
+      // لكن حذفه من Firestore كافي لإيقافه
+
+      emit(DeleteUserSuccess());
+    } catch (e) {
+      emit(DeleteUserError('Failed to delete user: $e'));
     }
   }
 
