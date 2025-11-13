@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/employee/logic/employee_layout_cubit.dart';
 import 'package:pharmacy/features/login/logic/login_cubit.dart';
 import 'package:pharmacy/features/repair/logic/repair_cubit.dart';
@@ -6,6 +7,7 @@ import 'package:pharmacy/features/report/logic/edit_report_cubit.dart';
 import 'package:pharmacy/features/report/logic/shift_report_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
+import 'package:pharmacy/features/request/data/services/coverage_shift_service.dart';
 
 import '../../features/salary/logic/salary_cubit.dart';
 import '../../features/user/logic/users_cubit.dart';
@@ -18,13 +20,16 @@ Future setupGetIt() async{
 
 
   ///Auth
-  getIt.registerLazySingleton<LoginCubit>(()=>LoginCubit());
+  getIt.registerFactory<LoginCubit>(()=>LoginCubit());
 
   ///Employee
   getIt.registerLazySingleton<EmployeeLayoutCubit>(()=>EmployeeLayoutCubit());
 
   ///Request
-  getIt.registerLazySingleton<RequestCubit>(()=>RequestCubit());
+  getIt.registerLazySingleton<RequestCubit>(()=>(currentUser.isManagement? (RequestCubit()..fetchManagementRequests()): RequestCubit()..fetchRequests()));
+
+  ///Coverage Shift Service
+  getIt.registerLazySingleton<CoverageShiftService>(()=>CoverageShiftService());
 
   ///Repair
   getIt.registerLazySingleton<RepairCubit>(()=>RepairCubit());
@@ -35,7 +40,7 @@ Future setupGetIt() async{
   ///Shift Report
   getIt.registerFactory<ShiftReportCubit>(()=>ShiftReportCubit());
 
-  ///View Reports (SubManager)
+  ///View Reports (Management)
   getIt.registerFactory<ViewReportsCubit>(()=>ViewReportsCubit());
   getIt.registerFactory<EditReportCubit>(()=>EditReportCubit());
 

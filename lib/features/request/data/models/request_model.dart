@@ -1,4 +1,5 @@
 
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:pharmacy/core/helpers/server_timestamp_helper.dart';
 
@@ -83,11 +84,56 @@ class RequestModel {
       details: details ?? this.details,
     );
   }
+
+  Color get statusColor {
+    switch (status) {
+      case RequestStatus.pending:
+        return  Colors.orange;
+      case RequestStatus.approved:
+        return Colors.green;
+      case RequestStatus.rejected:
+        return Colors.red;
+    }
+  }
+  String get typeLabel {
+    switch (type) {
+      case RequestType.annualLeave:
+        return 'Annual Leave';
+      case RequestType.sickLeave:
+        return 'Sick Leave';
+      case RequestType.extraHours:
+        return 'Extra Hours';
+      case RequestType.coverageShift:
+        return 'Coverage Shift';
+      case RequestType.attend:
+        return 'Attendance';
+      case RequestType.permission:
+        return 'Early Leave Permission';
+    }
+  }
+  IconData get typeIcon {
+    switch (type) {
+      case RequestType.annualLeave:
+        return Icons.beach_access;
+      case RequestType.sickLeave:
+        return Icons.local_hospital;
+      case RequestType.extraHours:
+        return Icons.access_time;
+      case RequestType.coverageShift:
+        return Icons.swap_horiz;
+      case RequestType.attend:
+        return Icons.check_circle;
+      case RequestType.permission:
+        return Icons.exit_to_app;
+    }
+  }
 }
 
 @JsonSerializable()
 class AnnualLeaveDetails {
+  @ServerTimestampConverter()
   final DateTime startDate;
+  @ServerTimestampConverter()
   final DateTime endDate;
   AnnualLeaveDetails({
     required this.startDate,
@@ -98,11 +144,17 @@ class AnnualLeaveDetails {
       _$AnnualLeaveDetailsFromJson(json);
 
   Map<String, dynamic> toJson() => _$AnnualLeaveDetailsToJson(this);
+
+  int get totalDays {
+    return endDate.difference(startDate).inDays + 1;
+  }
 }
 
 @JsonSerializable()
 class SickLeaveDetails {
+  @ServerTimestampConverter()
   final DateTime startDate;
+  @ServerTimestampConverter()
   final DateTime endDate;
   String prescription;
 
@@ -121,6 +173,7 @@ class SickLeaveDetails {
 
 @JsonSerializable()
 class ExtraHoursDetails {
+  @ServerTimestampConverter()
   final DateTime date;
   final int hours;
 
@@ -135,12 +188,13 @@ class ExtraHoursDetails {
   Map<String, dynamic> toJson() => _$ExtraHoursDetailsToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class CoverageShiftDetails {
   final String peerEmployeeId;
   final String peerEmployeeName;
   final String peerBranchId;
   final String peerBranchName;
+  @ServerTimestampConverter()
   final DateTime date;
 
 
@@ -161,6 +215,7 @@ class CoverageShiftDetails {
 
 @JsonSerializable()
 class AttendDetails {
+  @ServerTimestampConverter()
   final DateTime date;
 
   AttendDetails({
@@ -175,6 +230,7 @@ class AttendDetails {
 
 @JsonSerializable()
 class PermissionDetails {
+  @ServerTimestampConverter()
   final DateTime date;
   final int hours;
 

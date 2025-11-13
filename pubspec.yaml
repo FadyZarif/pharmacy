@@ -44,6 +44,8 @@ dependencies:
   rounded_loading_button_plus: ^3.0.1
   file_picker: ^10.3.3
   cached_network_image: ^3.4.1
+  url_launcher: ^6.3.2
+  excel: ^4.0.6
   # Code Generator (used with cubit & retrofit)
   freezed_annotation: ^2.4.4
   # Json generate

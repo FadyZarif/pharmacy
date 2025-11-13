@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/features/request/data/services/coverage_shift_service.dart';
 
 import '../../features/user/data/models/user_model.dart';
 
@@ -25,6 +27,21 @@ Future<bool> checkIsLogged() async {
     final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     currentUser = UserModel.fromJson(doc.data()!);
+
+    // Check if user has coverage shift today
+    if (!currentUser.isManagement) {
+      try {
+        final coverageShiftService = getIt<CoverageShiftService>();
+        final tempBranch = await coverageShiftService.getTemporaryBranch(currentUser.uid);
+
+        if (tempBranch != null) {
+          // Apply temporary branch for today
+          currentUser.currentBranch = tempBranch;
+        }
+      } catch (e) {
+        print('Error checking coverage shift: $e');
+      }
+    }
 
     return true;
   }

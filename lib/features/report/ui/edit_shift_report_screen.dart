@@ -9,6 +9,7 @@ import 'package:pharmacy/features/report/logic/edit_report_cubit.dart';
 import 'package:pharmacy/features/report/logic/edit_report_state.dart';
 import 'package:pharmacy/features/report/ui/widgets/shift_report_widgets.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:pharmacy/features/user/data/models/user_model.dart';
 
 class EditShiftReportScreen extends StatefulWidget {
   final ShiftReportModel report;
@@ -94,7 +95,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
               actions: [
-                if (!_isEditMode)
+                if (!_isEditMode && ((currentUser.isManagement)||(currentUser.role == Role.subManager && _isDateTodayOrYesterday(widget.date))))
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.white),
                     onPressed: () {
@@ -246,7 +247,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                     // Expense Type Dropdown
                     DropdownButtonFormField<ExpenseType>(
                       isExpanded: true, // <-- allow full width to avoid tiny overflow
-                      value: selectedType,
+                      initialValue: selectedType,
                       decoration: const InputDecoration(
                         labelText: 'Expense Type *',
                         border: OutlineInputBorder(),
@@ -570,6 +571,22 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
     );
 
     context.read<EditReportCubit>().updateReport(updatedReport, widget.date);
+  }
+
+  bool _isDateTodayOrYesterday(String dateString) {
+    // تحويل الـ string للتاريخ
+    DateTime inputDate = DateTime.parse(dateString);
+
+    // تاريخ النهارده وامبارح
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+    DateTime yesterday = today.subtract(Duration(days: 1));
+    DateTime inputDateOnly = DateTime(inputDate.year, inputDate.month, inputDate.day);
+    print(inputDateOnly.isAtSameMomentAs(today) ||
+        inputDateOnly.isAtSameMomentAs(yesterday));
+
+    return inputDateOnly.isAtSameMomentAs(today) ||
+        inputDateOnly.isAtSameMomentAs(yesterday);
   }
 }
 

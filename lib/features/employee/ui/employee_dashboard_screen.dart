@@ -1,3 +1,5 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,19 +7,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/employee/logic/employee_layout_cubit.dart';
+import 'package:pharmacy/features/login/ui/login_screen.dart';
+import 'package:pharmacy/features/repair/logic/repair_cubit.dart';
+import 'package:pharmacy/features/request/data/services/coverage_shift_service.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_state.dart';
-import 'package:pharmacy/features/request/ui/add_attend_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_coverage_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_extra_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_permission_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_sick_request_screen.dart';
+import 'package:pharmacy/features/request/ui/add_request_screen_unified.dart';
 import 'package:pharmacy/features/request/ui/widgets/requests_list_view.dart';
+import 'package:pharmacy/features/salary/logic/salary_cubit.dart';
+import 'package:pharmacy/features/user/logic/users_cubit.dart';
 
 import '../../../core/di/dependency_injection.dart';
 import '../../../core/widgets/profile_circle.dart';
 import '../../request/data/models/request_model.dart';
-import '../../request/ui/add_annual_request_screen.dart';
 import 'widgets/request_tile.dart';
 
 class EmployeeDashboardScreen extends StatelessWidget {
@@ -25,7 +27,9 @@ class EmployeeDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider.value(
+  value: getIt<RequestCubit>(),
+  child: Scaffold(
       appBar: AppBar(
         title: Text(
           'Dashboard',
@@ -33,6 +37,13 @@ class EmployeeDashboardScreen extends StatelessWidget {
         ),
         backgroundColor: ColorsManger.primary,
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () => _showLogoutDialog(context),
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -136,6 +147,7 @@ class EmployeeDashboardScreen extends StatelessWidget {
                         ),
                         Text(
                           'Vacation\nBalance',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w300,
@@ -169,6 +181,7 @@ class EmployeeDashboardScreen extends StatelessWidget {
                         ),
                         Text(
                           'Over\nTime',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w300,
@@ -257,9 +270,90 @@ class EmployeeDashboardScreen extends StatelessWidget {
             RequestsListView(),
           ],
         ),
+    ),
+  ),
+);
+}
+
+void _showLogoutDialog(BuildContext context) {
+
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.warning,
+      animType: AnimType.bottomSlide,
+      title: 'Logout',
+      desc: 'are you sure you want to logout?',
+      btnOkText: 'logout',
+      btnCancelOnPress: () {},
+      btnOkOnPress: () {
+        _logout(context);
+      },
+    ).show();
+}
+
+Future<void> _logout(BuildContext context) async {
+  try {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
+
+    // Sign out from Firebase
+    await FirebaseAuth.instance.signOut();
+
+    // Reset all lazy singletons in GetIt (but keep factories)
+    if (getIt.isRegistered<EmployeeLayoutCubit>()) {
+      await getIt.resetLazySingleton<EmployeeLayoutCubit>();
+    }
+    if (getIt.isRegistered<RequestCubit>()) {
+      await getIt.resetLazySingleton<RequestCubit>();
+    }
+    if (getIt.isRegistered<CoverageShiftService>()) {
+      await getIt.resetLazySingleton<CoverageShiftService>();
+    }
+    if (getIt.isRegistered<RepairCubit>()) {
+      await getIt.resetLazySingleton<RepairCubit>();
+    }
+    if (getIt.isRegistered<SalaryCubit>()) {
+      await getIt.resetLazySingleton<SalaryCubit>();
+    }
+    if (getIt.isRegistered<UsersCubit>()) {
+      await getIt.resetLazySingleton<UsersCubit>();
+    }
+
+    // Update isLogged flag
+    isLogged = false;
+
+    // Pop loading dialog
+    if (context.mounted) Navigator.pop(context);
+
+    // Navigate to login screen
+    if (context.mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  } catch (e) {
+    // Pop loading dialog if still showing
+    if (context.mounted) Navigator.pop(context);
+
+    // Show error message
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
 }
 
 Future<void> showNewRequestSheet(BuildContext context) async {
@@ -269,42 +363,42 @@ Future<void> showNewRequestSheet(BuildContext context) async {
       title: 'Annual Leave',
       subtitle: 'طلب إجازة',
       icon: Icons.flight_takeoff,
-      screen: const AddAnnualRequestScreen(),
+      screen: const AddRequestScreenUnified(requestType: RequestType.annualLeave),
     ),
     RequestItem(
       type: RequestType.sickLeave,
       title: 'Sick Leave',
       subtitle: 'طلب إجازة مرضية',
       icon: Icons.local_hospital,
-      screen: const AddSickRequestScreen(),
+      screen: const AddRequestScreenUnified(requestType: RequestType.sickLeave),
     ),
     RequestItem(
       type: RequestType.extraHours,
       title: 'Extra Hours',
       subtitle: 'طلب ساعات إضافية',
       icon: Icons.access_time,
-      screen: const AddExtraRequestScreen(),
+      screen: const AddRequestScreenUnified(requestType: RequestType.extraHours),
     ),
     RequestItem(
       type: RequestType.coverageShift,
       title: 'Coverage Shift',
       subtitle: 'طلب تغطية وردية',
       icon: Icons.swap_horiz,
-      screen: const AddCoverageRequestScreen(),
+      screen: const AddRequestScreenUnified(requestType: RequestType.coverageShift),
     ),
     RequestItem(
       type: RequestType.attend,
       title: 'Attend',
       subtitle: 'طلب حضور',
       icon: Icons.how_to_reg,
-      screen: const AddAttendRequestScreen(),
+      screen: const AddRequestScreenUnified(requestType: RequestType.attend),
     ),
     RequestItem(
       type: RequestType.permission,
       title: 'Permission Early Leave',
       subtitle: 'طلب إذن انصراف بدري',
       icon: Icons.exit_to_app,
-      screen: const AddPermissionRequestScreen(),
+      screen: const AddRequestScreenUnified(requestType: RequestType.permission),
     ),
   ];
 

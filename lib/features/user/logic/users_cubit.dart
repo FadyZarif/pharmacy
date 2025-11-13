@@ -28,6 +28,7 @@ class UsersCubit extends Cubit<UsersState> {
           'id': currentUser.currentBranch.id,
           'name': currentUser.currentBranch.name,
         })
+    .where('role', isNotEqualTo: Role.admin.name)
         .snapshots()
         .listen(
           (snapshot) {

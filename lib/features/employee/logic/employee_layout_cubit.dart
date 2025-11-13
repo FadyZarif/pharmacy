@@ -9,6 +9,8 @@ import 'package:pharmacy/features/user/data/models/user_model.dart';
 import '../../repair/ui/view_repairs_screen.dart';
 import '../../report/ui/add_shift_report_screen.dart';
 import '../../report/ui/view_reports_screen.dart';
+import '../../request/ui/manage_requests_screen.dart';
+import '../../salary/ui/add_salary_screen.dart';
 import '../../salary/ui/salary_screen.dart';
 import '../../user/ui/users_management_screen.dart';
 import 'employee_layout_state.dart';
@@ -26,9 +28,9 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
         BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long), label: 'Reports'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money), label: 'Salary'),
+            icon: Icon(Icons.event_note), label: 'Requests'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.person), label: 'Profile'),
+            icon: Icon(Icons.attach_money), label: 'Salary'),
         BottomNavigationBarItem(
             icon: Icon(Icons.groups), label: 'Users'),
       ];
@@ -51,12 +53,12 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
 
   List<Widget> get screensList {
     // Manager & Admin - View Mode
-    if (currentUser.role == Role.manager || currentUser.role == Role.admin) {
+    if (currentUser.isManagement) {
       return <Widget>[
         const ViewRepairsScreen(),
         const ViewReportsScreen(),
-        const SalaryScreen(),
-        ProfileScreen(user: currentUser),
+        const ManageRequestsScreen(),
+        currentUser.role==Role.admin? const AddSalaryScreen(): const SalaryScreen(),
         const UsersManagementScreen(),
       ];
     }

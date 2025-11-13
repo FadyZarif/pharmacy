@@ -35,9 +35,9 @@ SalaryModel _$SalaryModelFromJson(Map<String, dynamic> json) => SalaryModel(
   netSalary: json['netSalary'] as String,
   remainingAdvance: json['remainingAdvance'] as String,
   notes: json['notes'] as String?,
-  uploadedAt: json['uploadedAt'] == null
-      ? null
-      : DateTime.parse(json['uploadedAt'] as String),
+  uploadedAt: const ServerNullableTimestampConverter().fromJson(
+    json['uploadedAt'],
+  ),
   uploadedBy: json['uploadedBy'] as String?,
 );
 
@@ -70,6 +70,8 @@ Map<String, dynamic> _$SalaryModelToJson(SalaryModel instance) =>
       'netSalary': instance.netSalary,
       'remainingAdvance': instance.remainingAdvance,
       'notes': instance.notes,
-      'uploadedAt': instance.uploadedAt?.toIso8601String(),
+      'uploadedAt': const ServerNullableTimestampConverter().toJson(
+        instance.uploadedAt,
+      ),
       'uploadedBy': instance.uploadedBy,
     };

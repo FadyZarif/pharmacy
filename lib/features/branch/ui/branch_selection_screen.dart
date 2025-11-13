@@ -15,7 +15,7 @@ class BranchSelectionScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: ColorsManger.primaryBackground,
       appBar: AppBar(
-        title: const Text('Select Branch'),
+        title: const Text('Select Branch',style: TextStyle(fontWeight: FontWeight.bold),),
         backgroundColor: ColorsManger.primary,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -70,6 +70,7 @@ class BranchSelectionScreen extends StatelessWidget {
 
   Widget _buildBranchCard(BuildContext context, Branch branch) {
     return Card(
+      color: Colors.white,
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -80,7 +81,7 @@ class BranchSelectionScreen extends StatelessWidget {
           // Set current branch
           currentUser.currentBranch = branch;
           // Callback
-          navigateToReplacement(context, EmployeeLayout());
+          navigateTo(context, EmployeeLayout());
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

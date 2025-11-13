@@ -205,12 +205,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProfileScreen(user: user),
-            ),
-          );
+          navigateTo(context, ProfileScreen(user: user));
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

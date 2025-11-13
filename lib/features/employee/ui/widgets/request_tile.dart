@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
-import 'package:pharmacy/features/request/ui/add_request_screen.dart';
 
 import '../../../request/data/models/request_model.dart';
 
@@ -42,11 +41,12 @@ class RequestTile extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           HapticFeedback.mediumImpact();
-          // اقفل الشيت الأول
+          // إغلاق الـ bottom sheet
           Navigator.of(context).pop();
+          // الانتقال للشاشة الموحدة
           navigateTo(
             context,
-            AddRequestScreen(body: item.screen, requestCubit: requestCubit,),
+            item.screen,
           );
         },
       ),

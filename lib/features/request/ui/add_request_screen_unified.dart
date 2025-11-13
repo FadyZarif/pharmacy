@@ -1,0 +1,945 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/core/widgets/app_dropdown_button_form_field.dart';
+import 'package:pharmacy/core/widgets/app_text_form_field.dart';
+import 'package:pharmacy/core/widgets/profile_circle.dart';
+import 'package:pharmacy/features/branch/data/branch_model.dart';
+import 'package:pharmacy/features/request/data/models/request_model.dart';
+import 'package:pharmacy/features/request/logic/request_cubit.dart';
+import 'package:pharmacy/features/request/logic/request_state.dart';
+import 'package:pharmacy/features/user/data/models/user_model.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class AddRequestScreenUnified extends StatefulWidget {
+  final RequestType requestType;
+  final RequestModel? existingRequest;
+  final bool isReadOnly;
+
+  const AddRequestScreenUnified({
+    super.key,
+    required this.requestType,
+    this.existingRequest,
+    this.isReadOnly = false,
+  });
+
+  @override
+  State<AddRequestScreenUnified> createState() => _AddRequestScreenUnifiedState();
+}
+
+class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
+  final _formKey = GlobalKey<FormState>();
+  final _notesController = TextEditingController();
+
+  // Annual & Sick Leave
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  // Sick Leave - File
+  PlatformFile? _prescriptionFile;
+
+  // Extra Hours & Permission
+  DateTime? _selectedDate;
+  int? _hours;
+
+  // Attend
+  DateTime? _attendDate;
+
+  // Coverage Shift
+  DateTime? _coverageDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFromExistingRequest();
+
+    // Preload branches for coverage shift
+    if (widget.requestType == RequestType.coverageShift) {
+      final cubit = getIt<RequestCubit>();
+      CoverageShiftDetails? details;
+      if (widget.existingRequest != null) {
+        details = CoverageShiftDetails.fromJson(widget.existingRequest!.details);
+      }
+      cubit.preloadAllBranchesWithEmployees(
+        details?.peerBranchId,
+        details?.peerEmployeeId,
+      );
+    }
+  }
+
+  void _initializeFromExistingRequest() {
+    if (widget.existingRequest == null) return;
+
+    final request = widget.existingRequest!;
+    _notesController.text = request.notes ?? '';
+
+    switch (widget.requestType) {
+      case RequestType.annualLeave:
+        final details = AnnualLeaveDetails.fromJson(request.details);
+        _startDate = details.startDate;
+        _endDate = details.endDate;
+        break;
+
+      case RequestType.sickLeave:
+        final details = SickLeaveDetails.fromJson(request.details);
+        _startDate = details.startDate;
+        _endDate = details.endDate;
+        break;
+
+      case RequestType.extraHours:
+        final details = ExtraHoursDetails.fromJson(request.details);
+        _selectedDate = details.date;
+        _hours = details.hours;
+        break;
+
+      case RequestType.coverageShift:
+        final details = CoverageShiftDetails.fromJson(request.details);
+        _coverageDate = details.date;
+        break;
+
+      case RequestType.attend:
+        final details = AttendDetails.fromJson(request.details);
+        _attendDate = details.date;
+        break;
+
+      case RequestType.permission:
+        final details = PermissionDetails.fromJson(request.details);
+        _selectedDate = details.date;
+        _hours = details.hours;
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+
+    // Reset coverage shift selections
+    if (widget.requestType == RequestType.coverageShift) {
+      final cubit = getIt<RequestCubit>();
+      cubit.selectedBranch = null;
+      cubit.selectedEmployee = null;
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: getIt<RequestCubit>(),
+      child: BlocConsumer<RequestCubit, RequestState>(
+        listenWhen: (_, current) =>
+            current is AddRequestLoading ||
+            current is AddRequestSuccess ||
+            current is AddRequestFailure,
+        listener: (context, state) async {
+          if (state is AddRequestLoading) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(
+                child: CircularProgressIndicator(
+                  color: ColorsManger.primary,
+                ),
+              ),
+            );
+          } else if (state is AddRequestSuccess) {
+            // Close loading dialog first
+            Navigator.pop(context);
+
+            // Show success message
+            await defToast2(
+              context: context,
+              msg: widget.existingRequest == null
+                  ? 'Request submitted successfully'
+                  : 'Request updated successfully',
+              dialogType: DialogType.success,
+            );
+
+            // Close AddRequestScreenUnified and go back to previous screen
+            if (context.mounted) {
+              Navigator.pop(context, true);
+              Navigator.pop(context, true);
+            }
+          } else if (state is AddRequestFailure) {
+            // Close loading dialog first
+            Navigator.pop(context);
+
+            // Show error message
+            await defToast2(
+              context: context,
+              msg: state.error,
+              dialogType: DialogType.error,
+            );
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: ColorsManger.primaryBackground,
+            appBar: AppBar(
+              title: Text(_getTitle(),style: TextStyle(fontWeight: FontWeight.bold),),
+              backgroundColor: ColorsManger.primary,
+              foregroundColor: Colors.white,
+              centerTitle: true,
+            ),
+            body: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title and Status
+                      _buildHeader(),
+                      const SizedBox(height: 20),
+
+                      // Dynamic Form Fields based on request type
+                      _buildFormFields(),
+
+                      const SizedBox(height: 20),
+
+                      // Notes
+                      _buildNotesField(),
+
+                      const SizedBox(height: 30),
+
+                      // Submit Button
+                      if (!widget.isReadOnly)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _handleSubmit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorsManger.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              widget.existingRequest == null
+                                  ? 'Submit Request'
+                                  : 'Update Request',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Text(
+          '${_getTitle()} Details',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const Spacer(),
+        if (widget.existingRequest != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _getStatusColor(),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              widget.existingRequest!.status.name.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFormFields() {
+    switch (widget.requestType) {
+      case RequestType.annualLeave:
+      case RequestType.sickLeave:
+        return Column(
+          children: [
+            _buildDateRangePicker(),
+
+            if (widget.requestType == RequestType.sickLeave) ...[
+              const SizedBox(height: 20),
+              _buildPrescriptionUpload(),
+            ],
+          ],
+        );
+
+      case RequestType.extraHours:
+      case RequestType.permission:
+        return Column(
+          children: [
+            _buildSingleDatePicker(),
+            const SizedBox(height: 20),
+            _buildHoursInput(),
+          ],
+        );
+
+      case RequestType.attend:
+        return _buildAttendDatePicker();
+
+      case RequestType.coverageShift:
+        return BlocBuilder<RequestCubit, RequestState>(
+          buildWhen: (_, current) =>
+              current is FetchBranchesWithEmployeesLoading ||
+              current is FetchBranchesWithEmployeesSuccess ||
+              current is FetchBranchesWithEmployeesFailure,
+          builder: (context, state) {
+            if (state is FetchBranchesWithEmployeesLoading) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            } else if (state is FetchBranchesWithEmployeesFailure) {
+              return Center(
+                child: Text(
+                  state.error,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+
+            return _buildCoverageShiftFields();
+          },
+        );
+    }
+  }
+
+  Widget _buildDateRangePicker() {
+    final displayText = _startDate != null && _endDate != null
+        ? '${DateFormat('yyyy-MM-dd').format(_startDate!)} to ${DateFormat('yyyy-MM-dd').format(_endDate!)}'
+        : '';
+
+    return Column(
+      children: [
+        AppTextFormField(
+          controller: TextEditingController(text: displayText),
+          readOnly: true,
+          labelText: 'Select Start and End Date',
+          suffixIcon: const Icon(Icons.calendar_today),
+          hintText: 'yyyy-mm-dd to yyyy-mm-dd',
+          fillColor: Colors.white,
+          validator: (value) {
+            if (_startDate == null || _endDate == null) {
+              return 'Please select date range';
+            }
+            return null;
+          },
+          onTap: widget.isReadOnly
+              ? null
+              : () async {
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    initialEntryMode: DatePickerEntryMode.calendarOnly,
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: ColorsManger.primary,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+
+                  if (picked != null) {
+                    setState(() {
+                      _startDate = picked.start;
+                      _endDate = picked.end;
+                    });
+                  }
+                },
+        ),
+        ///Number of Days
+        if (_startDate != null && _endDate != null)
+          Align(
+            alignment: Alignment.centerRight.add(const Alignment(-0.02, 0)),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Number of Days: ${_startDate != null && _endDate != null ? _endDate!.difference(_startDate!).inDays + 1 : 0} days',
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSingleDatePicker() {
+    final displayText = _selectedDate != null
+        ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+        : '';
+
+    return AppTextFormField(
+      controller: TextEditingController(text: displayText),
+      readOnly: true,
+      labelText: 'Select Date',
+      suffixIcon: const Icon(Icons.calendar_today),
+      hintText: 'yyyy-mm-dd',
+      fillColor: Colors.white,
+      validator: (value) {
+        if (_selectedDate == null) {
+          return 'Please select a date';
+        }
+        return null;
+      },
+      onTap: widget.isReadOnly
+          ? null
+          : () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedDate ?? DateTime.now(),
+                firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                initialEntryMode: DatePickerEntryMode.calendarOnly,
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: ColorsManger.primary,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+
+              if (picked != null) {
+                setState(() {
+                  _selectedDate = picked;
+                });
+              }
+            },
+    );
+  }
+
+  Widget _buildAttendDatePicker() {
+    final displayText = _attendDate != null
+        ? DateFormat('yyyy-MM-dd').format(_attendDate!)
+        : '';
+
+    return AppTextFormField(
+      controller: TextEditingController(text: displayText),
+      readOnly: true,
+      labelText: 'Attendance Date',
+      suffixIcon: const Icon(Icons.calendar_today),
+      hintText: 'yyyy-mm-dd',
+      fillColor: Colors.white,
+      validator: (value) {
+        if (_attendDate == null) {
+          return 'Please select attendance date';
+        }
+        return null;
+      },
+      onTap: widget.isReadOnly
+          ? null
+          : () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _attendDate ?? DateTime.now(),
+                firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                lastDate: DateTime.now(),
+                initialEntryMode: DatePickerEntryMode.calendarOnly,
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: ColorsManger.primary,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+
+              if (picked != null) {
+                setState(() {
+                  _attendDate = picked;
+                });
+              }
+            },
+    );
+  }
+
+  Widget _buildHoursInput() {
+    return AppTextFormField(
+      controller: TextEditingController(text: _hours?.toString() ?? ''),
+      labelText: widget.requestType == RequestType.extraHours
+          ? 'Extra Hours'
+          : 'Early Leave Hours',
+      keyboardType: TextInputType.number,
+      fillColor: Colors.white,
+      prefixIcon: const Icon(Icons.access_time),
+      readOnly: widget.isReadOnly,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter hours';
+        }
+        final parsed = int.tryParse(value);
+        if (parsed == null || parsed <= 0 || parsed > 12) {
+          return 'Please enter valid hours (1-12)';
+        }
+        return null;
+      },
+      onChanged: (value) {
+        setState(() {
+          _hours = int.tryParse(value);
+        });
+      },
+    );
+  }
+
+  Widget _buildPrescriptionUpload() {
+    final hasFile = _prescriptionFile != null ||
+        (widget.existingRequest?.details['prescription'] != null &&
+         widget.existingRequest!.details['prescription'].toString().isNotEmpty);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Medical Prescription',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasFile ? Colors.green : Colors.grey.shade300,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                hasFile ? Icons.check_circle : Icons.upload_file,
+                size: 50,
+                color: hasFile ? Colors.green : Colors.grey,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                hasFile
+                    ? (_prescriptionFile?.name ?? 'Prescription uploaded')
+                    : 'Upload Medical Prescription',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: hasFile ? Colors.green : Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (!widget.isReadOnly) ...[
+                const SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      // allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                      allowedExtensions: ['pdf'],
+                    );
+
+                    if (result != null && result.files.isNotEmpty) {
+                      setState(() {
+                        _prescriptionFile = result.files.first;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(hasFile ? 'Change File' : 'Select File'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ColorsManger.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+              // preview file
+              if (widget.isReadOnly)
+                ...[
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      _previewPrescription();
+                    },
+                    icon: const Icon(Icons.remove_red_eye),
+                    label: const Text('Preview File'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorsManger.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+
+                ]
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCoverageShiftFields() {
+    final cubit = getIt<RequestCubit>();
+
+    // Coverage date picker
+    final coverageDateText = _coverageDate != null
+        ? DateFormat('yyyy-MM-dd').format(_coverageDate!)
+        : '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Date Selection
+        AppTextFormField(
+          controller: TextEditingController(text: coverageDateText),
+          readOnly: true,
+          labelText: 'Coverage Date',
+          suffixIcon: const Icon(Icons.calendar_today),
+          hintText: 'yyyy-mm-dd',
+          fillColor: Colors.white,
+          validator: (value) {
+            if (_coverageDate == null) {
+              return 'Please select coverage date';
+            }
+            return null;
+          },
+          onTap: widget.isReadOnly
+              ? null
+              : () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _coverageDate ?? DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    initialEntryMode: DatePickerEntryMode.calendarOnly,
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: ColorsManger.primary,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+
+                  if (picked != null) {
+                    setState(() {
+                      _coverageDate = picked;
+                    });
+                  }
+                },
+        ),
+        const SizedBox(height: 20),
+
+        // Branch Selection
+        Text(
+          'Select Branch',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 10),
+        AppDropdownButtonFormField<BranchModel>(
+          value: cubit.selectedBranch,
+          fillColor: Colors.white,
+          items: cubit.branchesWithEmployees.keys.map((branch) {
+            final employeeCount = cubit.branchesWithEmployees[branch]!.length;
+            return DropdownMenuItem(
+              value: branch,
+              child: Text('${branch.name} ($employeeCount employees)',style: TextStyle(color: Colors.black),),
+            );
+          }).toList(),
+          onChanged: widget.isReadOnly
+              ? null
+              : (branch) {
+                  if (branch != null) {
+                    cubit.setBranch(branch);
+                  }
+                },
+          labelText: 'Branch',
+          prefixIcon: const Icon(Icons.store),
+          validator: (value) {
+            if (value == null) {
+              return 'Please select a branch';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
+
+        // Employee Selection
+        if (cubit.selectedBranch != null) ...[
+          Text(
+            'Select Employee',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 10),
+          AppDropdownButtonFormField<UserModel>(
+            value: cubit.selectedEmployee,
+            fillColor: Colors.white,
+            items: cubit.branchesWithEmployees[cubit.selectedBranch]!
+                .map((employee) {
+              return DropdownMenuItem(
+                value: employee,
+                child: Row(
+                  children: [
+                    ProfileCircle(
+                      photoUrl: employee.photoUrl,
+                      size: 15,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(employee.name,style: TextStyle(color: Colors.black),)),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: widget.isReadOnly
+                ? null
+                : (employee) {
+                    setState(() {
+                      cubit.selectedEmployee = employee;
+                    });
+                  },
+            labelText: 'Employee',
+            prefixIcon: const Icon(Icons.person),
+            validator: (value) {
+              if (value == null) {
+                return 'Please select an employee';
+              }
+              return null;
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNotesField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Additional Notes (Optional)',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 10),
+        AppTextFormField(
+          controller: _notesController,
+          labelText: 'Notes',
+          hintText: 'Add any additional notes here...',
+          fillColor: Colors.white,
+          maxLines: 4,
+          readOnly: widget.isReadOnly,
+        ),
+      ],
+    );
+  }
+
+  String _getTitle() {
+    switch (widget.requestType) {
+      case RequestType.annualLeave:
+        return 'Annual Leave';
+      case RequestType.sickLeave:
+        return 'Sick Leave';
+      case RequestType.extraHours:
+        return 'Extra Hours';
+      case RequestType.coverageShift:
+        return 'Coverage Shift';
+      case RequestType.attend:
+        return 'Attendance';
+      case RequestType.permission:
+        return 'Early Leave Permission';
+    }
+  }
+
+  Color _getStatusColor() {
+    if (widget.existingRequest == null) return Colors.grey;
+
+    switch (widget.existingRequest!.status) {
+      case RequestStatus.approved:
+        return Colors.green;
+      case RequestStatus.rejected:
+        return Colors.red;
+      case RequestStatus.pending:
+        return Colors.orange;
+    }
+  }
+
+  Future<void> _previewPrescription() async {
+    // Handles preview for prescription either from a local picked file or from existing request URL
+    try {
+      // Otherwise, try to read URL from existing request details
+      final url = widget.existingRequest?.details['prescription']?.toString() ?? '';
+      if (url.isEmpty) {
+        await defToast2(
+          context: context,
+          msg: 'No prescription available to preview',
+          dialogType: DialogType.warning,
+        );
+        return;
+      }
+
+      final uri = Uri.tryParse(url);
+      if (uri == null) {
+        throw 'Invalid prescription URL';
+      }
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Cannot open prescription URL';
+      }
+    } catch (e) {
+      await defToast2(
+        context: context,
+        msg: 'Failed to preview prescription: $e',
+        dialogType: DialogType.error,
+      );
+    }
+  }
+
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final cubit = getIt<RequestCubit>();
+
+    // Build details based on request type
+    Map<String, dynamic> details;
+
+    try {
+      switch (widget.requestType) {
+        case RequestType.annualLeave:
+          if (_startDate == null || _endDate == null) {
+            throw 'Please select date range';
+          }
+          details = AnnualLeaveDetails(
+            startDate: _startDate!,
+            endDate: _endDate!,
+          ).toJson();
+          break;
+
+        case RequestType.sickLeave:
+          if (_startDate == null || _endDate == null) {
+            throw 'Please select date range';
+          }
+          if (_prescriptionFile == null && widget.existingRequest == null) {
+            throw 'Please upload medical prescription';
+          }
+          details = SickLeaveDetails(
+            startDate: _startDate!,
+            endDate: _endDate!,
+            prescription: widget.existingRequest?.details['prescription'] ?? '',
+          ).toJson();
+          break;
+
+        case RequestType.extraHours:
+          if (_selectedDate == null || _hours == null) {
+            throw 'Please fill all fields';
+          }
+          details = ExtraHoursDetails(
+            date: _selectedDate!,
+            hours: _hours!,
+          ).toJson();
+          break;
+
+        case RequestType.coverageShift:
+          if (_coverageDate == null) {
+            throw 'Please select date';
+          }
+          if (cubit.selectedBranch == null || cubit.selectedEmployee == null) {
+            throw 'Please select branch and employee';
+          }
+
+          // Validate using cubit method
+          final hasLeave = await cubit.checkEmployeeHasLeaveOnDate(
+            cubit.selectedEmployee!.uid,
+            _coverageDate!,
+          );
+          if (hasLeave) {
+            throw 'Selected employee has an approved leave on this date';
+          }
+
+          details = CoverageShiftDetails(
+            peerEmployeeId: cubit.selectedEmployee!.uid,
+            peerEmployeeName: cubit.selectedEmployee!.name,
+            peerBranchId: cubit.selectedBranch!.id,
+            peerBranchName: cubit.selectedBranch!.name,
+            date: _coverageDate!,
+          ).toJson();
+          break;
+
+        case RequestType.attend:
+          if (_attendDate == null) {
+            throw 'Please select attendance date';
+          }
+          details = AttendDetails(date: _attendDate!).toJson();
+          break;
+
+        case RequestType.permission:
+          if (_selectedDate == null || _hours == null) {
+            throw 'Please fill all fields';
+          }
+          details = PermissionDetails(
+            date: _selectedDate!,
+            hours: _hours!,
+          ).toJson();
+          break;
+      }
+
+      // Use cubit's submitRequest method
+      await cubit.submitRequest(
+        requestType: widget.requestType,
+        details: details,
+        notes: _notesController.text,
+        file: _prescriptionFile,
+        existingRequest: widget.existingRequest,
+      );
+    } catch (e) {
+      await defToast2(
+        context: context,
+        msg: e.toString(),
+        dialogType: DialogType.error,
+      );
+    }
+  }
+}
+

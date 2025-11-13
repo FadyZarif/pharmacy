@@ -9,6 +9,7 @@ import 'package:pharmacy/features/report/logic/shift_report_cubit.dart';
 import 'package:pharmacy/features/report/logic/shift_report_state.dart';
 import 'package:pharmacy/features/report/ui/widgets/shift_report_widgets.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:pharmacy/features/user/data/models/user_model.dart';
 
 import '../../employee/logic/employee_layout_cubit.dart';
 import 'view_reports_screen.dart';
@@ -114,6 +115,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
               actions: [
+                if (currentUser.role != Role.staff)
                 IconButton(
                   icon: const Icon(Icons.assessment, color: Colors.white),
                   onPressed: () {
@@ -122,119 +124,122 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                 ),
               ],
             ),
-            body: Stack(
-              children: [
-                Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // معلومات ثابتة (غير قابلة للتعديل)
-                        ShiftReportWidgets.buildInfoSection(
-                          branchName: currentUser.currentBranch.name,
-                          date: DateTime.now(),
-                        ),
+            body: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Stack(
+                children: [
+                  Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // معلومات ثابتة (غير قابلة للتعديل)
+                          ShiftReportWidgets.buildInfoSection(
+                            branchName: currentUser.currentBranch.name,
+                            date: DateTime.now(),
+                          ),
 
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                        // اختيار نوع الوردية
-                        _buildShiftTypeSelector(cubit),
+                          // اختيار نوع الوردية
+                          _buildShiftTypeSelector(cubit),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // إدخال الدرج
-                        ShiftReportWidgets.buildDrawerAmountField(
-                          controller: _drawerAmountController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter drawer amount';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Please enter a valid number';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // إدخال فرق الكمبيوتر
-                        ShiftReportWidgets.buildComputerDifferenceSection(
-                          selectedType: _computerDifferenceType ?? ComputerDifferenceType.none,
-                          controller: _computerDifferenceController,
-                          onTypeChanged: (type) {
-                            setState(() {
-                              _computerDifferenceType = type;
-                              if (type == ComputerDifferenceType.none) {
-                                _computerDifferenceController.clear();
-                              }
-                            });
-                          },
-                          validator: (value) {
-                            if (_computerDifferenceType != null &&
-                                _computerDifferenceType != ComputerDifferenceType.none) {
+                          // إدخال الدرج
+                          ShiftReportWidgets.buildDrawerAmountField(
+                            controller: _drawerAmountController,
+                            validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter the amount';
+                                return 'Please enter drawer amount';
                               }
                               if (double.tryParse(value) == null) {
                                 return 'Please enter a valid number';
                               }
-                            }
-                            return null;
-                          },
-                        ),
+                              return null;
+                            },
+                          ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // المحفظة الإلكترونية
-                        ShiftReportWidgets.buildElectronicWalletField(
-                          controller: _electronicWalletController,
-                        ),
+                          // إدخال فرق الكمبيوتر
+                          ShiftReportWidgets.buildComputerDifferenceSection(
+                            selectedType: _computerDifferenceType ?? ComputerDifferenceType.none,
+                            controller: _computerDifferenceController,
+                            onTypeChanged: (type) {
+                              setState(() {
+                                _computerDifferenceType = type;
+                                if (type == ComputerDifferenceType.none) {
+                                  _computerDifferenceController.clear();
+                                }
+                              });
+                            },
+                            validator: (value) {
+                              if (_computerDifferenceType != null &&
+                                  _computerDifferenceType != ComputerDifferenceType.none) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter the amount';
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return 'Please enter a valid number';
+                                }
+                              }
+                              return null;
+                            },
+                          ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // الملاحظات
-                        ShiftReportWidgets.buildNotesField(
-                          controller: _notesController,
-                        ),
+                          // المحفظة الإلكترونية
+                          ShiftReportWidgets.buildElectronicWalletField(
+                            controller: _electronicWalletController,
+                          ),
 
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 20),
 
-                        // قسم المصاريف
-                        ShiftReportWidgets.buildExpensesSection(
-                          expenses: _expenses,
-                          onAddExpense: _showAddExpenseDialog,
-                          onDeleteExpense: (expense) {
-                            setState(() {
-                              _expenses.remove(expense);
-                            });
-                          },
-                        ),
+                          // الملاحظات
+                          ShiftReportWidgets.buildNotesField(
+                            controller: _notesController,
+                          ),
 
-                        const SizedBox(height: 32),
+                          const SizedBox(height: 24),
 
-                        // زر الحفظ
-                        ShiftReportWidgets.buildSubmitButton(
-                          label: 'Submit Report',
-                          onPressed: () => _handleSubmit(cubit),
-                          isLoading: isLoading,
-                        ),
+                          // قسم المصاريف
+                          ShiftReportWidgets.buildExpensesSection(
+                            expenses: _expenses,
+                            onAddExpense: _showAddExpenseDialog,
+                            onDeleteExpense: (expense) {
+                              setState(() {
+                                _expenses.remove(expense);
+                              });
+                            },
+                          ),
 
-                        const SizedBox(height: 20),
-                      ],
+                          const SizedBox(height: 32),
+
+                          // زر الحفظ
+                          ShiftReportWidgets.buildSubmitButton(
+                            label: 'Submit Report',
+                            onPressed: () => _handleSubmit(cubit),
+                            isLoading: isLoading,
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                if (isLoading)
-                  Container(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
+                  if (isLoading)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           );
         },

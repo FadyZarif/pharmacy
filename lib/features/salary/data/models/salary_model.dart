@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../../../core/helpers/server_timestamp_helper.dart';
+
 part 'salary_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
@@ -42,7 +44,7 @@ class SalaryModel {
   final String remainingAdvance; // المتبقي من السلف على العامل
 
   final String? notes; // ملاحظات
-
+  @ServerNullableTimestampConverter()
   final DateTime? uploadedAt; // تاريخ رفع الملف
   final String? uploadedBy; // من رفع الملف (Admin UID)
 

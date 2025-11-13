@@ -64,7 +64,7 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   child: Scaffold(
         backgroundColor: ColorsManger.primaryBackground,
         appBar: AppBar(
-          title: const Text('Repair Report'),
+          title: const Text('Repair Report', style: TextStyle(fontWeight: FontWeight.bold)),
           backgroundColor: ColorsManger.primary,
           foregroundColor: Colors.white,
           centerTitle: true,

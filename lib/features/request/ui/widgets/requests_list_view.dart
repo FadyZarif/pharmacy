@@ -8,15 +8,9 @@ import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_state.dart';
-import 'package:pharmacy/features/request/ui/add_attend_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_coverage_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_extra_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_permission_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_request_screen.dart';
-import 'package:pharmacy/features/request/ui/add_sick_request_screen.dart';
+import 'package:pharmacy/features/request/ui/add_request_screen_unified.dart';
 
 import '../../../../core/di/dependency_injection.dart';
-import '../add_annual_request_screen.dart';
 
 class RequestsListView extends StatelessWidget {
   const RequestsListView({super.key});
@@ -55,7 +49,7 @@ class RequestsListView extends StatelessWidget {
                 final borderRadius = BorderRadius.circular(16);
 
                 return Dismissible(
-                  key: ValueKey(request.id ?? index),
+                  key: ValueKey(request.id),
                   direction: DismissDirection.horizontal,
 
                   // خلفية عند السحب من اليمين لليسار (شمال) = حذف
@@ -171,35 +165,18 @@ class RequestsListView extends StatelessWidget {
           );
 
         }
-        return const SizedBox.shrink();
+        return const SizedBox.shrink(child: Text('not State'),);
       },
     );
   }
 }
 
-void onTapRequestItem(BuildContext context, RequestModel request,bool isReadOnly){
-  print('isReadOnly $isReadOnly');
+void onTapRequestItem(BuildContext context, RequestModel request, bool isReadOnly) {
   HapticFeedback.mediumImpact();
-  final Widget body;
-  switch (request.type) {
-    case RequestType.annualLeave:
-      body = AddAnnualRequestScreen(requestModel: request,isReadOnly: isReadOnly,);
-      break;
-    case RequestType.sickLeave:
-      body = AddSickRequestScreen(requestModel: request,isReadOnly: isReadOnly,);
-      break;
-    case RequestType.extraHours:
-      body = AddExtraRequestScreen(requestModel: request,isReadOnly: isReadOnly,);
-      break;
-    case RequestType.coverageShift:
-      body = AddCoverageRequestScreen(requestModel: request,isReadOnly: isReadOnly,);
-      break;
-    case RequestType.attend:
-      body = AddAttendRequestScreen(requestModel: request,isReadOnly: isReadOnly,);
-      break;
-    case RequestType.permission:
-      body = AddPermissionRequestScreen(requestModel: request,isReadOnly: isReadOnly,);
-      break;
-  }
-  navigateTo(context, AddRequestScreen(body: body, requestCubit: context.read<RequestCubit>(),),);
+  navigateTo(context, AddRequestScreenUnified(
+    requestType: request.type,
+    existingRequest: request,
+    isReadOnly: isReadOnly,
+  ));
+
 }

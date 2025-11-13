@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/salary/data/models/employee_monthly_salary.dart';
 import 'package:pharmacy/features/salary/data/models/month_salary_model.dart';
@@ -15,29 +17,34 @@ class SalaryScreen extends StatefulWidget {
 }
 
 class _SalaryScreenState extends State<SalaryScreen> {
-  late int _selectedYear;
-  late int _selectedMonth;
+
+  late DateTime _selectedDate;
   EmployeeMonthlySalary? _currentSalary;
+  late final SalaryCubit _salaryCubit;
 
   @override
   void initState() {
     super.initState();
     // تحديد الشهر الحالي تلقائياً
     final now = DateTime.now();
-    _selectedYear = now.year;
-    _selectedMonth = now.month;
+    _selectedDate = now;
+    _salaryCubit = getIt<SalaryCubit>();
+    // جلب البيانات مرة واحدة فقط
+    _salaryCubit.fetchSalaryByMonthKey(_monthKey);
   }
 
-  String get _monthKey => MonthSalaryModel.createMonthKey(_selectedYear, _selectedMonth);
-  String get _monthName => MonthSalaryModel.getMonthNameArabic(_selectedMonth);
+  String get _monthKey => MonthSalaryModel.createMonthKey(_selectedDate.year, _selectedDate.month);
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value:  getIt<SalaryCubit>()..fetchSalaryByMonthKey(_monthKey),
+      value: _salaryCubit,
       child: Scaffold(
+        backgroundColor: ColorsManger.primaryBackground,
         appBar: AppBar(
-          title: const Text('Salary'),
+          backgroundColor: ColorsManger.primary,
+          foregroundColor: Colors.white,
+          title: const Text('Salary',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
           centerTitle: true,
         ),
         body: BlocConsumer<SalaryCubit, SalaryState>(
@@ -119,64 +126,78 @@ class _SalaryScreenState extends State<SalaryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsManger.primary,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.grey.withValues(alpha: 0.2),
+            spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.calendar_month, color: Colors.blue),
-          const SizedBox(width: 12),
-          Expanded(
-            child: InkWell(
-              onTap: () => _showMonthPicker(context),
-              child: Row(
-                children: [
-                  Text(
-                    '$_monthName $_selectedYear',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                ],
-              ),
+          // Previous Month Button
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                if (_selectedDate.month == 1) {
+                  _selectedDate = DateTime(_selectedDate.year - 1, 12);
+                } else {
+                  _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1);
+                }
+                _currentSalary = null; // Clear current data
+              });
+              // جلب بيانات الشهر الجديد
+              _salaryCubit.fetchSalaryByMonthKey(_monthKey);
+            },
+          ),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  DateFormat.yMMMM().format(_selectedDate),
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ),
+
+          // Next Month Button
+          IconButton(
+            icon: const Icon(Icons.arrow_forward, color: Colors.white),
+            onPressed: _selectedDate.isBefore(
+              DateTime.now().subtract(const Duration(days: 1)),
+            )? () {
+              setState(() {
+                if (_selectedDate.month == 12) {
+                  _selectedDate = DateTime(_selectedDate.year + 1, 1);
+                } else {
+                  _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1);
+                }
+                _currentSalary = null; // Clear current data
+              });
+              // جلب بيانات الشهر الجديد
+              _salaryCubit.fetchSalaryByMonthKey(_monthKey);
+            }: null,
+          )
         ],
       ),
     );
   }
 
-  void _showMonthPicker(BuildContext context) async {
-    final cubit = context.read<SalaryCubit>();
-
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(_selectedYear, _selectedMonth),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDatePickerMode: DatePickerMode.year,
-      helpText: 'Select Month',
-    );
-
-    if (picked != null && mounted) {
-      setState(() {
-        _selectedYear = picked.year;
-        _selectedMonth = picked.month;
-        _currentSalary = null; // Clear current data
-      });
-      // جلب بيانات الشهر الجديد
-      cubit.fetchSalaryByMonthKey(_monthKey);
-    }
-  }
 }
 
 class SalaryDetailsCard extends StatelessWidget {
@@ -316,7 +337,7 @@ class SalaryDetailsCard extends StatelessWidget {
       controller: TextEditingController(text: value),
       labelText: label,
       readOnly: true,
-      fillColor: fillColor,
+      fillColor: Colors.white,
       maxLines: maxLines ?? 1,
       isArabic: false,
     );

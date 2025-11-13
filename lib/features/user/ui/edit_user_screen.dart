@@ -276,7 +276,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                         controller: _printCodeController,
                         labelText: 'Print Code (Optional)',
                         fillColor: Colors.white,
-                        prefixIcon: const Icon(Icons.qr_code),
+                        prefixIcon: const Icon(Icons.fingerprint),
                       ),
                       const SizedBox(height: 16),
 

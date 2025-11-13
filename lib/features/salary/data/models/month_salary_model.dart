@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../../../core/helpers/server_timestamp_helper.dart';
+
 part 'month_salary_model.g.dart';
 
 /// Model for the month document that contains metadata about the salary upload
@@ -9,6 +11,7 @@ class MonthSalaryModel {
   final String monthName; // اسم الشهر: "نوفمبر 2024"
   final int year; // السنة: 2024
   final int month; // الشهر: 11
+  @ServerTimestampOnNullConverter()
   final DateTime? uploadedAt; // تاريخ الرفع
   final String? uploadedBy; // Admin UID
   final int? employeeCount; // عدد الموظفين

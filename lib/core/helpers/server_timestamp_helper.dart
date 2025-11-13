@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:intl/intl.dart';
 
-class ServerNullableTimestampConverter implements JsonConverter<DateTime?, Object?> {
+class ServerNullableTimestampConverter
+    implements JsonConverter<DateTime?, Object?> {
   const ServerNullableTimestampConverter();
 
   @override
@@ -20,7 +21,8 @@ class ServerNullableTimestampConverter implements JsonConverter<DateTime?, Objec
   }
 }
 
-class ServerTimestampOnNullConverter implements JsonConverter<DateTime?, Object?> {
+class ServerTimestampOnNullConverter
+    implements JsonConverter<DateTime?, Object?> {
   const ServerTimestampOnNullConverter();
 
   @override
@@ -34,10 +36,34 @@ class ServerTimestampOnNullConverter implements JsonConverter<DateTime?, Object?
 
   @override
   Object? toJson(DateTime? date) {
-    return date != null ? Timestamp.fromDate(date) : FieldValue.serverTimestamp();
+    return date != null
+        ? Timestamp.fromDate(date)
+        : FieldValue.serverTimestamp();
   }
 }
-class ServerTimestampListConverter implements JsonConverter<List<DateTime>, List<dynamic>> {
+
+class ServerTimestampConverter implements JsonConverter<DateTime, Object> {
+  const ServerTimestampConverter();
+
+  @override
+  DateTime fromJson(Object json) {
+    if (json is Timestamp) {
+      return json.toDate();
+    } else if (json is DateTime) {
+      return json;
+    } else  {
+      return DateTime.parse(json.toString());
+    }
+  }
+
+  @override
+  Object toJson(DateTime date) {
+    return  Timestamp.fromDate(date);
+  }
+}
+
+class ServerTimestampListConverter
+    implements JsonConverter<List<DateTime>, List<dynamic>> {
   const ServerTimestampListConverter();
 
   @override

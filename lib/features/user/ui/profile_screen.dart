@@ -60,13 +60,13 @@ class ProfileScreen extends StatelessWidget {
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
             appBar: AppBar(
-              title: const Text('User Details'),
+              title: const Text('User Details',style: TextStyle(fontWeight: FontWeight.bold),),
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
               foregroundColor: Colors.white,
               actions: [
                 // Edit Button
-                if (currentUser.isManagement)
+                if (currentUser.isManagement && (currentUser.role.index < user.role.index))
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () async {
@@ -205,7 +205,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Work Information',
                 children: [
                   _buildInfoField(
-                      'Print Code', user.printCode ?? 'N/A', Icons.qr_code),
+                      'Print Code', user.printCode ?? 'N/A', Icons.fingerprint),
                   _buildInfoField('Shift Hours', '${user.shiftHours} hours',
                       Icons.access_time),
                   _buildInfoField('Overtime Hours', '${user.overTimeHours} hours',

@@ -12,9 +12,9 @@ MonthSalaryModel _$MonthSalaryModelFromJson(Map<String, dynamic> json) =>
       monthName: json['monthName'] as String,
       year: (json['year'] as num).toInt(),
       month: (json['month'] as num).toInt(),
-      uploadedAt: json['uploadedAt'] == null
-          ? null
-          : DateTime.parse(json['uploadedAt'] as String),
+      uploadedAt: const ServerTimestampOnNullConverter().fromJson(
+        json['uploadedAt'],
+      ),
       uploadedBy: json['uploadedBy'] as String?,
       employeeCount: (json['employeeCount'] as num?)?.toInt(),
       notes: json['notes'] as String?,
@@ -26,7 +26,9 @@ Map<String, dynamic> _$MonthSalaryModelToJson(MonthSalaryModel instance) =>
       'monthName': instance.monthName,
       'year': instance.year,
       'month': instance.month,
-      'uploadedAt': instance.uploadedAt?.toIso8601String(),
+      'uploadedAt': const ServerTimestampOnNullConverter().toJson(
+        instance.uploadedAt,
+      ),
       'uploadedBy': instance.uploadedBy,
       'employeeCount': instance.employeeCount,
       'notes': instance.notes,

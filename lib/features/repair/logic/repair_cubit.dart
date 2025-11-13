@@ -44,8 +44,15 @@ class RepairCubit extends Cubit<RepairState> {
     }
   }
 
+  bool hasLoadedData = false; // Flag عشان نتحقق لو الداتا اتجابت
+
   /// Fetch repairs by branch and date
-  fetchRepairsByBranchAndDate({required String branchId, required DateTime date}) async {
+  fetchRepairsByBranchAndDate({required String branchId, required DateTime date,bool forceUpdate = false}) async {
+    if(forceUpdate){
+      hasLoadedData = false;
+    }
+    if (hasLoadedData) return;
+
     emit(FetchRepairsLoading());
     try {
       // Parse date to get start and end of day
@@ -65,6 +72,8 @@ class RepairCubit extends Cubit<RepairState> {
           .toList();
 
       emit(FetchRepairsSuccess(repairs));
+      hasLoadedData = true; // اتأكد إنها اتجابت
+
     } catch (e) {
       emit(FetchRepairsError('Fetch Repairs Error: $e'));
     }

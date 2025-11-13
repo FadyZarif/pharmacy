@@ -72,7 +72,7 @@ class ShiftReportWidgets {
               ),
               Container(
                 width: 1,
-                height: 50,
+                height: 70,
                 color: Colors.grey.shade300,
                 margin: const EdgeInsets.symmetric(horizontal: 16),
               ),
@@ -155,7 +155,7 @@ class ShiftReportWidgets {
                 if (employeeName != null && shiftType != null)
                   Container(
                     width: 1,
-                    height: 50,
+                    height: 70,
                     color: Colors.grey.shade300,
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                   ),

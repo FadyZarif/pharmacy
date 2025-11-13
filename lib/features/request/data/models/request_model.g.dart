@@ -62,39 +62,47 @@ const _$RequestStatusEnumMap = {
 
 AnnualLeaveDetails _$AnnualLeaveDetailsFromJson(Map<String, dynamic> json) =>
     AnnualLeaveDetails(
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
+      startDate: const ServerTimestampConverter().fromJson(
+        json['startDate'] as Object,
+      ),
+      endDate: const ServerTimestampConverter().fromJson(
+        json['endDate'] as Object,
+      ),
     );
 
 Map<String, dynamic> _$AnnualLeaveDetailsToJson(AnnualLeaveDetails instance) =>
     <String, dynamic>{
-      'startDate': instance.startDate.toIso8601String(),
-      'endDate': instance.endDate.toIso8601String(),
+      'startDate': const ServerTimestampConverter().toJson(instance.startDate),
+      'endDate': const ServerTimestampConverter().toJson(instance.endDate),
     };
 
 SickLeaveDetails _$SickLeaveDetailsFromJson(Map<String, dynamic> json) =>
     SickLeaveDetails(
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
+      startDate: const ServerTimestampConverter().fromJson(
+        json['startDate'] as Object,
+      ),
+      endDate: const ServerTimestampConverter().fromJson(
+        json['endDate'] as Object,
+      ),
       prescription: json['prescription'] as String,
     );
 
 Map<String, dynamic> _$SickLeaveDetailsToJson(SickLeaveDetails instance) =>
     <String, dynamic>{
-      'startDate': instance.startDate.toIso8601String(),
-      'endDate': instance.endDate.toIso8601String(),
+      'startDate': const ServerTimestampConverter().toJson(instance.startDate),
+      'endDate': const ServerTimestampConverter().toJson(instance.endDate),
       'prescription': instance.prescription,
     };
 
 ExtraHoursDetails _$ExtraHoursDetailsFromJson(Map<String, dynamic> json) =>
     ExtraHoursDetails(
-      date: DateTime.parse(json['date'] as String),
+      date: const ServerTimestampConverter().fromJson(json['date'] as Object),
       hours: (json['hours'] as num).toInt(),
     );
 
 Map<String, dynamic> _$ExtraHoursDetailsToJson(ExtraHoursDetails instance) =>
     <String, dynamic>{
-      'date': instance.date.toIso8601String(),
+      'date': const ServerTimestampConverter().toJson(instance.date),
       'hours': instance.hours,
     };
 
@@ -105,7 +113,7 @@ CoverageShiftDetails _$CoverageShiftDetailsFromJson(
   peerEmployeeName: json['peerEmployeeName'] as String,
   peerBranchId: json['peerBranchId'] as String,
   peerBranchName: json['peerBranchName'] as String,
-  date: DateTime.parse(json['date'] as String),
+  date: const ServerTimestampConverter().fromJson(json['date'] as Object),
 );
 
 Map<String, dynamic> _$CoverageShiftDetailsToJson(
@@ -115,23 +123,27 @@ Map<String, dynamic> _$CoverageShiftDetailsToJson(
   'peerEmployeeName': instance.peerEmployeeName,
   'peerBranchId': instance.peerBranchId,
   'peerBranchName': instance.peerBranchName,
-  'date': instance.date.toIso8601String(),
+  'date': const ServerTimestampConverter().toJson(instance.date),
 };
 
 AttendDetails _$AttendDetailsFromJson(Map<String, dynamic> json) =>
-    AttendDetails(date: DateTime.parse(json['date'] as String));
+    AttendDetails(
+      date: const ServerTimestampConverter().fromJson(json['date'] as Object),
+    );
 
 Map<String, dynamic> _$AttendDetailsToJson(AttendDetails instance) =>
-    <String, dynamic>{'date': instance.date.toIso8601String()};
+    <String, dynamic>{
+      'date': const ServerTimestampConverter().toJson(instance.date),
+    };
 
 PermissionDetails _$PermissionDetailsFromJson(Map<String, dynamic> json) =>
     PermissionDetails(
-      date: DateTime.parse(json['date'] as String),
+      date: const ServerTimestampConverter().fromJson(json['date'] as Object),
       hours: (json['hours'] as num).toInt(),
     );
 
 Map<String, dynamic> _$PermissionDetailsToJson(PermissionDetails instance) =>
     <String, dynamic>{
-      'date': instance.date.toIso8601String(),
+      'date': const ServerTimestampConverter().toJson(instance.date),
       'hours': instance.hours,
     };

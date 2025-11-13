@@ -21,8 +21,8 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<RepairCubit>()..fetchRepairsByBranchAndDate(
+    return BlocProvider.value(
+      value:  getIt<RepairCubit>()..fetchRepairsByBranchAndDate(
             branchId: currentUser.currentBranch.id,
             date: _selectedDate,
           ),
@@ -84,9 +84,10 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
 
                         return RefreshIndicator(
                           onRefresh: () async {
-                            context.read<RepairCubit>().fetchRepairsByBranchAndDate(
+                            getIt<RepairCubit>().fetchRepairsByBranchAndDate(
                                   branchId: currentUser.currentBranch.id,
                                   date: _selectedDate,
+                              forceUpdate: true,
                                 );
                           },
                           child: ListView.builder(
@@ -230,6 +231,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
               context.read<RepairCubit>().fetchRepairsByBranchAndDate(
                     branchId: currentUser.currentBranch.id,
                     date: _selectedDate,
+                forceUpdate: true,
                   );
             },
           ),
@@ -251,6 +253,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
                 context.read<RepairCubit>().fetchRepairsByBranchAndDate(
                       branchId: currentUser.currentBranch.id,
                       date: _selectedDate,
+                  forceUpdate: true,
                     );
               }
             },
@@ -291,6 +294,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
                     context.read<RepairCubit>().fetchRepairsByBranchAndDate(
                           branchId: currentUser.currentBranch.id,
                           date: _selectedDate,
+                      forceUpdate: true,
                         );
                   }
                 : null,

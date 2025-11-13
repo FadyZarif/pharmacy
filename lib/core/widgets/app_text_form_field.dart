@@ -27,6 +27,7 @@ class AppTextFormField extends StatelessWidget {
   final bool? isArabic;
   final List<String>? autofillHints;
   final Function()? onTap;
+  final Function(String)? onChanged;
   final bool? readOnly;
 
 
@@ -43,7 +44,7 @@ class AppTextFormField extends StatelessWidget {
     this.obscureText,
     this.style,
     required this.controller,
-    this.validator, this.prefixIcon, this.labelText, this.textInputAction, this.keyboardType, this.maxLength, this.inputFormatters, this.fillColor, this.isArabic, this.autofillHints, this.onTap, this.readOnly, this.maxLines,
+    this.validator, this.prefixIcon, this.labelText, this.textInputAction, this.keyboardType, this.maxLength, this.inputFormatters, this.fillColor, this.isArabic, this.autofillHints, this.onTap,this.onChanged , this.readOnly, this.maxLines,
   });
 
   @override
@@ -52,6 +53,7 @@ class AppTextFormField extends StatelessWidget {
       expands: false,
       controller: controller,
       onTap: onTap,
+      onChanged: onChanged,
       readOnly: readOnly??false,
       textInputAction: textInputAction,
       keyboardType: keyboardType,
