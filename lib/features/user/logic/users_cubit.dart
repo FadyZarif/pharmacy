@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -198,6 +199,7 @@ class UsersCubit extends Cubit<UsersState> {
     required int shiftHours,
     required Role role,
     required bool isActive,
+    bool? hasRequestsPermission,
     File? imageFile,
   }) async {
     emit(UpdateUserLoading());
@@ -232,6 +234,11 @@ class UsersCubit extends Cubit<UsersState> {
         'isActive': isActive,
         'updatedAt': FieldValue.serverTimestamp(),
       };
+
+      // Add hasRequestsPermission only if provided (for subManagers)
+      if (hasRequestsPermission != null) {
+        updatedData['hasRequestsPermission'] = hasRequestsPermission;
+      }
 
       if (newPhotoUrl != null) {
         updatedData['photoUrl'] = newPhotoUrl;
@@ -316,7 +323,8 @@ class UsersCubit extends Cubit<UsersState> {
       // Step 4: Delete from Firebase Auth
       // ملحوظة: لا يمكن حذف مستخدم آخر من Auth مباشرة
       // يحتاج Cloud Function أو المستخدم نفسه يحذف حسابه
-      // لكن حذفه من Firestore كافي لإيقافه
+
+
 
       emit(DeleteUserSuccess());
     } catch (e) {

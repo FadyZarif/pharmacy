@@ -17,6 +17,7 @@ class UserModel {
   final Role role;
   final String? photoUrl;
   final bool isActive;
+  final bool hasRequestsPermission;
 
   UserModel( {
     required this.uid,
@@ -31,6 +32,7 @@ class UserModel {
     required this.role,
     this.photoUrl,
     required this.isActive,
+    this.hasRequestsPermission = false,
   });
 
   /// fromJson & toJson

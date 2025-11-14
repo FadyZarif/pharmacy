@@ -1,8 +1,18 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
+import '../../../core/di/dependency_injection.dart';
 import '../../../core/themes/colors.dart';
+import '../../employee/logic/employee_layout_cubit.dart';
 import '../../employee/ui/employee_layout.dart';
+import '../../login/ui/login_screen.dart';
+import '../../repair/logic/repair_cubit.dart';
+import '../../request/data/services/coverage_shift_service.dart';
+import '../../request/logic/request_cubit.dart';
+import '../../salary/logic/salary_cubit.dart';
+import '../../user/logic/users_cubit.dart';
 
 class BranchSelectionScreen extends StatelessWidget {
 
@@ -20,6 +30,13 @@ class BranchSelectionScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         centerTitle: true,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            onPressed: () => _showLogoutDialog(context),
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -66,8 +83,87 @@ class BranchSelectionScreen extends StatelessWidget {
         ),
       ),
     );
+
+  }
+  void _showLogoutDialog(BuildContext context) {
+
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.warning,
+      animType: AnimType.bottomSlide,
+      title: 'Logout',
+      desc: 'are you sure you want to logout?',
+      btnOkText: 'logout',
+      btnCancelOnPress: () {},
+      btnOkOnPress: () {
+        _logout(context);
+      },
+    ).show();
   }
 
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Reset all lazy singletons in GetIt (but keep factories)
+      /*if (getIt.isRegistered<EmployeeLayoutCubit>()) {
+        await getIt.resetLazySingleton<EmployeeLayoutCubit>();
+      }
+      if (getIt.isRegistered<RequestCubit>()) {
+        await getIt.resetLazySingleton<RequestCubit>();
+      }
+      if (getIt.isRegistered<CoverageShiftService>()) {
+        await getIt.resetLazySingleton<CoverageShiftService>();
+      }
+      if (getIt.isRegistered<RepairCubit>()) {
+        await getIt.resetLazySingleton<RepairCubit>();
+      }
+      if (getIt.isRegistered<SalaryCubit>()) {
+        await getIt.resetLazySingleton<SalaryCubit>();
+      }
+      if (getIt.isRegistered<UsersCubit>()) {
+        await getIt.resetLazySingleton<UsersCubit>();
+      }*/
+
+      // Update isLogged flag
+      isLogged = false;
+
+      // Pop loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Navigate to login screen
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      // Pop loading dialog if still showing
+      if (context.mounted) Navigator.pop(context);
+
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
   Widget _buildBranchCard(BuildContext context, Branch branch) {
     return Card(
       color: Colors.white,

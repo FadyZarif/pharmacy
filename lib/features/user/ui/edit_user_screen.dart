@@ -30,6 +30,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
 
   late Role _selectedRole;
   late bool _isActive;
+  late bool _hasRequestsPermission;
   File? _selectedImage;
   String? _currentPhotoUrl;
 
@@ -45,6 +46,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
 
     _selectedRole = widget.user.role;
     _isActive = widget.user.isActive;
+    _hasRequestsPermission = widget.user.hasRequestsPermission;
     _currentPhotoUrl = widget.user.photoUrl;
   }
 
@@ -267,6 +269,10 @@ class _EditUserScreenState extends State<EditUserScreen> {
                         onChanged: (value) {
                           setState(() {
                             _selectedRole = value!;
+                            // Reset permission if role is not subManager
+                            if (_selectedRole != Role.subManager) {
+                              _hasRequestsPermission = false;
+                            }
                           });
                         },
                       ),
@@ -355,6 +361,54 @@ class _EditUserScreenState extends State<EditUserScreen> {
                           ],
                         ),
                       ),
+
+                      // Requests Permission Switch (Only for SubManagers)
+                      if (_selectedRole == Role.subManager && currentUser.isManagement) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _hasRequestsPermission ? Icons.admin_panel_settings : Icons.block,
+                                      color: _hasRequestsPermission ? Colors.blue : Colors.grey,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
+                                      child: Text(
+                                        'Requests Management Permission',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: _hasRequestsPermission,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _hasRequestsPermission = value;
+                                  });
+                                },
+                                activeTrackColor: Colors.blue,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 24),
 
                       // Update Button
@@ -413,6 +467,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
       shiftHours: int.parse(_shiftHoursController.text),
       role: _selectedRole,
       isActive: _isActive,
+      hasRequestsPermission: _selectedRole == Role.subManager ? _hasRequestsPermission : null,
       imageFile: _selectedImage,
     );
   }

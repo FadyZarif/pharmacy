@@ -36,17 +36,35 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
       ];
     }
 
-    // Staff & SubManager
-    return const <BottomNavigationBarItem>[
-      BottomNavigationBarItem(
+    // SubManager with Requests Permission
+    /*if (currentUser.role == Role.subManager && currentUser.hasRequestsPermission) {
+      return const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+            icon: Icon(Icons.build), label: 'Repair'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long), label: 'Report'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.event_note), label: 'Requests'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money), label: 'Salary'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.person), label: 'Profile'),
+      ];
+    }*/
+
+    // Staff & SubManager without permission
+    return <BottomNavigationBarItem>[
+      const BottomNavigationBarItem(
           icon: Icon(Icons.build), label: 'Repair'),
-      BottomNavigationBarItem(
+      const BottomNavigationBarItem(
           icon: Icon(Icons.receipt_long), label: 'Report'),
-      BottomNavigationBarItem(
+      (currentUser.role == Role.subManager && currentUser.hasRequestsPermission)? const BottomNavigationBarItem(
+          icon: Icon(Icons.event_note), label: 'Requests') :
+      const BottomNavigationBarItem(
           icon: Icon(Icons.home), label: 'Dashboard'),
-      BottomNavigationBarItem(
+      const BottomNavigationBarItem(
           icon: Icon(Icons.attach_money), label: 'Salary'),
-      BottomNavigationBarItem(
+      const BottomNavigationBarItem(
           icon: Icon(Icons.person), label: 'Profile'),
     ];
   }
@@ -63,10 +81,22 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
       ];
     }
 
-    // Staff & SubManager - Add Mode
+    // SubManager with Requests Permission
+    /*if (currentUser.role == Role.subManager && currentUser.hasRequestsPermission) {
+      return <Widget>[
+        const AddRepairScreen(),
+        const AddShiftReportScreen(),
+        const ManageRequestsScreen(),
+        const SalaryScreen(),
+        ProfileScreen(user: currentUser),
+      ];
+    }*/
+
+    // Staff & SubManager without permission - Add Mode
     return <Widget>[
       const AddRepairScreen(),
       const AddShiftReportScreen(),
+      (currentUser.role == Role.subManager && currentUser.hasRequestsPermission)? const ManageRequestsScreen() :
       const EmployeeDashboardScreen(),
       const SalaryScreen(),
       ProfileScreen(user: currentUser),
