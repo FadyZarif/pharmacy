@@ -11,6 +11,7 @@ import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_state.dart';
 import 'package:pharmacy/features/request/ui/request_details_screen.dart';
 
+
 class ManageRequestsScreen extends StatelessWidget {
   const ManageRequestsScreen({super.key});
 
@@ -30,7 +31,49 @@ class _ManageRequestsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = getIt<RequestCubit>();
 
-    return Scaffold(
+    return BlocListener<RequestCubit, RequestState>(
+      listenWhen: (previous, current) =>
+      current is AddRequestLoading ||
+          current is AddRequestSuccess ||
+          current is AddRequestFailure,
+      listener: (context, state) async {
+        if (state is AddRequestLoading) {
+          // Show loading dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(
+              child: CircularProgressIndicator(
+                color: ColorsManger.primary,
+              ),
+            ),
+          );
+        } else if (state is AddRequestSuccess) {
+          // Close loading dialog
+          Navigator.pop(context);
+
+          // Show success message
+          await defToast2(
+            context: context,
+            msg: 'Request updated successfully',
+            dialogType: DialogType.success,
+          );
+
+        } else if (state is AddRequestFailure) {
+          // Close loading dialog
+          Navigator.pop(context);
+
+          // Show error message
+          await defToast2(
+            context: context,
+            msg: state.error,
+            dialogType: DialogType.error,
+            sec: 5,
+
+          );
+        }
+      },
+  child: Scaffold(
       backgroundColor: ColorsManger.primaryBackground,
       appBar: AppBar(
         title: Text(
@@ -160,7 +203,8 @@ class _ManageRequestsBody extends StatelessWidget {
           );
         },
       ),
-    );
+    ),
+);
   }
 
   Widget _buildRequestsList(RequestState state) {
@@ -635,22 +679,8 @@ class _ManageRequestsBody extends StatelessWidget {
       desc: 'Are you sure you want to approve this ${request.type.name} request?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
-        try {
-          await getIt<RequestCubit>().approveRequest(request);
-        if (!context.mounted) return;
-        defToast2(
-        context: context,
-        msg: 'Request approved successfully',
-        dialogType: DialogType.success,
-        );
-        } catch (e) {
-        if (!context.mounted) return;
-        defToast2(
-        context: context,
-        msg: 'Error: ${e.toString()}',
-        dialogType: DialogType.error,
-        );
-        }
+        await getIt<RequestCubit>().approveRequest(request);
+
       },
     ).show();
 
@@ -667,22 +697,8 @@ class _ManageRequestsBody extends StatelessWidget {
       desc: 'Are you sure you want to reject this ${request.type.name} request?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
-        try {
-          await getIt<RequestCubit>().rejectRequest(request);
-        if (!context.mounted) return;
-        defToast2(
-        context: context,
-        msg: 'Request rejected',
-        dialogType: DialogType.info,
-        );
-        } catch (e) {
-        if (!context.mounted) return;
-        defToast2(
-        context: context,
-        msg: 'Error: ${e.toString()}',
-        dialogType: DialogType.error,
-        );
-        }
+        await getIt<RequestCubit>().rejectRequest(request);
+
       },
     ).show();
 

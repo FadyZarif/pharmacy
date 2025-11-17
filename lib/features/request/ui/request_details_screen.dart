@@ -1,5 +1,6 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
@@ -7,6 +8,7 @@ import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/profile_circle.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
+import 'package:pharmacy/features/request/logic/request_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RequestDetailsScreen extends StatelessWidget {
@@ -21,7 +23,55 @@ class RequestDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider.value(
+      value: getIt<RequestCubit>(),
+      child: BlocListener<RequestCubit, RequestState>(
+        listenWhen: (previous, current) =>
+            current is AddRequestLoading ||
+            current is AddRequestSuccess ||
+            current is AddRequestFailure,
+        listener: (context, state) async {
+          if (state is AddRequestLoading) {
+            // Show loading dialog
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(
+                child: CircularProgressIndicator(
+                  color: ColorsManger.primary,
+                ),
+              ),
+            );
+          } else if (state is AddRequestSuccess) {
+            // Close loading dialog
+            Navigator.pop(context);
+
+            // Show success message
+            await defToast2(
+              context: context,
+              msg: 'Request updated successfully',
+              dialogType: DialogType.success,
+            );
+
+            // Close the details screen
+            if (!context.mounted) return;
+              Navigator.pop(context);
+              Navigator.pop(context);
+
+          } else if (state is AddRequestFailure) {
+            // Close loading dialog
+            Navigator.pop(context);
+
+            // Show error message
+            await defToast2(
+              context: context,
+              msg: state.error,
+              dialogType: DialogType.error,
+              sec: 5,
+            );
+          }
+        },
+        child: Scaffold(
       backgroundColor: ColorsManger.primaryBackground,
       body: CustomScrollView(
         slivers: [
@@ -101,6 +151,8 @@ class RequestDetailsScreen extends StatelessWidget {
           ? _buildActionButtons(context)
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        ),
+      ),
     );
   }
 
@@ -796,24 +848,9 @@ class RequestDetailsScreen extends StatelessWidget {
       desc: 'Are you sure you want to approve this ${request.typeLabel}?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
-        try {
-          await getIt<RequestCubit>().approveRequest(request);
-        if (!context.mounted) return;
+        await getIt<RequestCubit>().approveRequest(request);
 
-        Navigator.pop(context);
-        defToast2(
-        context: context,
-        msg: 'Request approved successfully',
-        dialogType: DialogType.success,
-        );
-        } catch (e) {
-        if (!context.mounted) return;
-        defToast2(
-        context: context,
-        msg: 'Error: ${e.toString()}',
-        dialogType: DialogType.error,
-        );
-        }
+
       },
     ).show();
 
@@ -828,24 +865,8 @@ class RequestDetailsScreen extends StatelessWidget {
       desc: 'Are you sure you want to reject this ${request.typeLabel}?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
-        try {
-          await getIt<RequestCubit>().rejectRequest(request);
-        if (!context.mounted) return;
+        await getIt<RequestCubit>().rejectRequest(request);
 
-        Navigator.pop(context);
-        defToast2(
-        context: context,
-        msg: 'Request rejected',
-        dialogType: DialogType.info,
-        );
-        } catch (e) {
-        if (!context.mounted) return;
-        defToast2(
-        context: context,
-        msg: 'Error: ${e.toString()}',
-        dialogType: DialogType.error,
-        );
-        }
       },
     ).show();
 

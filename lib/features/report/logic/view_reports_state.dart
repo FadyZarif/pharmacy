@@ -20,3 +20,22 @@ class ViewReportsError extends ViewReportsState {
   ViewReportsError({required this.message});
 }
 
+// Monthly Summary States
+class MonthlySummaryLoading extends ViewReportsState {}
+
+class MonthlySummaryLoaded extends ViewReportsState {
+  final double totalSales;
+  final double totalMedicinesExpenses;
+
+  MonthlySummaryLoaded({
+    required this.totalSales,
+    required this.totalMedicinesExpenses,
+  });
+}
+
+class MonthlySummaryError extends ViewReportsState {
+  final String message;
+
+  MonthlySummaryError({required this.message});
+}
+

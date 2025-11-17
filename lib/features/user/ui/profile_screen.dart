@@ -9,14 +9,29 @@ import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_state.dart';
 import 'package:pharmacy/features/user/ui/edit_user_screen.dart';
+import 'package:pharmacy/features/user/ui/edit_profile_screen.dart';
 
 import '../../../core/widgets/profile_circle.dart';
 import '../data/models/user_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final UserModel user;
   const ProfileScreen({super.key, required this.user});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+
+  late UserModel userModel;
+
+  @override
+  void initState() {
+    userModel = currentUser.uid == widget.user.uid? currentUser: widget.user;
+    // TODO: implement initState
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -65,15 +80,42 @@ class ProfileScreen extends StatelessWidget {
               backgroundColor: ColorsManger.primary,
               foregroundColor: Colors.white,
               actions: [
-                // Edit Button
-                if (currentUser.isManagement && (currentUser.role.index < user.role.index))
+                // Edit Profile Button (for the current user viewing their own profile)
+                if (currentUser.uid == widget.user.uid)
                   IconButton(
                     icon: const Icon(Icons.edit),
+                    tooltip: 'Edit Profile',
                     onPressed: () async {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EditUserScreen(user: user),
+                          builder: (context) => EditProfileScreen(user: userModel),
+                        ),
+                      );
+
+                      // Refresh if profile was updated
+                      if (result == true) {
+                        setState(() {
+                          userModel = currentUser;
+                        });
+                        if( context.mounted && Navigator.canPop(context)) {
+                          Navigator.pop(context, true);
+                        }
+                      }
+                    },
+                  ),
+                // Edit User Button (for management viewing other users)
+                if (currentUser.uid != widget.user.uid &&
+                    currentUser.isManagement &&
+                    (currentUser.role.index < widget.user.role.index))
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    tooltip: 'Edit User',
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditUserScreen(user: userModel),
                         ),
                       );
 
@@ -83,10 +125,11 @@ class ProfileScreen extends StatelessWidget {
                       }
                     },
                   ),
-                // Delete Button
-                if (currentUser.role == Role.admin)
+                // Delete Button (Admin only, not for own profile)
+                if (currentUser.role == Role.admin && currentUser.uid != widget.user.uid)
                   IconButton(
                     icon: const Icon(Icons.delete),
+                    tooltip: 'Delete User',
                     onPressed: () => _showDeleteConfirmation(context),
                   ),
               ],
@@ -111,12 +154,12 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     // Profile Photo
-                    ProfileCircle(photoUrl: user.photoUrl, size: 65),
+                    ProfileCircle(photoUrl: userModel.photoUrl, size: 65),
                     const SizedBox(height: 16),
 
                     // Name
                     Text(
-                      user.name,
+                      userModel.name,
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -129,11 +172,11 @@ class ProfileScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getRoleColor(user.role),
+                        color: _getRoleColor(userModel.role),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        user.role.name.toUpperCase(),
+                        userModel.role.name.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.white,
@@ -145,7 +188,7 @@ class ProfileScreen extends StatelessWidget {
 
                     // Branches
                     Text(
-                      '[${user.branches.map((e) => e.name).join(', ')}]',
+                      '[${userModel.branches.map((e) => e.name).join(', ')}]',
                       style: const TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -158,28 +201,28 @@ class ProfileScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: user.isActive
+                        color: userModel.isActive
                             ? Colors.green.withValues(alpha: 0.1)
                             : Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: user.isActive ? Colors.green : Colors.red,
+                          color: userModel.isActive ? Colors.green : Colors.red,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            user.isActive ? Icons.check_circle : Icons.cancel,
+                            userModel.isActive ? Icons.check_circle : Icons.cancel,
                             size: 16,
-                            color: user.isActive ? Colors.green : Colors.red,
+                            color: userModel.isActive ? Colors.green : Colors.red,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            user.isActive ? 'Active' : 'Inactive',
+                            userModel.isActive ? 'Active' : 'Inactive',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: user.isActive ? Colors.green : Colors.red,
+                              color: userModel.isActive ? Colors.green : Colors.red,
                             ),
                           ),
                         ],
@@ -194,8 +237,8 @@ class ProfileScreen extends StatelessWidget {
               _buildInfoSection(
                 title: 'Contact Information',
                 children: [
-                  _buildInfoField('Email', user.email, Icons.email),
-                  _buildInfoField('Phone', user.phone, Icons.phone),
+                  _buildInfoField('Email', userModel.email, Icons.email),
+                  _buildInfoField('Phone', userModel.phone, Icons.phone),
                 ],
               ),
               const SizedBox(height: 20),
@@ -205,12 +248,12 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Work Information',
                 children: [
                   _buildInfoField(
-                      'Print Code', user.printCode ?? 'N/A', Icons.fingerprint),
-                  _buildInfoField('Shift Hours', '${user.shiftHours} hours',
+                      'Print Code', userModel.printCode ?? 'N/A', Icons.fingerprint),
+                  _buildInfoField('Shift Hours', '${userModel.shiftHours} hours',
                       Icons.access_time),
-                  _buildInfoField('Overtime Hours', '${user.overTimeHours} hours',
+                  _buildInfoField('Overtime Hours', '${userModel.overTimeHours} hours',
                       Icons.add_alarm),
-                  _buildInfoField('Vacation Balance', user.vocationBalance,
+                  _buildInfoField('Vacation Balance', userModel.vocationBalance,
                       Icons.beach_access),
                 ],
               ),
@@ -282,7 +325,7 @@ class ProfileScreen extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete User'),
         content: Text(
-          'Are you sure you want to delete ${user.name}?\nThis action cannot be undone.',
+          'Are you sure you want to delete ${userModel.name}?\nThis action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -292,7 +335,7 @@ class ProfileScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              getIt<UsersCubit>().deleteUser(user.uid);
+              getIt<UsersCubit>().deleteUser(userModel.uid);
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,

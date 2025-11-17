@@ -45,54 +45,210 @@ class EmployeeDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          spacing: 30,
-          children: [
-
-            /// CurrentUser Info Card
-            Container(
-              padding: EdgeInsets.all(16.0),
-              height: 100,
-              decoration: BoxDecoration(
-                color: ColorsManger.cardColor,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            spacing: 30,
+            children: [
+        
+              /// CurrentUser Info Card
+              Container(
+                padding: EdgeInsets.all(16.0),
+                height: 100,
+                decoration: BoxDecoration(
+                  color: ColorsManger.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+                ),
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    ProfileCircle(photoUrl: currentUser.photoUrl,),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currentUser.name,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          currentUser.currentBranch.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<EmployeeLayoutCubit>().changeBottomNav(4);
+                      },
+                      icon: const Icon(Icons.remove_red_eye_outlined, size: 18),
+                      label: const Text('View'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorsManger.primary,
+                        // بنفسجي قريب من الصورة
+                        foregroundColor: Colors.white,
+                        // لون الأيقونة والنص
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadiusGeometry.circular(10),
+                        ),
+                        // Corners دائري بالكامل
+                        textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
+        
+              /// Statistics Section
+              Text('Statistics', style: GoogleFonts.pacifico(fontSize: 25)),
+              Row(
                 spacing: 10,
                 children: [
-                  ProfileCircle(photoUrl: currentUser.photoUrl,),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        currentUser.name,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: ColorsManger.cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black12, blurRadius: 5),
+                        ],
                       ),
-                      Text(
-                        currentUser.currentBranch.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w300,
-                        ),
+                      child: Column(
+                        spacing: 10,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.beach_access,
+                            color: Colors.green,
+                            size: 45,
+                          ),
+                          Text(
+                            currentUser.vocationBalance,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Vacation\nBalance',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: ColorsManger.cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black12, blurRadius: 5),
+                        ],
+                      ),
+                      child: Column(
+                        spacing: 10,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          Icon(Icons.schedule, color: Colors.blue, size: 45),
+                          Text(
+                            '${currentUser.overTimeHours}h',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Over\nTime',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: ColorsManger.cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black12, blurRadius: 5),
+                        ],
+                      ),
+                      child: Column(
+                        spacing: 10,
+                        children: [
+                          Icon(
+                            Icons.pending_actions,
+                            color: Colors.orange,
+                            size: 45,
+                          ),
+                          BlocBuilder<RequestCubit, RequestState>(
+                            buildWhen: (_, current) => current is FetchRequestsSuccess,
+                            builder: (context, state) {
+                              return Text(
+                                '${getIt<RequestCubit>().pendingRequestsCount}',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                          Text(
+                            'Pending Requests',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+        
+              /// Requests Section
+              Row(
+                children: [
+                  Text('Requests', style: GoogleFonts.pacifico(fontSize: 25)),
                   Spacer(),
                   ElevatedButton.icon(
                     onPressed: () {
-                      context.read<EmployeeLayoutCubit>().changeBottomNav(4);
+                      HapticFeedback.mediumImpact();
+                      showNewRequestSheet(context);
                     },
-                    icon: const Icon(Icons.remove_red_eye_outlined, size: 18),
-                    label: const Text('View'),
+                    icon: const Icon(Icons.add_circle, size: 18),
+                    label: const Text('New Request'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ColorsManger.primary,
                       // بنفسجي قريب من الصورة
@@ -112,165 +268,11 @@ class EmployeeDashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              RequestsListView(),
+            ],
+          ),
             ),
-
-            /// Statistics Section
-            Text('Statistics', style: GoogleFonts.pacifico(fontSize: 25)),
-            Row(
-              spacing: 10,
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: ColorsManger.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 5),
-                      ],
-                    ),
-                    child: Column(
-                      spacing: 10,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.beach_access,
-                          color: Colors.green,
-                          size: 45,
-                        ),
-                        Text(
-                          currentUser.vocationBalance,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Vacation\nBalance',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: ColorsManger.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 5),
-                      ],
-                    ),
-                    child: Column(
-                      spacing: 10,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Icon(Icons.schedule, color: Colors.blue, size: 45),
-                        Text(
-                          '${currentUser.overTimeHours}h',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Over\nTime',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: ColorsManger.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 5),
-                      ],
-                    ),
-                    child: Column(
-                      spacing: 10,
-                      children: [
-                        Icon(
-                          Icons.pending_actions,
-                          color: Colors.orange,
-                          size: 45,
-                        ),
-                        BlocBuilder<RequestCubit, RequestState>(
-                          buildWhen: (_, current) => current is FetchRequestsSuccess,
-                          builder: (context, state) {
-                            return Text(
-                              '${getIt<RequestCubit>().pendingRequestsCount}',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            );
-                          },
-                        ),
-                        Text(
-                          'Pending Requests',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            /// Requests Section
-            Row(
-              children: [
-                Text('Requests', style: GoogleFonts.pacifico(fontSize: 25)),
-                Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    showNewRequestSheet(context);
-                  },
-                  icon: const Icon(Icons.add_circle, size: 18),
-                  label: const Text('New Request'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorsManger.primary,
-                    // بنفسجي قريب من الصورة
-                    foregroundColor: Colors.white,
-                    // لون الأيقونة والنص
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(10),
-                    ),
-                    // Corners دائري بالكامل
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            RequestsListView(),
-          ],
-        ),
-    ),
+      ),
   ),
 );
 }

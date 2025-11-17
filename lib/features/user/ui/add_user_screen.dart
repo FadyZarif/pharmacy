@@ -28,7 +28,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final _passwordController = TextEditingController();
   final _printCodeController = TextEditingController();
   final _shiftHoursController = TextEditingController();
-  final _vocationBalanceController = TextEditingController();
+  final _vocationBalanceHoursController = TextEditingController();
 
   Role _selectedRole = Role.staff;
   bool _isActive = true;
@@ -38,7 +38,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   void initState() {
     super.initState();
     _shiftHoursController.text = '8';
-    _vocationBalanceController.text = '0';
+    _vocationBalanceHoursController.text = '${8*21}'; // Default 21 days
   }
 
   @override
@@ -49,7 +49,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     _passwordController.dispose();
     _printCodeController.dispose();
     _shiftHoursController.dispose();
-    _vocationBalanceController.dispose();
+    _vocationBalanceHoursController.dispose();
     super.dispose();
   }
 
@@ -290,6 +290,43 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     }
                     return null;
                   },
+                  onChanged: (_) {
+                    setState(() {});
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextFormField(
+                  controller: _vocationBalanceHoursController,
+                  labelText: 'Vacation Hours Balance',
+                  fillColor: Colors.white,
+                  prefixIcon: const Icon(Icons.beach_access),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter vacation hours balance';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Please enter valid number';
+                    }
+                    return null;
+                  },
+                  onChanged: (_) {
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'Vacation balance is ${((int.tryParse(_vocationBalanceHoursController.text) ?? 0) ~/ (int.tryParse(_shiftHoursController.text) ?? 1))} days and ${((int.tryParse(_vocationBalanceHoursController.text) ?? 0) % (int.tryParse(_shiftHoursController.text) ?? 1))} hours',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 16),
@@ -383,6 +420,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     final cubit = getIt<UsersCubit>();
 
+    // Calculate vacation balance hours from days
+    final shiftHours = int.parse(_shiftHoursController.text);
+    final vocationBalanceHours = int.parse(_vocationBalanceHoursController.text);
+
     await cubit.addUser(
       name: _nameController.text,
       email: _emailController.text,
@@ -391,8 +432,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
       printCode: _printCodeController.text.isEmpty
           ? null
           : _printCodeController.text,
-      shiftHours: int.parse(_shiftHoursController.text),
-      vocationBalanceHours: int.parse(_vocationBalanceController.text),
+      shiftHours: shiftHours,
+      vocationBalanceHours: vocationBalanceHours,
       role: _selectedRole,
       isActive: _isActive,
       imageFile: _selectedImage,

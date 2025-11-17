@@ -342,15 +342,15 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                     icon = Icons.bedtime;
                     break;
                   case ShiftType.morning:
-                    label = 'Morning (8 AM - 4 PM)';
+                    label = 'Morning (8 AM - 2 PM)';
                     icon = Icons.wb_sunny_outlined;
                     break;
                   case ShiftType.afternoon:
-                    label = 'Afternoon (4 PM - 12 AM)';
+                    label = 'Afternoon (2 PM - 7 PM)';
                     icon = Icons.wb_twilight;
                     break;
                   case ShiftType.evening:
-                    label = 'Evening (8 PM - 4 AM)';
+                    label = 'Evening (7 PM - 12 AM)';
                     icon = Icons.dark_mode_outlined;
                     break;
                 }

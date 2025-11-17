@@ -490,23 +490,52 @@ class RequestCubit extends Cubit<RequestState> {
         case RequestType.annualLeave:
           final details = AnnualLeaveDetails.fromJson(request.details);
           final days = details.endDate.difference(details.startDate).inDays + 1;
-          vocationHoursChange = days * employee.shiftHours;
+          final requiredHours = days * employee.shiftHours;
+
+          // Check if employee has enough vacation balance
+          if (employee.vocationBalanceHours < requiredHours) {
+            emit(AddRequestFailure(
+              error: 'Employee does not have enough vacation balance. Required: $requiredHours hours, Available: ${employee.vocationBalanceHours} hours'
+            ));
+            return;
+          }
+
+          vocationHoursChange = -requiredHours; // Negative to subtract from balance
           break;
 
         case RequestType.sickLeave:
           final details = SickLeaveDetails.fromJson(request.details);
           final days = details.endDate.difference(details.startDate).inDays + 1;
-          vocationHoursChange = days * employee.shiftHours;
+          final requiredHours = days * employee.shiftHours;
+
+          // Check if employee has enough vacation balance
+          if (employee.vocationBalanceHours < requiredHours) {
+            emit(AddRequestFailure(
+              error: 'Employee does not have enough vacation balance. Required: $requiredHours hours, Available: ${employee.vocationBalanceHours} hours'
+            ));
+            return;
+          }
+
+          vocationHoursChange = -requiredHours; // Negative to subtract from balance
           break;
 
         case RequestType.permission:
           final details = PermissionDetails.fromJson(request.details);
-          vocationHoursChange = details.hours;
+
+          // Check if employee has enough vacation balance
+          if (employee.vocationBalanceHours < details.hours) {
+            emit(AddRequestFailure(
+              error: 'Employee does not have enough vacation balance. Required: ${details.hours} hours, Available: ${employee.vocationBalanceHours} hours'
+            ));
+            return;
+          }
+
+          vocationHoursChange = -details.hours; // Negative to subtract from balance
           break;
 
         case RequestType.extraHours:
           final details = ExtraHoursDetails.fromJson(request.details);
-          overTimeHoursChange = details.hours;
+          overTimeHoursChange = details.hours; // Positive to add overtime
           break;
 
         default:
@@ -538,9 +567,6 @@ class RequestCubit extends Cubit<RequestState> {
       // If it's a coverage shift, create coverage shift record
       if (request.type == RequestType.coverageShift) {
         final details = CoverageShiftDetails.fromJson(request.details);
-
-        // Get employee branches
-        final employee1 = employee;
 
         final employee2Doc = await _db.collection('users').doc(details.peerEmployeeId).get();
         final employee2 = UserModel.fromJson(employee2Doc.data()!);
@@ -592,23 +618,23 @@ class RequestCubit extends Cubit<RequestState> {
           case RequestType.annualLeave:
             final details = AnnualLeaveDetails.fromJson(request.details);
             final days = details.endDate.difference(details.startDate).inDays + 1;
-            vocationHoursChange = -(days * employee.shiftHours); // Negative to subtract
+            vocationHoursChange = (days * employee.shiftHours); // Positive to restore balance
             break;
 
           case RequestType.sickLeave:
             final details = SickLeaveDetails.fromJson(request.details);
             final days = details.endDate.difference(details.startDate).inDays + 1;
-            vocationHoursChange = -(days * employee.shiftHours); // Negative to subtract
+            vocationHoursChange = (days * employee.shiftHours); // Positive to restore balance
             break;
 
           case RequestType.permission:
             final details = PermissionDetails.fromJson(request.details);
-            vocationHoursChange = -details.hours; // Negative to subtract
+            vocationHoursChange = details.hours; // Positive to restore balance
             break;
 
           case RequestType.extraHours:
             final details = ExtraHoursDetails.fromJson(request.details);
-            overTimeHoursChange = -details.hours; // Negative to subtract
+            overTimeHoursChange = -details.hours; // Negative to subtract overtime
             break;
 
           default:
