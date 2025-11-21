@@ -105,14 +105,15 @@ class RequestCubit extends Cubit<RequestState> {
 
   Query<Map<String, dynamic>> getRequestsQuery() {
     final now = DateTime.now(); // عرّفها هنا
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 1); // يتعامل تلقائيًا مع ديسمبر
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    // final startOfMonth = DateTime(now.year, now.month, 1);
+    // final endOfMonth = DateTime(now.year, now.month + 1, 1); // يتعامل تلقائيًا مع ديسمبر
 
     return _db
         .collection('requests')
         .where('employeeId', isEqualTo: currentUser.uid)
-        .where('createdAt', isGreaterThanOrEqualTo: startOfMonth)
-        .where('createdAt', isLessThan: endOfMonth)
+        .where('createdAt', isGreaterThanOrEqualTo: thirtyDaysAgo)
+        .where('createdAt', isLessThan: now)
     // لازم يكون أول orderBy على نفس حقل الـ range
         .orderBy('createdAt', descending: true);
   }
@@ -372,7 +373,9 @@ class RequestCubit extends Cubit<RequestState> {
       }
 
       emit(FetchBranchesWithEmployeesSuccess());
-    } catch (e) {
+    } catch (e,s) {
+      print(e);
+      print(s);
       emit(FetchBranchesWithEmployeesFailure(error: 'فشل تحميل الموظفين: $e'));
     }
   }
@@ -547,6 +550,7 @@ class RequestCubit extends Cubit<RequestState> {
       await _db.collection('requests').doc(request.id).update({
         'status': RequestStatus.approved.name,
         'updatedAt': FieldValue.serverTimestamp(),
+        'processedByName': currentUser.name,
       });
 
       // Update user hours if needed
@@ -662,6 +666,7 @@ class RequestCubit extends Cubit<RequestState> {
       await _db.collection('requests').doc(request.id).update({
         'status': RequestStatus.rejected.name,
         'updatedAt': FieldValue.serverTimestamp(),
+        'processedByName': currentUser.name,
       });
 
       // If it's a coverage shift that was previously approved, delete coverage shift record

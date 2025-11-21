@@ -29,6 +29,9 @@ class RequestModel {
   @ServerNullableTimestampConverter()
   final DateTime? updatedAt;
 
+  /// معلومات من قام بالموافقة أو الرفض
+  final String? processedByName;
+
   /// تفاصيل الطلب (بتختلف حسب النوع)
   final Map<String, dynamic> details;
 
@@ -45,6 +48,7 @@ class RequestModel {
     this.notes,
     this.createdAt,
     this.updatedAt,
+    this.processedByName,
     required this.details,
   });
 
@@ -66,6 +70,7 @@ class RequestModel {
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? processedByName,
     Map<String, dynamic>? details,
   }) {
     return RequestModel(
@@ -81,6 +86,7 @@ class RequestModel {
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      processedByName: processedByName ?? this.processedByName,
       details: details ?? this.details,
     );
   }

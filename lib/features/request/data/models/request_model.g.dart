@@ -21,6 +21,7 @@ RequestModel _$RequestModelFromJson(Map<String, dynamic> json) => RequestModel(
   updatedAt: const ServerNullableTimestampConverter().fromJson(
     json['updatedAt'],
   ),
+  processedByName: json['processedByName'] as String?,
   details: json['details'] as Map<String, dynamic>,
 );
 
@@ -42,6 +43,7 @@ Map<String, dynamic> _$RequestModelToJson(RequestModel instance) =>
       'updatedAt': const ServerNullableTimestampConverter().toJson(
         instance.updatedAt,
       ),
+      'processedByName': instance.processedByName,
       'details': instance.details,
     };
 

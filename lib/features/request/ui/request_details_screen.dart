@@ -726,23 +726,32 @@ class RequestDetailsScreen extends StatelessWidget {
               isFirst: true,
             ),
 
-            // Updated At (if different from created)
-            if (request.updatedAt != null &&
-                request.updatedAt!.difference(request.createdAt!).inSeconds > 5) ...[
+            // Processed At (if approved or rejected)
+            if (request.status != RequestStatus.pending &&
+                request.processedByName != null &&
+                request.updatedAt != null) ...[
               const SizedBox(height: 16),
               _buildTimelineItem(
                 request.status == RequestStatus.approved
-                    ? 'Approved'
-                    : request.status == RequestStatus.rejected
-                        ? 'Rejected'
-                        : 'Updated',
+                    ? 'Approved by ${request.processedByName}'
+                    : 'Rejected by ${request.processedByName}',
                 request.updatedAt!,
                 request.status == RequestStatus.approved
                     ? Icons.check_circle
-                    : request.status == RequestStatus.rejected
-                        ? Icons.cancel
-                        : Icons.edit,
+                    : Icons.cancel,
                 request.statusColor,
+                isLast: true,
+              ),
+            ]
+            // Updated At (if different from created but no processedByName)
+            else if (request.updatedAt != null &&
+                request.updatedAt!.difference(request.createdAt!).inSeconds > 5) ...[
+              const SizedBox(height: 16),
+              _buildTimelineItem(
+                'Updated',
+                request.updatedAt!,
+                Icons.edit,
+                Colors.orange,
                 isLast: true,
               ),
             ],

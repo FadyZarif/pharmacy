@@ -487,19 +487,49 @@ class _ManageRequestsBody extends StatelessWidget {
 
               // Timestamp
               const SizedBox(height: 12),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('MMM dd, yyyy - hh:mm a').format(request.createdAt!),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Created: ${DateFormat('MMM dd, yyyy - hh:mm a').format(request.createdAt!)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[600]),
+                  // Show who processed the request if it's approved or rejected
+                  if (request.status != RequestStatus.pending &&
+                      request.processedByName != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          request.status == RequestStatus.approved
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                          size: 14,
+                          color: request.statusColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${request.status == RequestStatus.approved ? 'Approved' : 'Rejected'} by ${request.processedByName}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: request.statusColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ],

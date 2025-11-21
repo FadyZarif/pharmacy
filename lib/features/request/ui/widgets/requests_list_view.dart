@@ -8,9 +8,10 @@ import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_state.dart';
-import 'package:pharmacy/features/request/ui/add_request_screen_unified.dart';
+import 'package:pharmacy/features/request/ui/request_details_screen.dart';
 
 import '../../../../core/di/dependency_injection.dart';
+import '../add_request_screen_unified.dart';
 
 class RequestsListView extends StatelessWidget {
   const RequestsListView({super.key});
@@ -129,8 +130,26 @@ class RequestsListView extends StatelessWidget {
                       request.type.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text(
-                      DateFormat.yMMMd().add_jm().format(request.createdAt!),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat.yMMMd().add_jm().format(request.createdAt!),
+                        ),
+                        // Show who processed the request if it's approved or rejected
+                        if (request.status != RequestStatus.pending &&
+                            request.processedByName != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${request.status == RequestStatus.approved ? 'Approved' : 'Rejected'} by ${request.processedByName}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: request.statusColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     onTap: () => onTapRequestItem(context, request, true),
                     trailing: Container(
@@ -170,10 +189,15 @@ class RequestsListView extends StatelessWidget {
 
 void onTapRequestItem(BuildContext context, RequestModel request, bool isReadOnly) {
   HapticFeedback.mediumImpact();
+  if(isReadOnly){
+    navigateTo(context, RequestDetailsScreen(request: request,canManage: false,));
+    return;
+  }else{
+
+  }
   navigateTo(context, AddRequestScreenUnified(
     requestType: request.type,
     existingRequest: request,
     isReadOnly: isReadOnly,
   ));
-
 }
