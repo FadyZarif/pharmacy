@@ -3,69 +3,48 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/features/repair/logic/repair_cubit.dart';
 import 'package:pharmacy/features/repair/logic/repair_state.dart';
-import 'package:pharmacy/features/repair/ui/view_all_branches_repairs_screen.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/helpers/constants.dart';
 import '../../../core/themes/colors.dart';
 
-class ViewRepairsScreen extends StatefulWidget {
-  const ViewRepairsScreen({super.key});
+class ViewAllBranchesRepairsScreen extends StatefulWidget {
+  const ViewAllBranchesRepairsScreen({super.key});
 
   @override
-  State<ViewRepairsScreen> createState() => _ViewRepairsScreenState();
+  State<ViewAllBranchesRepairsScreen> createState() => _ViewAllBranchesRepairsScreenState();
 }
 
-class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
-  DateTime _selectedDate = DateTime.now();
-
+class _ViewAllBranchesRepairsScreenState extends State<ViewAllBranchesRepairsScreen> {
+  DateTime _selectedMonth = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value:  getIt<RepairCubit>()..fetchRepairsByBranchAndDate(
-            branchId: currentUser.currentBranch.id,
-            date: _selectedDate,
-          ),
+      value: getIt<RepairCubit>()..fetchRepairsByMonthForBranches(month: _selectedMonth),
       child: Builder(
         builder: (context) {
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
             appBar: AppBar(
-              title: Text('Repair Reports [${currentUser.currentBranch.name}]',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+              title: const Text(
+                'All Branches Repair Reports',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
               foregroundColor: Colors.white,
-              actions: [
-                if (currentUser.branches.length > 1)
-                  IconButton(
-                    icon: const Icon(Icons.grid_view),
-                    tooltip: 'View All Branches',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ViewAllBranchesRepairsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-              ],
             ),
             body: Column(
               children: [
-                // Date Selector
-                _buildDateSelector(context),
+                // Month Selector
+                _buildMonthSelector(context),
 
                 // Repairs List
                 Expanded(
                   child: BlocBuilder<RepairCubit, RepairState>(
                     builder: (context, state) {
-                      if (state is FetchRepairsLoading) {
+                      if (state is FetchAllBranchesRepairsLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is FetchRepairsError) {
+                      } else if (state is FetchAllBranchesRepairsError) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -80,7 +59,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
                             ],
                           ),
                         );
-                      } else if (state is FetchRepairsSuccess) {
+                      } else if (state is FetchAllBranchesRepairsSuccess) {
                         if (state.repairs.isEmpty) {
                           return Center(
                             child: Column(
@@ -90,7 +69,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
                                     size: 80, color: Colors.grey[400]),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No repair reports found for this date',
+                                  'No repair reports found for this month',
                                   style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                                 ),
                               ],
@@ -100,10 +79,8 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
 
                         return RefreshIndicator(
                           onRefresh: () async {
-                            getIt<RepairCubit>().fetchRepairsByBranchAndDate(
-                                  branchId: currentUser.currentBranch.id,
-                                  date: _selectedDate,
-                              forceUpdate: true,
+                            context.read<RepairCubit>().fetchRepairsByMonthForBranches(
+                                  month: _selectedMonth,
                                 );
                           },
                           child: ListView.builder(
@@ -123,7 +100,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Header
+                                      // Header with Branch Name
                                       Row(
                                         children: [
                                           Container(
@@ -161,6 +138,41 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
                                             ),
                                           ),
                                         ],
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Branch Name Badge
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: ColorsManger.primary.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: ColorsManger.primary.withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.location_on,
+                                              size: 16,
+                                              color: ColorsManger.primary,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              repair.branchName,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: ColorsManger.primary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       const SizedBox(height: 12),
 
@@ -220,7 +232,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
     );
   }
 
-  Widget _buildDateSelector(BuildContext context) {
+  Widget _buildMonthSelector(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -237,39 +249,39 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Previous Day
+          // Previous Month
           IconButton(
-            icon: const Icon(Icons.chevron_left,color: Colors.white,),
+            icon: const Icon(Icons.chevron_left, color: Colors.white),
             onPressed: () {
               setState(() {
-                _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                _selectedMonth = DateTime(
+                  _selectedMonth.year,
+                  _selectedMonth.month - 1,
+                );
               });
-              context.read<RepairCubit>().fetchRepairsByBranchAndDate(
-                    branchId: currentUser.currentBranch.id,
-                    date: _selectedDate,
-                forceUpdate: true,
+              context.read<RepairCubit>().fetchRepairsByMonthForBranches(
+                    month: _selectedMonth,
                   );
             },
           ),
 
-          // Date Display
+          // Month Display
           InkWell(
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
-                initialDate: _selectedDate,
+                initialDate: _selectedMonth,
                 firstDate: DateTime(2020),
                 lastDate: DateTime.now(),
+                initialDatePickerMode: DatePickerMode.year,
               );
-              if (picked != null && picked != _selectedDate) {
+              if (picked != null && picked != _selectedMonth) {
                 setState(() {
-                  _selectedDate = picked;
+                  _selectedMonth = DateTime(picked.year, picked.month);
                 });
                 if (!context.mounted) return;
-                context.read<RepairCubit>().fetchRepairsByBranchAndDate(
-                      branchId: currentUser.currentBranch.id,
-                      date: _selectedDate,
-                  forceUpdate: true,
+                context.read<RepairCubit>().fetchRepairsByMonthForBranches(
+                      month: _selectedMonth,
                     );
               }
             },
@@ -282,11 +294,11 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                  const Icon(Icons.calendar_month, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    DateFormat('MMM dd, yyyy').format(_selectedDate),
-                    style: TextStyle(
+                    DateFormat('MMMM yyyy').format(_selectedMonth),
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -297,20 +309,21 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
             ),
           ),
 
-          // Next Day
+          // Next Month
           IconButton(
-            icon: const Icon(Icons.chevron_right,color: Colors.white,),
-            onPressed: _selectedDate.isBefore(
-              DateTime.now().subtract(const Duration(days: 1)),
+            icon: const Icon(Icons.chevron_right, color: Colors.white),
+            onPressed: _selectedMonth.isBefore(
+              DateTime(DateTime.now().year, DateTime.now().month ),
             )
                 ? () {
                     setState(() {
-                      _selectedDate = _selectedDate.add(const Duration(days: 1));
+                      _selectedMonth = DateTime(
+                        _selectedMonth.year,
+                        _selectedMonth.month + 1,
+                      );
                     });
-                    context.read<RepairCubit>().fetchRepairsByBranchAndDate(
-                          branchId: currentUser.currentBranch.id,
-                          date: _selectedDate,
-                      forceUpdate: true,
+                    context.read<RepairCubit>().fetchRepairsByMonthForBranches(
+                          month: _selectedMonth,
                         );
                   }
                 : null,

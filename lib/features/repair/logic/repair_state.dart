@@ -34,4 +34,15 @@ class FetchRepairsError extends RepairState {
 
 }
 
+class FetchAllBranchesRepairsLoading extends RepairState {}
+class FetchAllBranchesRepairsSuccess extends RepairState {
+  final List<RepairModel> repairs;
+
+  FetchAllBranchesRepairsSuccess(this.repairs);
+}
+class FetchAllBranchesRepairsError extends RepairState {
+  final String error;
+
+  FetchAllBranchesRepairsError(this.error);
+}
 

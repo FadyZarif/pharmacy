@@ -79,4 +79,42 @@ class RepairCubit extends Cubit<RepairState> {
     }
   }
 
+  /// Fetch repairs from all branches for a specific month
+  /// Only fetches from branches in currentUser.branches
+  fetchRepairsByMonthForBranches({required DateTime month}) async {
+    emit(FetchAllBranchesRepairsLoading());
+    try {
+      // Get branch IDs from currentUser.branches
+      final branchIds = currentUser.branches.map((branch) => branch.id).toList();
+
+      if (branchIds.isEmpty) {
+        emit(FetchAllBranchesRepairsSuccess([]));
+        return;
+      }
+
+      // Parse month to get start and end
+      final startOfMonth = DateTime(month.year, month.month, 1);
+      final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+      print(startOfMonth);
+      print(endOfMonth);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('repair_reports')
+          .where('branchId', whereIn: branchIds)
+          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
+          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final repairs = snapshot.docs
+          .map((doc) => RepairModel.fromJson(doc.data()))
+          .toList();
+
+      emit(FetchAllBranchesRepairsSuccess(repairs));
+
+    } catch (e) {
+      emit(FetchAllBranchesRepairsError('Fetch All Branches Repairs Error: $e'));
+    }
+  }
+
 }
