@@ -114,6 +114,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
               ),
               centerTitle: true,
               backgroundColor: ColorsManger.primary,
+              foregroundColor: Colors.white,
               actions: [
                 if (currentUser.role != Role.staff)
                 IconButton(

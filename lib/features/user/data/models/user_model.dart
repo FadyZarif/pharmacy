@@ -57,6 +57,10 @@ class UserModel {
   bool get isManagement{
     return role == Role.admin || role == Role.manager;
   }
+
+  bool get isStaff{
+    return role == Role.staff ;
+  }
 }
 
 @JsonEnum(alwaysCreate: true)

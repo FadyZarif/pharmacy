@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
@@ -202,6 +203,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   prefixIcon: const Icon(Icons.phone),
                   keyboardType: TextInputType.phone,
                   maxLength: 11,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter phone number';

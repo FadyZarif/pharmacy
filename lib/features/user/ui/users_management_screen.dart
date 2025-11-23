@@ -9,6 +9,8 @@ import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_state.dart';
 import 'package:pharmacy/features/user/ui/profile_screen.dart';
 import 'package:pharmacy/features/user/ui/add_user_screen.dart';
+import 'package:pharmacy/features/job_opportunity/ui/view_job_opportunities_screen.dart';
+import 'package:pharmacy/features/job_opportunity/logic/job_opportunity_cubit.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -32,6 +34,23 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           centerTitle: true,
           backgroundColor: ColorsManger.primary,
           foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.work),
+              tooltip: 'Job Opportunities',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: getIt<JobOpportunityCubit>(),
+                      child: const ViewJobOpportunitiesScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         body: Column(
           children: [

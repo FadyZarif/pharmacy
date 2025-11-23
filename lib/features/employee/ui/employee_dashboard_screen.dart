@@ -20,6 +20,8 @@ import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import '../../../core/di/dependency_injection.dart';
 import '../../../core/widgets/profile_circle.dart';
 import '../../request/data/models/request_model.dart';
+import '../../job_opportunity/ui/view_job_opportunities_screen.dart';
+import '../../job_opportunity/logic/job_opportunity_cubit.dart';
 import 'widgets/request_tile.dart';
 
 class EmployeeDashboardScreen extends StatefulWidget {
@@ -36,6 +38,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   value: getIt<RequestCubit>(),
   child: Scaffold(
       appBar: AppBar(
+        foregroundColor: Colors.white,
         title: Text(
           'Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -248,6 +251,38 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                /// Job Opportunity Section
+                Row(
+                  children: [
+                    Text('Job Opportunities', style: GoogleFonts.pacifico(fontSize: 25)),
+                    Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        navigateTo(context, BlocProvider.value(
+                          value: getIt<JobOpportunityCubit>(),
+                          child: const ViewJobOpportunitiesScreen(),
+                        ));
+                      },
+                      icon: const Icon(Icons.work, size: 18),
+                      label: const Text('View All'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorsManger.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadiusGeometry.circular(10),
+                        ),
+                        textStyle: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],

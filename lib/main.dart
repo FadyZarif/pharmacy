@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: ColorsManger.cardColor),
         useMaterial3: true,
       ),
-      home: isLogged? currentUser.isManagement? BranchSelectionScreen()
+      home: isLogged? !currentUser.isStaff? BranchSelectionScreen()
           : EmployeeLayout(): LoginScreen(),
     );
   }
