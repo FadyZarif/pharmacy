@@ -30,11 +30,7 @@ ShiftReportModel _$ShiftReportModelFromJson(Map<String, dynamic> json) =>
           (json['computerDifference'] as num?)?.toDouble() ?? 0.0,
       electronicWalletAmount:
           (json['electronicWalletAmount'] as num?)?.toDouble() ?? 0.0,
-      attachments:
-          (json['attachments'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
+      attachmentUrl: json['attachmentUrl'] as String?,
       updatedAt: const ServerNullableTimestampConverter().fromJson(
         json['updatedAt'],
       ),
@@ -59,7 +55,7 @@ Map<String, dynamic> _$ShiftReportModelToJson(ShiftReportModel instance) =>
           _$ComputerDifferenceTypeEnumMap[instance.computerDifferenceType],
       'computerDifference': instance.computerDifference,
       'electronicWalletAmount': instance.electronicWalletAmount,
-      'attachments': instance.attachments,
+      'attachmentUrl': instance.attachmentUrl,
       'updatedAt': const ServerNullableTimestampConverter().toJson(
         instance.updatedAt,
       ),

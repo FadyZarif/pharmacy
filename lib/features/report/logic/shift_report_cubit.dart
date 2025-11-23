@@ -17,7 +17,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   double electronicWalletAmount = 0.0;
   String? notes;
   final List<ExpenseItem> expenses = [];
-  final List<String> attachments = [];
+  String? attachmentUrl; // Single attachment URL
+  File? attachmentFile; // Local file before upload
 
   // Current date
   DateTime currentDate = DateTime.now();
@@ -63,8 +64,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         notes = existingShift.notes;
         expenses.clear();
         expenses.addAll(existingShift.expenses);
-        attachments.clear();
-        attachments.addAll(existingShift.attachments);
+        attachmentUrl = existingShift.attachmentUrl;
 
         emit(ShiftAlreadyExists(existingShift));
       } else {
@@ -104,8 +104,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         notes = myShift.notes;
         expenses.clear();
         expenses.addAll(myShift.expenses);
-        attachments.clear();
-        attachments.addAll(myShift.attachments);
+        attachmentUrl = myShift.attachmentUrl;
 
         emit(ShiftReportLoaded(myShift));
       } else {
@@ -172,30 +171,38 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     return drawerAmount - totalExpenses;
   }
 
-  /// Upload attachment to Firebase Storage
-  Future<void> uploadAttachment(File file) async {
-    try {
-      emit(AttachmentUploading());
+  /// Pick and store attachment locally (will be uploaded on submit)
+  void pickAttachment(File file) {
+    attachmentFile = file;
+    emit(ShiftReportUpdated());
+  }
 
-      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+  /// Remove attachment
+  void removeAttachment() {
+    attachmentFile = null;
+    attachmentUrl = null;
+    emit(AttachmentRemoved());
+  }
+
+  /// Upload attachment to Firebase Storage
+  Future<String?> _uploadAttachment(File file) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final extension = file.path.split('.').last;
+      final dateStr = _formatDate(currentDate);
+      final fileName = '${timestamp}_${selectedShiftType!.name}.$extension';
+
       final storageRef = FirebaseStorage.instance.ref().child(
-            'shift_reports/${currentUser.currentBranch.id}/$fileName',
-          );
+        'shift_reports/${currentUser.currentBranch.id}/$dateStr/$fileName',
+      );
 
       final uploadTask = await storageRef.putFile(file);
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
-      attachments.add(downloadUrl);
-      emit(AttachmentUploaded(downloadUrl, List.from(attachments)));
+      return downloadUrl;
     } catch (e) {
-      emit(AttachmentUploadError('Failed to upload attachment: ${e.toString()}'));
+      throw Exception('Failed to upload attachment: ${e.toString()}');
     }
-  }
-
-  /// Remove attachment
-  void removeAttachment(String url) {
-    attachments.remove(url);
-    emit(ShiftReportUpdated());
   }
 
   /// Validate shift data before submission
@@ -230,6 +237,17 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       emit(ShiftReportLoading());
 
+      // Upload attachment if exists
+      String? uploadedUrl;
+      if (attachmentFile != null) {
+        try {
+          uploadedUrl = await _uploadAttachment(attachmentFile!);
+        } catch (e) {
+          emit(AttachmentUploadError(e.toString()));
+          return;
+        }
+      }
+
       // Create report model
       final report = ShiftReportModel(
         id: '${currentUser.currentBranch.id}_${_formatDate(currentDate)}_${selectedShiftType!.name}',
@@ -245,7 +263,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         computerDifferenceType: computerDifferenceType,
         computerDifference: computerDifference,
         electronicWalletAmount: electronicWalletAmount,
-        attachments: List.from(attachments),
+        attachmentUrl: uploadedUrl ?? attachmentUrl,
         submittedAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -290,7 +308,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         computerDifferenceType: computerDifferenceType,
         computerDifference: computerDifference,
         electronicWalletAmount: electronicWalletAmount,
-        attachments: List.from(attachments),
+        attachmentUrl: attachmentUrl,
         updatedAt: DateTime.now(),
       );
 
@@ -316,7 +334,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     electronicWalletAmount = 0.0;
     notes = null;
     expenses.clear();
-    attachments.clear();
+    attachmentUrl = null;
+    attachmentFile = null;
     emit(ShiftReportInitial());
   }
 

@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
@@ -36,6 +38,15 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
 
   // Expenses list
   final List<ExpenseItem> _expenses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listener to update UI when drawer amount changes
+    _drawerAmountController.addListener(() {
+      setState(() {});
+    });
+  }
 
   @override
   void dispose() {
@@ -191,12 +202,12 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                             },
                           ),
 
-                          const SizedBox(height: 20),
+                         /* const SizedBox(height: 20),
 
                           // المحفظة الإلكترونية
                           ShiftReportWidgets.buildElectronicWalletField(
                             controller: _electronicWalletController,
-                          ),
+                          ),*/
 
                           const SizedBox(height: 20),
 
@@ -204,6 +215,11 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                           ShiftReportWidgets.buildNotesField(
                             controller: _notesController,
                           ),
+
+                          const SizedBox(height: 24),
+
+                          // قسم المرفقات
+                          _buildAttachmentSection(cubit),
 
                           const SizedBox(height: 24),
 
@@ -216,6 +232,14 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                                 _expenses.remove(expense);
                               });
                             },
+                          ),
+
+                          const SizedBox(height: 24),
+                          // Financial Summary
+                          // _buildFinancialSummary(),
+                          ShiftReportWidgets.buildFinancialSummary(
+                            _drawerAmountController.text,
+                            _expenses,
                           ),
 
                           const SizedBox(height: 32),
@@ -246,6 +270,164 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildAttachmentSection(ShiftReportCubit cubit) {
+    final hasAttachment = cubit.attachmentFile != null || cubit.attachmentUrl != null;
+    final isLocalFile = cubit.attachmentFile != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Attachment (Image or PDF) *',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        if (!hasAttachment)
+          // Add Attachment Button
+          InkWell(
+            onTap: () => _pickAttachment(cubit),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: ColorsManger.primary.withValues(alpha: 0.3),
+                  width: 1.5,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.attach_file, color: ColorsManger.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Add Image or PDF',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: ColorsManger.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          // Show Attachment Preview
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                // Icon based on file type
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: ColorsManger.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    _getFileIcon(cubit),
+                    color: ColorsManger.primary,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // File info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getFileName(cubit),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isLocalFile ? 'Ready to upload' : 'Uploaded',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isLocalFile ? Colors.orange : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Delete button
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    cubit.removeAttachment();
+                  },
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _pickAttachment(ShiftReportCubit cubit) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        cubit.pickAttachment(file);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking file: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  IconData _getFileIcon(ShiftReportCubit cubit) {
+    if (cubit.attachmentFile != null) {
+      final extension = cubit.attachmentFile!.path.split('.').last.toLowerCase();
+      return extension == 'pdf' ? Icons.picture_as_pdf : Icons.image;
+    } else if (cubit.attachmentUrl != null) {
+      final extension = cubit.attachmentUrl!.split('.').last.toLowerCase();
+      return extension.contains('pdf') ? Icons.picture_as_pdf : Icons.image;
+    }
+    return Icons.attach_file;
+  }
+
+  String _getFileName(ShiftReportCubit cubit) {
+    if (cubit.attachmentFile != null) {
+      return cubit.attachmentFile!.path.split('/').last;
+    } else if (cubit.attachmentUrl != null) {
+      return 'Attachment';
+    }
+    return 'Unknown';
   }
 
 
@@ -740,6 +922,16 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
 
   void _handleSubmit(ShiftReportCubit cubit) {
     if (_formKey.currentState!.validate()) {
+      // Validate attachment is required
+      if (cubit.attachmentFile == null && cubit.attachmentUrl == null) {
+        defToast2(
+          context: context,
+          msg: 'Please attach an image or PDF file',
+          dialogType: DialogType.warning,
+        );
+        return;
+      }
+
       // Update cubit with current values
       if (_selectedShiftType != null) {
         cubit.updateShiftType(_selectedShiftType!);

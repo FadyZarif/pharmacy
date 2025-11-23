@@ -133,8 +133,8 @@ class ShiftReportModel {
   /// المحفظة الإلكترونية - خاصة بالشيفت
   final double electronicWalletAmount;
 
-  /// المرفقات (صور الإيصالات والسندات) - خاصة بالشيفت
-  final List<String> attachments;
+  /// مرفق واحد (صورة أو PDF) - خاصة بالشيفت
+  final String? attachmentUrl;
 
   @ServerNullableTimestampConverter()
   final DateTime? updatedAt; // آخر تعديل
@@ -156,7 +156,7 @@ class ShiftReportModel {
     this.computerDifferenceType,
     this.computerDifference = 0.0,
     this.electronicWalletAmount = 0.0,
-    this.attachments = const [],
+    this.attachmentUrl,
     this.updatedAt,
     this.submittedAt,
   });
@@ -169,6 +169,20 @@ class ShiftReportModel {
   /// حساب إجمالي مصاريف الشيفت
   double get totalExpenses {
     return expenses.fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  /// حساب مصاريف تغير الادويه
+  double get medicineExpenses {
+    return expenses
+        .where((expense) => expense.type == ExpenseType.medicines)
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  /// حساب مصاريف المحفظة الإلكترونية
+  double get electronicWalletExpenses {
+    return expenses
+        .where((expense) => expense.type == ExpenseType.electronicPayment)
+        .fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
   /// حساب صافي الشيفت = الدرج - المصاريف
@@ -204,7 +218,7 @@ class ShiftReportModel {
     ComputerDifferenceType? computerDifferenceType,
     double? computerDifference,
     double? electronicWalletAmount,
-    List<String>? attachments,
+    String? attachmentUrl,
     DateTime? updatedAt,
     DateTime? submittedAt,
   }) {
@@ -222,7 +236,7 @@ class ShiftReportModel {
       computerDifferenceType: computerDifferenceType ?? this.computerDifferenceType,
       computerDifference: computerDifference ?? this.computerDifference,
       electronicWalletAmount: electronicWalletAmount ?? this.electronicWalletAmount,
-      attachments: attachments ?? this.attachments,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
       updatedAt: updatedAt ?? this.updatedAt,
       submittedAt: submittedAt ?? this.submittedAt,
     );

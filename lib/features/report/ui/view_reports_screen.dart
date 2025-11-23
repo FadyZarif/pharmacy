@@ -20,34 +20,27 @@ class ViewReportsScreen extends StatefulWidget {
 
 class _ViewReportsScreenState extends State<ViewReportsScreen> {
   DateTime _selectedDate = DateTime.now();
-  late ViewReportsCubit _viewReportsCubit;
-  late ViewReportsCubit _monthlySummaryCubit;
+  late ViewReportsCubit _cubit;
 
   String get _formattedDate => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
   @override
   void initState() {
     super.initState();
-    _viewReportsCubit = getIt<ViewReportsCubit>()..fetchDailyReports(_formattedDate);
-    _monthlySummaryCubit = getIt<ViewReportsCubit>();
+    _cubit = getIt<ViewReportsCubit>()..fetchDailyReports(_formattedDate);
   }
 
   @override
   void dispose() {
-    _viewReportsCubit.close();
-    _monthlySummaryCubit.close();
+    _cubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _viewReportsCubit),
-        BlocProvider.value(value: _monthlySummaryCubit),
-      ],
+    return BlocProvider.value(
+      value: _cubit,
       child: BlocListener<ViewReportsCubit, ViewReportsState>(
-        bloc: _monthlySummaryCubit,
         listenWhen: (previous, current) =>
             current is MonthlySummaryLoading ||
             current is MonthlySummaryLoaded ||
@@ -97,7 +90,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                   IconButton(
                     icon: const Icon(Icons.calendar_view_month, color: Colors.white),
                     tooltip: 'Monthly Summary',
-                    onPressed: () => _monthlySummaryCubit.fetchMonthlySummary(_selectedDate),
+                    onPressed: () => _cubit.fetchMonthlySummary(_selectedDate),
                   ),
                 ]:null,
               ),
@@ -106,6 +99,11 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 _buildDateSelector(context),
                 Expanded(
                   child: BlocBuilder<ViewReportsCubit, ViewReportsState>(
+                    buildWhen: (previous, current) =>
+                        current is ViewReportsLoading ||
+                        current is ViewReportsLoaded ||
+                        current is ViewReportsEmpty ||
+                        current is ViewReportsError,
                     builder: (context, state) {
                       if (state is ViewReportsLoading) {
                         return const Center(child: CircularProgressIndicator());
@@ -120,7 +118,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                               const SizedBox(height: 16),
                               ElevatedButton(
                                 onPressed: () {
-                                  context.read<ViewReportsCubit>().fetchDailyReports(_formattedDate);
+                                  _cubit.fetchDailyReports(_formattedDate);
                                 },
                                 child: const Text('Retry'),
                               ),
@@ -155,16 +153,16 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                         photoUrl: report.employeePhoto,
                                         size: 26,
                                       ),
-                                      title: Text('${report.shiftType.name} Shift'),
+                                      title: Text('${report.shiftType.name} Shift',style: TextStyle(fontSize: 15),),
                                       subtitle: Text(report.employeeName),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            'EGP ${report.drawerAmount}',
+                                            'EGP ${report.netAmount}',
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 16,
+                                              fontSize: 15,
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -172,20 +170,17 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                         ],
                                       ),
                                       onTap: () {
-                                        final cubit = context.read<ViewReportsCubit>();
-                                        final dateStr = _formattedDate;
-
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) => EditShiftReportScreen(
                                               report: report,
-                                              date: dateStr,
+                                              date: _formattedDate,
                                             ),
                                           ),
                                         ).then((_) {
                                           // Refresh after editing
-                                          cubit.fetchDailyReports(dateStr);
+                                          _cubit.fetchDailyReports(_formattedDate);
                                         });
                                       },
                                     ),
@@ -298,9 +293,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     final totalMedicinesExpenses = reports.fold<double>(
       0.0,
       (sum, report) {
-        final medicinesExpenses = (report.expenses as List<ExpenseItem>).where(
-          (expense) => expense.type == ExpenseType.medicines,
-        ).fold<double>(0.0, (expSum, expense) => expSum + expense.amount);
+        final medicinesExpenses = (report as ShiftReportModel).medicineExpenses;
         return sum + medicinesExpenses;
       },
     );
@@ -394,7 +387,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       setState(() {
         _selectedDate = picked;
       });
-      _viewReportsCubit.fetchDailyReports(_formattedDate);
+      _cubit.fetchDailyReports(_formattedDate);
     }
   }
 

@@ -491,7 +491,7 @@ class ShiftReportWidgets {
                     expense: expense,
                     onDelete: isEditMode ? () => onDeleteExpense(expense) : null,
                   )),
-              const SizedBox(height: 12),
+              /*const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -509,7 +509,7 @@ class ShiftReportWidgets {
                       ),
                     ),
                     Text(
-                      'EGP ${_calculateTotalExpenses(expenses).toStringAsFixed(2)}',
+                      'EGP -${_calculateTotalExpenses(expenses).toStringAsFixed(1)}',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -518,7 +518,7 @@ class ShiftReportWidgets {
                     ),
                   ],
                 ),
-              ),
+              ),*/
             ],
           ),
       ],
@@ -616,6 +616,117 @@ class ShiftReportWidgets {
   /// Calculate total expenses
   static double _calculateTotalExpenses(List<ExpenseItem> expenses) {
     return expenses.fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  /// Build Financial Summary
+  static   Widget buildFinancialSummary(String drawerAmount, List<ExpenseItem> expenses,) {
+    final totalSales = double.tryParse(drawerAmount) ?? 0.0;
+    final totalExpenses = expenses.fold<double>(0.0, (sum, expense) => sum + expense.amount);
+    final netProfit = totalSales - totalExpenses;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Financial Summary',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Total Sales Card
+        buildSummaryCard(
+          icon: Icons.attach_money,
+          label: 'Total Sales',
+          value: totalSales,
+          color: Colors.blue,
+        ),
+        const SizedBox(height: 12),
+
+        // Total Expenses Card
+        buildSummaryCard(
+          icon: Icons.money_off,
+          label: 'Total Expenses',
+          value: totalExpenses,
+          color: Colors.orange,
+        ),
+        const SizedBox(height: 12),
+
+        // Net Profit Card
+        buildSummaryCard(
+          icon: netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+          label: 'Net Profit',
+          value: netProfit,
+          color: netProfit >= 0 ? Colors.green : Colors.red,
+          isBold: true,
+        ),
+      ],
+    );
+  }
+
+  /// Build individual summary card
+  static Widget buildSummaryCard({
+    required IconData icon,
+    required String label,
+    required double value,
+    required Color color,
+    bool isBold = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'EGP ${value.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: isBold ? 20 : 18,
+                    fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Build submit button

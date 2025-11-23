@@ -56,11 +56,12 @@ class ExpenseRemoved extends ShiftReportState {
 class AttachmentUploading extends ShiftReportState {}
 
 class AttachmentUploaded extends ShiftReportState {
-  final String url;
-  final List<String> allAttachments;
+  final String attachmentUrl;
 
-  AttachmentUploaded(this.url, this.allAttachments);
+  AttachmentUploaded(this.attachmentUrl);
 }
+
+class AttachmentRemoved extends ShiftReportState {}
 
 class AttachmentUploadError extends ShiftReportState {
   final String message;

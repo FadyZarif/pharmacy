@@ -10,6 +10,7 @@ import 'package:pharmacy/features/report/logic/edit_report_state.dart';
 import 'package:pharmacy/features/report/ui/widgets/shift_report_widgets.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EditShiftReportScreen extends StatefulWidget {
   final ShiftReportModel report;
@@ -47,6 +48,11 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
     _notesController = TextEditingController(text: widget.report.notes ?? '');
     _computerDifferenceType = widget.report.computerDifferenceType ?? ComputerDifferenceType.none;
     _expenses = List.from(widget.report.expenses);
+
+    // Add listener to update UI when drawer amount changes
+    _drawerAmountController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -169,6 +175,14 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                           readOnly: !_isEditMode,
                         ),
                         const SizedBox(height: 24),
+
+                        // Attachment Section
+                        if (widget.report.attachmentUrl != null)
+                          _buildAttachmentSection(widget.report.attachmentUrl!),
+
+                        if (widget.report.attachmentUrl != null)
+                          const SizedBox(height: 24),
+
                         ShiftReportWidgets.buildExpensesSection(
                           expenses: _expenses,
                           onAddExpense: _isEditMode ? _addExpense : null,
@@ -179,6 +193,24 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                           },
                           isEditMode: _isEditMode,
                         ),
+                        const SizedBox(height: 24),
+
+                        if (!_isEditMode)...[
+                          ShiftReportWidgets.buildSummaryCard(icon: Icons.currency_exchange, label: 'Total Medicines Expenses', value:  widget.report.medicineExpenses, color: Colors.purple),
+                          const SizedBox(height: 16),
+                          ShiftReportWidgets.buildSummaryCard(icon: Icons.add_card, label: 'Total Electronic Expenses', value:  widget.report.electronicWalletExpenses, color: Colors.cyan),
+                          const SizedBox(height: 24),
+                          Divider(color: Colors.grey.shade300),
+                          const SizedBox(height: 24),
+
+                        ],
+
+                        // Financial Summary
+                        ShiftReportWidgets.buildFinancialSummary(
+                          _drawerAmountController.text,
+                          _expenses,
+                        ),
+
                         const SizedBox(height: 32),
                         if (_isEditMode)
                           ShiftReportWidgets.buildSubmitButton(
@@ -572,6 +604,108 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
 
     context.read<EditReportCubit>().updateReport(updatedReport, widget.date);
   }
+
+  Widget _buildAttachmentSection(String attachmentUrl) {
+    final isPdf = attachmentUrl.toLowerCase().contains('.pdf');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Attachment',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: ColorsManger.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isPdf ? Icons.picture_as_pdf : Icons.image,
+                  color: ColorsManger.primary,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // File info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPdf ? 'PDF Document' : 'Image',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Tap to view',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // View button
+              IconButton(
+                icon: Icon(Icons.open_in_new, color: ColorsManger.primary),
+                onPressed: () => _openAttachment(attachmentUrl),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openAttachment(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open attachment'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening attachment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
 
   bool _isDateTodayOrYesterday(String dateString) {
     // تحويل الـ string للتاريخ
