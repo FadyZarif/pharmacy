@@ -206,6 +206,34 @@ class ReportFirestoreHelper {
           .toList();
     });
   }
+
+  // ============ Collection Status Operations ============
+
+  /// جلب حالة التحصيل لفرع في يوم معين
+  static Future<bool> getCollectionStatus(DateTime date, String branchId) async {
+    final doc = await branchRef(date, branchId).get();
+    if (!doc.exists || doc.data() == null) return false;
+    final data = doc.data() as Map<String, dynamic>;
+    return data['isCollected'] ?? false;
+  }
+
+  /// تحديث حالة التحصيل لفرع في يوم معين
+  static Future<void> updateCollectionStatus(
+      DateTime date, String branchId, bool isCollected) async {
+    await branchRef(date, branchId).set({
+      'isCollected': isCollected,
+      'collectedAt': isCollected ? FieldValue.serverTimestamp() : null,
+    }, SetOptions(merge: true));
+  }
+
+  /// متابعة حالة التحصيل real-time
+  static Stream<bool> watchCollectionStatus(DateTime date, String branchId) {
+    return branchRef(date, branchId).snapshots().map((snapshot) {
+      if (!snapshot.exists || snapshot.data() == null) return false;
+      final data = snapshot.data() as Map<String, dynamic>;
+      return data['isCollected'] ?? false;
+    });
+  }
 }
 
 // ============ Summary Models ============

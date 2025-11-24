@@ -58,6 +58,10 @@ class UserModel {
     return role == Role.admin || role == Role.manager;
   }
 
+  bool get isAdmin{
+    return role == Role.admin;
+  }
+
   bool get isStaff{
     return role == Role.staff ;
   }

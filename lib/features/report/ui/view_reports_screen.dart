@@ -21,13 +21,16 @@ class ViewReportsScreen extends StatefulWidget {
 class _ViewReportsScreenState extends State<ViewReportsScreen> {
   DateTime _selectedDate = DateTime.now();
   late ViewReportsCubit _cubit;
+  bool _isCollected = false;
 
   String get _formattedDate => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
   @override
   void initState() {
     super.initState();
-    _cubit = getIt<ViewReportsCubit>()..fetchDailyReports(_formattedDate);
+    _cubit = getIt<ViewReportsCubit>()
+      ..fetchDailyReports(_formattedDate)
+      ..fetchCollectionStatus(_formattedDate);
   }
 
   @override
@@ -44,7 +47,11 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
         listenWhen: (previous, current) =>
             current is MonthlySummaryLoading ||
             current is MonthlySummaryLoaded ||
-            current is MonthlySummaryError,
+            current is MonthlySummaryError ||
+            current is CollectionStatusLoading ||
+            current is CollectionStatusLoaded ||
+            current is CollectionStatusUpdated ||
+            current is CollectionStatusError,
         listener: (context, state) {
           if (state is MonthlySummaryLoading) {
             // Show loading dialog
@@ -72,6 +79,29 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Error loading monthly data: ${state.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } else if (state is CollectionStatusLoaded) {
+            setState(() {
+              _isCollected = state.isCollected;
+            });
+          } else if (state is CollectionStatusUpdated) {
+            setState(() {
+              _isCollected = state.isCollected;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_isCollected
+                    ? 'Net profit marked as collected ✓'
+                    : 'Net profit marked as not collected'),
+                backgroundColor: _isCollected ? Colors.green : Colors.orange,
+              ),
+            );
+          } else if (state is CollectionStatusError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -141,12 +171,12 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                           children: [
                             Expanded(
                               child: ListView.builder(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(9),
                                 itemCount: state.reports.length,
                                 itemBuilder: (context, index) {
                                   final report = state.reports[index];
                                   return Card(
-                                    margin: const EdgeInsets.only(bottom: 12),
+                                    margin: const EdgeInsets.only(bottom: 8),
                                     color: Colors.white,
                                     child: ListTile(
                                       leading: ProfileCircle(
@@ -207,7 +237,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
 
   Widget _buildDateSelector(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: ColorsManger.primary,
         boxShadow: [
@@ -229,7 +259,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               setState(() {
                 _selectedDate = _selectedDate.subtract(const Duration(days: 1));
               });
-              context.read<ViewReportsCubit>().fetchDailyReports(_formattedDate);
+              context.read<ViewReportsCubit>()
+                ..fetchDailyReports(_formattedDate)
+                ..fetchCollectionStatus(_formattedDate);
             },
           ),
 
@@ -272,7 +304,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               setState(() {
                 _selectedDate = _selectedDate.add(const Duration(days: 1));
               });
-              context.read<ViewReportsCubit>().fetchDailyReports(_formattedDate);
+              context.read<ViewReportsCubit>()
+                ..fetchDailyReports(_formattedDate)
+                ..fetchCollectionStatus(_formattedDate);
 
             }
                 : null,
@@ -283,13 +317,22 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
   }
 
   Widget _buildSummarySection(List<dynamic> reports) {
-    // حساب مجموع drawerAmount
-    final totalDrawerAmount = reports.fold<double>(
+    // حساب مجموع drawerAmount (Total Sales)
+    final totalSales = reports.fold<double>(
       0.0,
       (sum, report) => sum + (report.drawerAmount ?? 0.0),
     );
 
-    // حساب مجموع مصاريف تبديل الأدوية
+    // حساب مجموع كل المصاريف (Total Expenses)
+    final totalExpenses = reports.fold<double>(
+      0.0,
+      (sum, report) => sum + (report as ShiftReportModel).totalExpenses,
+    );
+
+    // حساب صافي الربح (Net Profit)
+    final netProfit = totalSales - totalExpenses;
+
+    // حساب مجموع مصاريف تبديل الأدوية (Medicines Expenses)
     final totalMedicinesExpenses = reports.fold<double>(
       0.0,
       (sum, report) {
@@ -298,26 +341,103 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       },
     );
 
-    return Padding(
+    // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
+    final totalElectronicPaymentExpenses = reports.fold<double>(
+      0.0,
+      (sum, report) {
+        final electronicExpenses = (report as ShiftReportModel).expenses
+            .where((expense) => expense.type == ExpenseType.electronicPayment)
+            .fold<double>(0.0, (total, expense) => total + expense.amount);
+        return sum + electronicExpenses;
+      },
+    );
+
+    return Container(
       padding: const EdgeInsets.all(12.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildSummaryCard(
-              title: 'Medicines Expenses',
-              amount: totalMedicinesExpenses,
-              icon: Icons.medication,
-              color: Colors.orange,
-            ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildSummaryCard(
-              title: 'Total Sales',
-              amount: totalDrawerAmount,
-              icon: Icons.attach_money,
-              color: Colors.green,
-            ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // const Padding(
+          //   padding: EdgeInsets.only(bottom: 12.0),
+          //   child: Text(
+          //     'Daily Summary',
+          //     style: TextStyle(
+          //       fontSize: 16,
+          //       fontWeight: FontWeight.bold,
+          //       color: Colors.black87,
+          //     ),
+          //   ),
+          // ),
+
+          // First Row: Total Sales & Total Expenses
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Total Sales',
+                  amount: totalSales,
+                  icon: Icons.attach_money,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Total Expenses',
+                  amount: totalExpenses,
+                  icon: Icons.money_off,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Second Row: Net Profit (Full Width)
+          _buildSummaryCard(
+            title: 'Net Profit',
+            amount: netProfit,
+            icon: netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+            color: netProfit >= 0 ? Colors.green : Colors.red,
+            isLarge: false,
+            isCollected: _isCollected,
+            onTap: currentUser.isAdmin
+                ? () => _showCollectionConfirmationDialog(context)
+                : null,
+          ),
+          const SizedBox(height: 8),
+
+          // Third Row: Medicines & Electronic Payment Expenses
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Medicines Exp.',
+                  amount: totalMedicinesExpenses,
+                  icon: Icons.medication,
+                  color: Colors.purple,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Electronic Pay.',
+                  amount: totalElectronicPaymentExpenses,
+                  icon: Icons.credit_card,
+                  color: Colors.teal,
+                ),
+              ),
+            ],
           ),
 
         ],
@@ -330,40 +450,76 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     required double amount,
     required IconData icon,
     required Color color,
+    bool isLarge = false,
+    bool? isCollected,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
+    final cardContent = Container(
+      padding: EdgeInsets.all(isLarge ? 16 : 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: isLarge ? 2 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(icon, color: color, size: isLarge ? 24 : 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: isLarge ? 14 : 12,
+                    fontWeight: isLarge ? FontWeight.w600 : FontWeight.w500,
                     color: Colors.grey[700],
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // Show collection status if applicable
+              if (isCollected != null) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isCollected ? Colors.green : Colors.orange,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCollected ? Icons.check_circle : Icons.pending,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isCollected ? 'Collected' : 'Pending',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
           Text(
             'EGP ${amount.toStringAsFixed(1)}',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isLarge ? 22 : 18,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -371,6 +527,17 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
         ],
       ),
     );
+
+    // If onTap is provided, wrap with InkWell
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -387,7 +554,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       setState(() {
         _selectedDate = picked;
       });
-      _cubit.fetchDailyReports(_formattedDate);
+      _cubit
+        ..fetchDailyReports(_formattedDate)
+        ..fetchCollectionStatus(_formattedDate);
     }
   }
 
@@ -404,88 +573,127 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
-              children: [
-                const Icon(
-                  Icons.calendar_month,
-                  color: ColorsManger.primary,
-                  size: 32,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Monthly Summary',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        monthName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_month,
+                    color: ColorsManger.primary,
+                    size: 32,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 24),
-
-            // Total Sales Card
-            _buildMonthlySummaryCard(
-              title: 'Total Sales',
-              amount: state.totalSales,
-              icon: Icons.attach_money,
-              color: Colors.green,
-            ),
-            const SizedBox(height: 16),
-
-            // Medicines Expenses Card
-            _buildMonthlySummaryCard(
-              title: 'Medicines Expenses',
-              amount: state.totalMedicinesExpenses,
-              icon: Icons.medication,
-              color: Colors.orange,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Close Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorsManger.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Monthly Summary',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          monthName,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Close',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                ],
+              ),
+              // const SizedBox(height: 24),
+              // const Divider(),
+              const SizedBox(height: 24),
+
+              // Total Sales Card
+              _buildMonthlySummaryCard(
+                title: 'Total Sales',
+                amount: state.totalSales,
+                icon: Icons.attach_money,
+                color: Colors.blue,
+              ),
+              const SizedBox(height: 16),
+
+              // Total Expenses Card
+              _buildMonthlySummaryCard(
+                title: 'Total Expenses',
+                amount: state.totalExpenses,
+                icon: Icons.money_off,
+                color: Colors.orange,
+              ),
+              const SizedBox(height: 16),
+
+              // Net Profit Card
+              _buildMonthlySummaryCard(
+                title: 'Net Profit',
+                amount: state.netProfit,
+                icon: state.netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+                color: state.netProfit >= 0 ? Colors.green : Colors.red,
+              ),
+              const SizedBox(height: 16),
+
+              // Medicines Expenses Card
+              _buildMonthlySummaryCard(
+                title: 'Medicines Expenses',
+                amount: state.totalMedicinesExpenses,
+                icon: Icons.medication,
+                color: Colors.purple,
+              ),
+              const SizedBox(height: 16),
+
+              // Electronic Payment Expenses Card
+              _buildMonthlySummaryCard(
+                title: 'Electronic Payment Expenses',
+                amount: state.totalElectronicPaymentExpenses,
+                icon: Icons.credit_card,
+                color: Colors.teal,
+              ),
+              const SizedBox(height: 16),
+
+              // Vault Amount Card (Uncollected Profits)
+              _buildMonthlySummaryCard(
+                title: 'Vault Amount (Uncollected)',
+                amount: state.vaultAmount,
+                icon: Icons.account_balance_wallet,
+                color: Colors.amber,
+                subtitle: 'Total net profit not yet collected',
+              ),
+
+              const SizedBox(height: 24),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ColorsManger.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -496,6 +704,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     required double amount,
     required IconData icon,
     required Color color,
+    String? subtitle,
   }) {
     return Container(
       width: double.infinity,
@@ -530,19 +739,79 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'EGP ${amount.toStringAsFixed(2)}',
+                  'EGP ${amount.toStringAsFixed(1)}',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
                 ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// عرض dialog للتأكيد على تحديث حالة التحصيل
+  Future<void> _showCollectionConfirmationDialog(BuildContext context) async {
+    final willCollect = !_isCollected;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              willCollect ? Icons.check_circle : Icons.pending,
+              color: willCollect ? Colors.green : Colors.orange,
+            ),
+            const SizedBox(width: 12),
+            const Text('Confirm Collection'),
+          ],
+        ),
+        content: Text(
+          willCollect
+              ? 'Are you sure you want to mark this net profit as collected?'
+              : 'Are you sure you want to mark this net profit as pending?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: willCollect ? Colors.green : Colors.orange,
+            ),
+            child: Text(
+              willCollect ? 'Mark as Collected' : 'Mark as Pending',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      _cubit.toggleCollectionStatus(_formattedDate, _isCollected);
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/features/report/data/helpers/report_firestore_helper.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 
@@ -55,7 +56,10 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       final lastDay = DateTime(selectedDate.year, selectedDate.month + 1, 0);
 
       double totalSales = 0.0;
+      double totalExpenses = 0.0;
       double totalMedicinesExpenses = 0.0;
+      double totalElectronicPaymentExpenses = 0.0;
+      double vaultAmount = 0.0; // مجموع الأرباح غير المحصلة
 
       // Fetch reports for each day in the month
       for (int day = 1; day <= lastDay.day; day++) {
@@ -73,16 +77,33 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
               .get();
 
           // Calculate daily totals
+          double dailySales = 0.0;
+          double dailyExpenses = 0.0;
+
           for (var doc in shiftsSnapshot.docs) {
             final report = ShiftReportModel.fromJson(doc.data());
 
+            dailySales += report.drawerAmount;
+            dailyExpenses += report.totalExpenses;
             totalSales += report.drawerAmount;
+            totalExpenses += report.totalExpenses;
 
-            final medicinesExpenses = report.expenses
-                .where((expense) => expense.type == ExpenseType.medicines)
-                .fold<double>(0.0, (total, expense) => total + expense.amount);
+            totalMedicinesExpenses += report.medicineExpenses;
+            totalElectronicPaymentExpenses += report.electronicWalletExpenses;
+          }
 
-            totalMedicinesExpenses += medicinesExpenses;
+          // Check if this day's profit is collected
+          if (dailySales > 0 || dailyExpenses > 0) {
+            final isCollected = await ReportFirestoreHelper.getCollectionStatus(
+              date,
+              currentUser.currentBranch.id,
+            );
+
+            // If not collected, add to vault
+            if (!isCollected) {
+              final dailyNetProfit = dailySales - dailyExpenses;
+              vaultAmount += dailyNetProfit;
+            }
           }
         } catch (e) {
           // Continue even if one day fails
@@ -90,12 +111,56 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
         }
       }
 
+      final netProfit = totalSales - totalExpenses;
+
       emit(MonthlySummaryLoaded(
         totalSales: totalSales,
+        totalExpenses: totalExpenses,
+        netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
+        totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
+        vaultAmount: vaultAmount,
       ));
     } catch (e) {
       emit(MonthlySummaryError(message: e.toString()));
+    }
+  }
+
+  /// تحديث حالة التحصيل لفرع في يوم معين
+  Future<void> toggleCollectionStatus(String dateKey, bool currentStatus) async {
+    emit(CollectionStatusLoading());
+
+    try {
+      final date = DateFormat('yyyy-MM-dd').parse(dateKey);
+      final newStatus = !currentStatus;
+
+      await ReportFirestoreHelper.updateCollectionStatus(
+        date,
+        currentUser.currentBranch.id,
+        newStatus,
+      );
+
+      emit(CollectionStatusUpdated(isCollected: newStatus));
+
+      // Refresh reports to update UI
+      await fetchDailyReports(dateKey);
+    } catch (e) {
+      emit(CollectionStatusError(message: e.toString()));
+    }
+  }
+
+  /// جلب حالة التحصيل الحالية
+  Future<void> fetchCollectionStatus(String dateKey) async {
+    try {
+      final date = DateFormat('yyyy-MM-dd').parse(dateKey);
+      final isCollected = await ReportFirestoreHelper.getCollectionStatus(
+        date,
+        currentUser.currentBranch.id,
+      );
+
+      emit(CollectionStatusLoaded(isCollected: isCollected));
+    } catch (e) {
+      emit(CollectionStatusError(message: e.toString()));
     }
   }
 }

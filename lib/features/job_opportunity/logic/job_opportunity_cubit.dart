@@ -21,7 +21,7 @@ class JobOpportunityCubit extends Cubit<JobOpportunityState> {
   }) async {
     emit(JobOpportunityAdding());
     try {
-      final docRef = _db.collection('jobOpportunities').doc();
+      final docRef = _db.collection('job_opportunities').doc();
 
       final jobOpportunity = JobOpportunityModel(
         id: docRef.id,
@@ -48,7 +48,7 @@ class JobOpportunityCubit extends Cubit<JobOpportunityState> {
   Future<void> fetchJobOpportunities() async {
     emit(JobOpportunityLoading());
     try {
-      Query query = _db.collection('jobOpportunities');
+      Query query = _db.collection('job_opportunities');
 
       // If staff or subManager, filter by their branch
       if (!currentUser.isManagement) {
@@ -78,7 +78,7 @@ class JobOpportunityCubit extends Cubit<JobOpportunityState> {
   Future<void> deleteJobOpportunity(String id) async {
     emit(JobOpportunityLoading());
     try {
-      await _db.collection('jobOpportunities').doc(id).delete();
+      await _db.collection('job_opportunities').doc(id).delete();
       emit(JobOpportunityAdded('Job opportunity deleted successfully'));
     } catch (e) {
       emit(JobOpportunityError(e.toString()));

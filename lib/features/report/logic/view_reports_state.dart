@@ -25,11 +25,19 @@ class MonthlySummaryLoading extends ViewReportsState {}
 
 class MonthlySummaryLoaded extends ViewReportsState {
   final double totalSales;
+  final double totalExpenses;
+  final double netProfit;
   final double totalMedicinesExpenses;
+  final double totalElectronicPaymentExpenses;
+  final double vaultAmount; // مجموع الأرباح غير المحصلة (في الخزنة)
 
   MonthlySummaryLoaded({
     required this.totalSales,
+    required this.totalExpenses,
+    required this.netProfit,
     required this.totalMedicinesExpenses,
+    required this.totalElectronicPaymentExpenses,
+    required this.vaultAmount,
   });
 }
 
@@ -37,5 +45,26 @@ class MonthlySummaryError extends ViewReportsState {
   final String message;
 
   MonthlySummaryError({required this.message});
+}
+
+// Collection Status States
+class CollectionStatusLoading extends ViewReportsState {}
+
+class CollectionStatusLoaded extends ViewReportsState {
+  final bool isCollected;
+
+  CollectionStatusLoaded({required this.isCollected});
+}
+
+class CollectionStatusUpdated extends ViewReportsState {
+  final bool isCollected;
+
+  CollectionStatusUpdated({required this.isCollected});
+}
+
+class CollectionStatusError extends ViewReportsState {
+  final String message;
+
+  CollectionStatusError({required this.message});
 }
 
