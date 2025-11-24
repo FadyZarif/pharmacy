@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
@@ -566,12 +567,43 @@ class ShiftReportWidgets {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  expense.description,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        expense.description,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (expense.fileUrl != null) ...[
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () async {
+                          final url = Uri.parse(expense.fileUrl!);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: ColorsManger.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(
+                            expense.fileUrl!.toLowerCase().contains('pdf')
+                                ? Icons.picture_as_pdf
+                                : Icons.image,
+                            color: ColorsManger.primary,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 if (expense.notes != null && expense.notes!.isNotEmpty) ...[
                   const SizedBox(height: 4),

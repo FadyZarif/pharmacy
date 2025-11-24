@@ -98,6 +98,7 @@ ExpenseItem _$ExpenseItemFromJson(Map<String, dynamic> json) => ExpenseItem(
   ),
   other: json['other'] as String?,
   notes: json['notes'] as String?,
+  fileUrl: json['fileUrl'] as String?,
 );
 
 Map<String, dynamic> _$ExpenseItemToJson(ExpenseItem instance) =>
@@ -115,6 +116,7 @@ Map<String, dynamic> _$ExpenseItemToJson(ExpenseItem instance) =>
       'other': instance.other,
       'amount': instance.amount,
       'notes': instance.notes,
+      'fileUrl': instance.fileUrl,
     };
 
 const _$ExpenseTypeEnumMap = {

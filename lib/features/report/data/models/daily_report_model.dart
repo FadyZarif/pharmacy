@@ -260,6 +260,7 @@ class ExpenseItem {
 
   final double amount; // المبلغ
   final String? notes; // ملاحظات إضافية
+  final String? fileUrl; // رابط الملف المرفق (صورة أو PDF) - اختياري
 
   ExpenseItem({
     required this.id,
@@ -273,6 +274,7 @@ class ExpenseItem {
     this.governmentType,
     this.other,
     this.notes,
+    this.fileUrl,
   });
 
   factory ExpenseItem.fromJson(Map<String, dynamic> json) =>

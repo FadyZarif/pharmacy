@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
@@ -36,6 +39,9 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
 
   late ComputerDifferenceType _computerDifferenceType;
   late List<ExpenseItem> _expenses;
+
+  // Map to store files locally before upload (expenseId -> PlatformFile)
+  final Map<String, PlatformFile> _expenseFiles = {};
 
   bool _isEditMode = false; // Preview mode by default
 
@@ -254,6 +260,10 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
     final amountController = TextEditingController();
     final notesController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+
+    // File attachment
+    PlatformFile? selectedFile;
+    String? selectedFileName;
 
     // Additional fields based on expense type
     String? deliveryArea;
@@ -536,6 +546,41 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // File Attachment (Optional)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        try {
+                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                            type: FileType.custom,
+                            allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                          );
+
+                          if (result != null) {
+                            setState(() {
+                              selectedFile = result.files.first;
+                              selectedFileName = result.files.first.name;
+                            });
+                          }
+                        } catch (e) {
+                          defToast2(
+                            context: context,
+                            msg: 'Error picking file: $e',
+                            dialogType: DialogType.error,
+                          );
+                        }
+                      },
+                      icon: Icon(
+                        selectedFile != null ? Icons.check_circle : Icons.attach_file,
+                        color: selectedFile != null ? Colors.green : null,
+                      ),
+                      label: Text(
+                        selectedFile != null
+                            ? 'File: $selectedFileName'
+                            : 'Attach File (Optional)',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // Notes Field
                     TextFormField(
                       controller: notesController,
@@ -557,8 +602,10 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (formKey.currentState!.validate()) {
+                    final expenseId = DateTime.now().millisecondsSinceEpoch.toString();
+
                     final expense = ExpenseItem(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      id: expenseId,
                       type: selectedType!,
                       amount: double.parse(amountController.text),
                       deliveryArea: deliveryArea,
@@ -569,10 +616,15 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                       governmentType: governmentType,
                       other: otherDescription,
                       notes: notesController.text.isEmpty ? null : notesController.text,
+                      fileUrl: selectedFile != null ? 'pending_upload_$expenseId' : null,
                     );
 
                     this.setState(() {
                       _expenses.add(expense);
+                      // Store file locally if selected
+                      if (selectedFile != null) {
+                        _expenseFiles[expenseId] = selectedFile!;
+                      }
                     });
 
                     Navigator.pop(context);
@@ -590,8 +642,83 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
     );
   }
 
-  void _saveReport(BuildContext context) {
+  void _saveReport(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
+
+    List<ExpenseItem> finalExpenses = _expenses;
+
+    // Upload expense files if any
+    if (_expenseFiles.isNotEmpty) {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: ColorsManger.primary),
+        ),
+      );
+
+      try {
+        // Upload all files and update expenses with real URLs
+        final updatedExpenses = <ExpenseItem>[];
+
+        for (var expense in _expenses) {
+          if (_expenseFiles.containsKey(expense.id)) {
+            // Upload this expense's file
+            final file = _expenseFiles[expense.id]!;
+            final fileName = 'expenses/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+            final storageRef = FirebaseStorage.instance.ref().child(fileName);
+
+            UploadTask uploadTask;
+            if (file.bytes != null) {
+              uploadTask = storageRef.putData(file.bytes!);
+            } else if (file.path != null) {
+              final ioFile = File(file.path!);
+              uploadTask = storageRef.putFile(ioFile);
+            } else {
+              throw Exception('File has no bytes or path');
+            }
+
+            final snapshot = await uploadTask;
+            final fileUrl = await snapshot.ref.getDownloadURL();
+
+            // Create updated expense with real URL
+            updatedExpenses.add(ExpenseItem(
+              id: expense.id,
+              type: expense.type,
+              amount: expense.amount,
+              deliveryArea: expense.deliveryArea,
+              companyName: expense.companyName,
+              warehouseName: expense.warehouseName,
+              electronicMethod: expense.electronicMethod,
+              administrativeStaff: expense.administrativeStaff,
+              governmentType: expense.governmentType,
+              other: expense.other,
+              notes: expense.notes,
+              fileUrl: fileUrl,
+            ));
+          } else {
+            // No file for this expense
+            updatedExpenses.add(expense);
+          }
+        }
+
+        finalExpenses = updatedExpenses;
+
+        // Close loading dialog
+        if (mounted) Navigator.pop(context);
+      } catch (e) {
+        // Close loading dialog
+        if (mounted) Navigator.pop(context);
+
+        defToast2(
+          context: context,
+          msg: 'Error uploading files: $e',
+          dialogType: DialogType.error,
+        );
+        return;
+      }
+    }
 
     final updatedReport = widget.report.copyWith(
       drawerAmount: double.parse(_drawerAmountController.text),
@@ -599,7 +726,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
       computerDifferenceType: _computerDifferenceType,
       electronicWalletAmount: double.tryParse(_electronicWalletController.text),
       notes: _notesController.text.isEmpty ? null : _notesController.text,
-      expenses: _expenses,
+      expenses: finalExpenses,
     );
 
     context.read<EditReportCubit>().updateReport(updatedReport, widget.date);
