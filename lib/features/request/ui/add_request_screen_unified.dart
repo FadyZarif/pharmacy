@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
@@ -567,17 +568,160 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    final result = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      // allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                      allowedExtensions: ['pdf'],
-                    );
+                    // Show bottom sheet with options
+                    await showModalBottomSheet(
+                      context: context,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (bottomSheetContext) => Container(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Select Prescription',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
 
-                    if (result != null && result.files.isNotEmpty) {
-                      setState(() {
-                        _prescriptionFile = result.files.first;
-                      });
-                    }
+                            // Camera option
+                            ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: ColorsManger.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(Icons.camera_alt, color: ColorsManger.primary),
+                              ),
+                              title: const Text('Take Photo'),
+                              subtitle: const Text('Use camera to take a photo'),
+                              onTap: () async {
+                                Navigator.pop(bottomSheetContext);
+                                try {
+                                  final ImagePicker picker = ImagePicker();
+                                  final XFile? image = await picker.pickImage(
+                                    source: ImageSource.camera,
+                                    imageQuality: 85,
+                                  );
+
+                                  if (image != null) {
+                                    final bytes = await image.readAsBytes();
+                                    setState(() {
+                                      _prescriptionFile = PlatformFile(
+                                        name: image.name,
+                                        size: bytes.length,
+                                        bytes: bytes,
+                                        path: image.path,
+                                      );
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    defToast2(
+                                      context: context,
+                                      msg: 'Error taking photo: $e',
+                                      dialogType: DialogType.error,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+
+                            const Divider(),
+
+                            // Gallery option
+                            ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.photo_library, color: Colors.green),
+                              ),
+                              title: const Text('Choose from Gallery'),
+                              subtitle: const Text('Select an image from gallery'),
+                              onTap: () async {
+                                Navigator.pop(bottomSheetContext);
+                                try {
+                                  final ImagePicker picker = ImagePicker();
+                                  final XFile? image = await picker.pickImage(
+                                    source: ImageSource.gallery,
+                                    imageQuality: 85,
+                                  );
+
+                                  if (image != null) {
+                                    final bytes = await image.readAsBytes();
+                                    setState(() {
+                                      _prescriptionFile = PlatformFile(
+                                        name: image.name,
+                                        size: bytes.length,
+                                        bytes: bytes,
+                                        path: image.path,
+                                      );
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    defToast2(
+                                      context: context,
+                                      msg: 'Error picking image: $e',
+                                      dialogType: DialogType.error,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+
+                            const Divider(),
+
+                            // PDF option
+                            ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                              ),
+                              title: const Text('Choose PDF'),
+                              subtitle: const Text('Select a PDF file'),
+                              onTap: () async {
+                                Navigator.pop(bottomSheetContext);
+                                try {
+                                  final result = await FilePicker.platform.pickFiles(
+                                    type: FileType.custom,
+                                    allowedExtensions: ['pdf'],
+                                  );
+
+                                  if (result != null && result.files.isNotEmpty) {
+                                    setState(() {
+                                      _prescriptionFile = result.files.first;
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    defToast2(
+                                      context: context,
+                                      msg: 'Error picking PDF: $e',
+                                      dialogType: DialogType.error,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+
+                            const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.attach_file),
                   label: Text(hasFile ? 'Change File' : 'Select File'),

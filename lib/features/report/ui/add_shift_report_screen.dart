@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
@@ -393,10 +394,142 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   }
 
   Future<void> _pickAttachment(ShiftReportCubit cubit) async {
+    // Show bottom sheet with options
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Select Attachment',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Camera option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: ColorsManger.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.camera_alt, color: ColorsManger.primary),
+              ),
+              title: const Text('Take Photo'),
+              subtitle: const Text('Use camera to take a photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickImageFromCamera(cubit);
+              },
+            ),
+
+            const Divider(),
+
+            // Gallery option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.photo_library, color: Colors.green),
+              ),
+              title: const Text('Choose from Gallery'),
+              subtitle: const Text('Select an image from gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickImageFromGallery(cubit);
+              },
+            ),
+
+            const Divider(),
+
+            // PDF option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+              ),
+              title: const Text('Choose PDF'),
+              subtitle: const Text('Select a PDF file'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickPdfFile(cubit);
+              },
+            ),
+
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImageFromCamera(ShiftReportCubit cubit) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final file = File(image.path);
+        cubit.pickAttachment(file);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error taking photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromGallery(ShiftReportCubit cubit) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final file = File(image.path);
+        cubit.pickAttachment(file);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickPdfFile(ShiftReportCubit cubit) async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        allowedExtensions: ['pdf'],
       );
 
       if (result != null && result.files.single.path != null) {
@@ -407,7 +540,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error picking file: $e'),
+          content: Text('Error picking PDF: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -877,25 +1010,163 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                     // File Attachment (Optional)
                     OutlinedButton.icon(
                       onPressed: () async {
-                        try {
-                          FilePickerResult? result = await FilePicker.platform.pickFiles(
-                            type: FileType.custom,
-                            allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-                          );
+                        // Show bottom sheet with options
+                        await showModalBottomSheet(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          builder: (bottomSheetContext) => Container(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Select Attachment',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
 
-                          if (result != null) {
-                            setState(() {
-                              selectedFile = result.files.first;
-                              selectedFileName = result.files.first.name;
-                            });
-                          }
-                        } catch (e) {
-                          defToast2(
-                            context: context,
-                            msg: 'Error picking file: $e',
-                            dialogType: DialogType.error,
-                          );
-                        }
+                                // Camera option
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: ColorsManger.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(Icons.camera_alt, color: ColorsManger.primary),
+                                  ),
+                                  title: const Text('Take Photo'),
+                                  subtitle: const Text('Use camera to take a photo'),
+                                  onTap: () async {
+                                    Navigator.pop(bottomSheetContext);
+                                    try {
+                                      final ImagePicker picker = ImagePicker();
+                                      final XFile? image = await picker.pickImage(
+                                        source: ImageSource.camera,
+                                        imageQuality: 85,
+                                      );
+
+                                      if (image != null) {
+                                        final bytes = await image.readAsBytes();
+                                        setState(() {
+                                          selectedFile = PlatformFile(
+                                            name: image.name,
+                                            size: bytes.length,
+                                            bytes: bytes,
+                                            path: image.path,
+                                          );
+                                          selectedFileName = image.name;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        defToast2(
+                                          context: context,
+                                          msg: 'Error taking photo: $e',
+                                          dialogType: DialogType.error,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+
+                                const Divider(),
+
+                                // Gallery option
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.photo_library, color: Colors.green),
+                                  ),
+                                  title: const Text('Choose from Gallery'),
+                                  subtitle: const Text('Select an image from gallery'),
+                                  onTap: () async {
+                                    Navigator.pop(bottomSheetContext);
+                                    try {
+                                      final ImagePicker picker = ImagePicker();
+                                      final XFile? image = await picker.pickImage(
+                                        source: ImageSource.gallery,
+                                        imageQuality: 85,
+                                      );
+
+                                      if (image != null) {
+                                        final bytes = await image.readAsBytes();
+                                        setState(() {
+                                          selectedFile = PlatformFile(
+                                            name: image.name,
+                                            size: bytes.length,
+                                            bytes: bytes,
+                                            path: image.path,
+                                          );
+                                          selectedFileName = image.name;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        defToast2(
+                                          context: context,
+                                          msg: 'Error picking image: $e',
+                                          dialogType: DialogType.error,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+
+                                const Divider(),
+
+                                // PDF option
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                                  ),
+                                  title: const Text('Choose PDF'),
+                                  subtitle: const Text('Select a PDF file'),
+                                  onTap: () async {
+                                    Navigator.pop(bottomSheetContext);
+                                    try {
+                                      FilePickerResult? result = await FilePicker.platform.pickFiles(
+                                        type: FileType.custom,
+                                        allowedExtensions: ['pdf'],
+                                      );
+
+                                      if (result != null) {
+                                        setState(() {
+                                          selectedFile = result.files.first;
+                                          selectedFileName = result.files.first.name;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        defToast2(
+                                          context: context,
+                                          msg: 'Error picking PDF: $e',
+                                          dialogType: DialogType.error,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+
+                                const SizedBox(height: 10),
+                              ],
+                            ),
+                          ),
+                        );
                       },
                       icon: Icon(
                         selectedFile != null ? Icons.check_circle : Icons.attach_file,
