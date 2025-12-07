@@ -116,7 +116,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 centerTitle: true,
                 backgroundColor: ColorsManger.primary,
                 foregroundColor: Colors.white,
-                actions: currentUser.isManagement? [
+                actions: (currentUser.isManagement || currentUser.uid=='7DUwUuQ0rIUUb94NCK2vdnrZCLo1')? [
                   IconButton(
                     icon: const Icon(Icons.calendar_view_month, color: Colors.white),
                     tooltip: 'Monthly Summary',
@@ -411,7 +411,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             color: netProfit >= 0 ? Colors.green : Colors.red,
             isLarge: false,
             isCollected: _isCollected,
-            onTap: currentUser.isAdmin
+            onTap:( currentUser.isAdmin || currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
                 ? () => _showCollectionConfirmationDialog(context)
                 : null,
           ),
