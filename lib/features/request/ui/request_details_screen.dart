@@ -79,11 +79,11 @@ class RequestDetailsScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
-            backgroundColor: request.statusColor,
+            backgroundColor: request.status.color,
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
-                request.typeLabel,
+                request.type.enName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -95,8 +95,8 @@ class RequestDetailsScreen extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      request.statusColor,
-                      request.statusColor.withValues(alpha: 0.8),
+                      request.status.color,
+                      request.status.color.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -281,7 +281,7 @@ class RequestDetailsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(request.typeIcon, color: ColorsManger.primary),
+                Icon(request.type.icon, color: ColorsManger.primary),
                 const SizedBox(width: 8),
                 const Text(
                   'Request Details',
@@ -739,7 +739,7 @@ class RequestDetailsScreen extends StatelessWidget {
                 request.status == RequestStatus.approved
                     ? Icons.check_circle
                     : Icons.cancel,
-                request.statusColor,
+                request.status.color,
                 isLast: true,
               ),
             ]
@@ -854,7 +854,7 @@ class RequestDetailsScreen extends StatelessWidget {
       dialogType: DialogType.question,
       animType: AnimType.scale,
       title: 'Approve Request',
-      desc: 'Are you sure you want to approve this ${request.typeLabel}?',
+      desc: 'Are you sure you want to approve this ${request.type.enName}?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
         await getIt<RequestCubit>().approveRequest(request);
@@ -871,7 +871,7 @@ class RequestDetailsScreen extends StatelessWidget {
       dialogType: DialogType.warning,
       animType: AnimType.scale,
       title: 'Reject Request',
-      desc: 'Are you sure you want to reject this ${request.typeLabel}?',
+      desc: 'Are you sure you want to reject this ${request.type.enName}?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
         await getIt<RequestCubit>().rejectRequest(request);

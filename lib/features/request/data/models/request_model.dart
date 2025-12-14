@@ -7,8 +7,93 @@ part 'request_model.g.dart';
 /// الأنواع الرئيسية للطلبات
 enum RequestType { annualLeave, sickLeave, extraHours, coverageShift, attend, permission }
 
+extension RequestTypeExtension on RequestType {
+  String get enName {
+    switch (this) {
+      case RequestType.annualLeave:
+        return 'Annual Leave';
+      case RequestType.sickLeave:
+        return 'Sick Leave';
+      case RequestType.extraHours:
+        return 'Extra Hours';
+      case RequestType.coverageShift:
+        return 'Coverage Shift';
+      case RequestType.attend:
+        return 'Attendance';
+      case RequestType.permission:
+        return 'Early Leave Permission';
+    }
+  }
+  String get arName {
+    switch (this) {
+      case RequestType.annualLeave:
+        return 'إجازة اعتيادية';
+      case RequestType.sickLeave:
+        return 'إجازة مرضية';
+      case RequestType.extraHours:
+        return 'ساعات إضافية';
+      case RequestType.coverageShift:
+        return 'تبديل وردية';
+      case RequestType.attend:
+        return 'حضور';
+      case RequestType.permission:
+        return 'انصراف مبكر';
+    }
+  }
+  IconData get icon {
+    switch (this) {
+      case RequestType.annualLeave:
+        return Icons.beach_access;
+      case RequestType.sickLeave:
+        return Icons.local_hospital;
+      case RequestType.extraHours:
+        return Icons.access_time;
+      case RequestType.coverageShift:
+        return Icons.swap_horiz;
+      case RequestType.attend:
+        return Icons.check_circle;
+      case RequestType.permission:
+        return Icons.exit_to_app;
+    }
+  }
+}
+
 /// حالة الطلب
 enum RequestStatus { pending, approved, rejected, }
+
+extension RequestStatusExtension on RequestStatus {
+  String get enName {
+    switch (this) {
+      case RequestStatus.pending:
+        return 'Pending';
+      case RequestStatus.approved:
+        return 'Approved';
+      case RequestStatus.rejected:
+        return 'Rejected';
+    }
+  }
+  String get arName {
+    switch (this) {
+      case RequestStatus.pending:
+        return 'قيد الانتظار';
+      case RequestStatus.approved:
+        return 'تم الموافقة';
+      case RequestStatus.rejected:
+        return 'تم الرفض';
+    }
+  }
+  Color get color {
+    switch (this) {
+      case RequestStatus.pending:
+        return  Colors.orange;
+      case RequestStatus.approved:
+        return Colors.green;
+      case RequestStatus.rejected:
+        return Colors.red;
+    }
+  }
+
+}
 
 /// الموديل الأساسي
 @JsonSerializable(explicitToJson: true)
@@ -89,49 +174,6 @@ class RequestModel {
       processedByName: processedByName ?? this.processedByName,
       details: details ?? this.details,
     );
-  }
-
-  Color get statusColor {
-    switch (status) {
-      case RequestStatus.pending:
-        return  Colors.orange;
-      case RequestStatus.approved:
-        return Colors.green;
-      case RequestStatus.rejected:
-        return Colors.red;
-    }
-  }
-  String get typeLabel {
-    switch (type) {
-      case RequestType.annualLeave:
-        return 'Annual Leave';
-      case RequestType.sickLeave:
-        return 'Sick Leave';
-      case RequestType.extraHours:
-        return 'Extra Hours';
-      case RequestType.coverageShift:
-        return 'Coverage Shift';
-      case RequestType.attend:
-        return 'Attendance';
-      case RequestType.permission:
-        return 'Early Leave Permission';
-    }
-  }
-  IconData get typeIcon {
-    switch (type) {
-      case RequestType.annualLeave:
-        return Icons.beach_access;
-      case RequestType.sickLeave:
-        return Icons.local_hospital;
-      case RequestType.extraHours:
-        return Icons.access_time;
-      case RequestType.coverageShift:
-        return Icons.swap_horiz;
-      case RequestType.attend:
-        return Icons.check_circle;
-      case RequestType.permission:
-        return Icons.exit_to_app;
-    }
   }
 }
 

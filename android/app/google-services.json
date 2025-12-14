@@ -23,25 +23,6 @@
           "other_platform_oauth_client": []
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:412302383494:android:6ecfa16a24248288257407",
-        "android_client_info": {
-          "package_name": "com.mycompany.pharmacystaffsystem"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAGCOy18BQ57hfa-WTPPGCkvSv38GDnpg8"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
     }
   ],
   "configuration_version": "1"

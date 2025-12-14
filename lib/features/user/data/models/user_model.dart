@@ -18,6 +18,7 @@ class UserModel {
   final String? photoUrl;
   final bool isActive;
   final bool hasRequestsPermission;
+  final String? fcmToken;
 
   UserModel( {
     required this.uid,
@@ -32,6 +33,7 @@ class UserModel {
     required this.role,
     this.photoUrl,
     required this.isActive,
+    this.fcmToken,
     this.hasRequestsPermission = false,
   });
 

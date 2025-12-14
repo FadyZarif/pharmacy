@@ -48,3 +48,5 @@ app.*.map.json
 key.properties
 upload-keystore.jks
 *.jks
+pharmacy-employee-system-new-firebase-adminsdk-fbsvc-d98e17de6b.json
+firebase.json

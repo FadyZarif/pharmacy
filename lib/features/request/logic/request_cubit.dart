@@ -6,7 +6,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/enums/notification_type.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/core/services/notification_service.dart';
 import 'package:pharmacy/features/branch/data/branch_model.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
 import 'package:pharmacy/features/request/data/services/coverage_shift_service.dart';
@@ -21,7 +23,6 @@ class RequestCubit extends Cubit<RequestState> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   addRequest({required RequestModel request,required DocumentReference docRef,PlatformFile? file}) async {
-    emit(AddRequestLoading());
     try {
       // Simulate adding request logic
       // On success:
@@ -40,6 +41,7 @@ class RequestCubit extends Cubit<RequestState> {
       emit(AddRequestFailure(error: e.toString()));
     }
   }
+
   Future<String> uploadFileAndGetUrl(PlatformFile pickedFile) async {
 
     try {
@@ -62,8 +64,8 @@ class RequestCubit extends Cubit<RequestState> {
       throw Exception('File upload failed: $e');
     }
   }
+
   updateRequest({required RequestModel request,PlatformFile? file}) async {
-    emit(AddRequestLoading());
     try {
       // Simulate adding request logic
       // On success:
@@ -104,17 +106,23 @@ class RequestCubit extends Cubit<RequestState> {
 
 
   Query<Map<String, dynamic>> getRequestsQuery() {
-    final now = DateTime.now(); // عرّفها هنا
-    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    // final now = DateTime.now(); // عرّفها هنا
+    // final thirtyDaysAgo = now.subtract(const Duration(days: 30));
     // final startOfMonth = DateTime(now.year, now.month, 1);
     // final endOfMonth = DateTime(now.year, now.month + 1, 1); // يتعامل تلقائيًا مع ديسمبر
+    final thirtyDaysAgo = Timestamp.fromDate(
+      DateTime.now().subtract(const Duration(days: 30))
+    );
+    // نضيف يوم واحد للمستقبل عشان نلحق الـ requests اللي هتتضاف دلوقتي
+    final tomorrow = Timestamp.fromDate(
+      DateTime.now().add(const Duration(days: 1))
+    );
 
     return _db
         .collection('requests')
         .where('employeeId', isEqualTo: currentUser.uid)
         .where('createdAt', isGreaterThanOrEqualTo: thirtyDaysAgo)
-        .where('createdAt', isLessThan: now)
-    // لازم يكون أول orderBy على نفس حقل الـ range
+        .where('createdAt', isLessThan: tomorrow)
         .orderBy('createdAt', descending: true);
   }
 
@@ -122,7 +130,7 @@ class RequestCubit extends Cubit<RequestState> {
     emit(FetchRequestsLoading());
 
     _requestsSub?.cancel();
-
+    requests.clear();
     _requestsSub = getRequestsQuery().snapshots().listen(
           (snapshot) {
         for (final change in snapshot.docChanges) {
@@ -464,6 +472,9 @@ class RequestCubit extends Cubit<RequestState> {
           docRef: docRef,
           file: file,
         );
+
+        // Send notification to managers/admins about new request
+        await _sendNewRequestNotification(request);
       } else {
         // Update existing request
         await updateRequest(
@@ -595,6 +606,9 @@ class RequestCubit extends Cubit<RequestState> {
         );
       }
 
+      // Send notification to employee
+      await _sendRequestStatusNotification(request, RequestStatus.approved);
+
       emit(AddRequestSuccess());
     } catch (e) {
       print('Error approving request: $e');
@@ -675,11 +689,128 @@ class RequestCubit extends Cubit<RequestState> {
         await coverageShiftService.deleteCoverageShift(request.id);
       }
 
+      // Send notification to employee
+      await _sendRequestStatusNotification(request, RequestStatus.rejected);
+
       emit(AddRequestSuccess());
     } catch (e) {
       print('Error rejecting request: $e');
       emit(AddRequestFailure(error: e.toString()));
       rethrow;
+    }
+  }
+
+  /// Helper: Send notification to managers/admins when new request is created
+  Future<void> _sendNewRequestNotification(RequestModel request) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get managers and admins for this branch
+      final managerIds = await notificationService.getUserIdsByRoleAndBranches(
+        roles: [Role.admin.name, Role.manager.name],
+        branchIds: [request.employeeBranchId],
+      );
+
+      if (managerIds.isEmpty) return;
+
+      // Get Arabic name for request type and notification type
+      String requestTypeAr = request.type.arName;
+      NotificationType notificationType = _getNewRequestNotificationType(request.type);
+
+      await notificationService.sendNotificationToUsers(
+        userIds: managerIds,
+        title: 'طلب جديد - فرع ${request.employeeBranchName}',
+        body: '${request.employeeName} - $requestTypeAr',
+        type: notificationType,
+        additionalData: {
+          'requestId': request.id,
+          'requestType': request.type.name,
+          'branchId': request.employeeBranchId,
+        },
+      );
+    } catch (e) {
+      print('Error sending new request notification: $e');
+    }
+  }
+
+  /// Helper: Send notification when request status changes (approved/rejected)
+  Future<void> _sendRequestStatusNotification(RequestModel request, RequestStatus newStatus) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get Arabic name for request type
+      String requestTypeAr = request.type.arName;
+
+      // Determine status text and notification type
+      String statusText = newStatus.arName;
+      NotificationType notificationType = _getRequestStatusNotificationType(request.type, newStatus);
+
+      await notificationService.sendNotificationToUsers(
+        userIds: [request.employeeId],
+        title: '$statusText علي $requestTypeAr',
+        body: '$statusText طلب $requestTypeAr الخاص بك',
+        type: notificationType,
+        additionalData: {
+          'requestId': request.id,
+          'requestType': request.type.name,
+          'status': newStatus.name,
+        },
+      );
+    } catch (e) {
+      print('Error sending request status notification: $e');
+    }
+  }
+
+  /// Helper: Get notification type for new request based on request type
+  NotificationType _getNewRequestNotificationType(RequestType type) {
+    switch (type) {
+      case RequestType.annualLeave:
+        return NotificationType.newAnnualLeaveRequest;
+      case RequestType.sickLeave:
+        return NotificationType.newSickLeaveRequest;
+      case RequestType.permission:
+        return NotificationType.newPermissionRequest;
+      case RequestType.attend:
+        return NotificationType.newAttendRequest;
+      case RequestType.extraHours:
+        return NotificationType.newExtraHoursRequest;
+      case RequestType.coverageShift:
+        return NotificationType.newCoverageShiftRequest;
+    }
+  }
+
+  /// Helper: Get notification type for request status based on request type and status
+  NotificationType _getRequestStatusNotificationType(RequestType type, RequestStatus status) {
+    if (status == RequestStatus.approved) {
+      switch (type) {
+        case RequestType.annualLeave:
+          return NotificationType.annualLeaveApproved;
+        case RequestType.sickLeave:
+          return NotificationType.sickLeaveApproved;
+        case RequestType.permission:
+          return NotificationType.permissionApproved;
+        case RequestType.attend:
+          return NotificationType.attendApproved;
+        case RequestType.extraHours:
+          return NotificationType.extraHoursApproved;
+        case RequestType.coverageShift:
+          return NotificationType.coverageShiftApproved;
+      }
+    } else {
+      switch (type) {
+        case RequestType.annualLeave:
+          return NotificationType.annualLeaveRejected;
+        case RequestType.sickLeave:
+          return NotificationType.sickLeaveRejected;
+        case RequestType.permission:
+          return NotificationType.permissionRejected;
+        case RequestType.attend:
+          return NotificationType.attendRejected;
+        case RequestType.extraHours:
+          return NotificationType.extraHoursRejected;
+        case RequestType.coverageShift:
+          return NotificationType.coverageShiftRejected;
+      }
     }
   }
 

@@ -1,10 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/enums/notification_type.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/core/services/notification_service.dart';
 import 'package:pharmacy/features/repair/data/models/repair_model.dart';
 import 'package:pharmacy/features/repair/logic/repair_state.dart';
 
 import '../../branch/data/branch_model.dart';
+import '../../user/data/models/user_model.dart';
 
 
 class RepairCubit extends Cubit<RepairState> {
@@ -38,6 +42,10 @@ class RepairCubit extends Cubit<RepairState> {
     emit(AddRepairReportLoading());
     try {
       docRef.set(request.toJson());
+
+      // Send notification to managers and admins
+      await _sendNewRepairReportNotification(request);
+
       emit(AddRepairReportSuccess());
     } catch (e) {
       emit(AddRepairReportError(e.toString()));
@@ -114,6 +122,35 @@ class RepairCubit extends Cubit<RepairState> {
 
     } catch (e) {
       emit(FetchAllBranchesRepairsError('Fetch All Branches Repairs Error: $e'));
+    }
+  }
+
+  /// Helper: Send notification when new repair report is added
+  Future<void> _sendNewRepairReportNotification(RepairModel report) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get managers and admins for this branch
+      final managerIds = await notificationService.getUserIdsByRoleAndBranches(
+        roles: [Role.admin.name, Role.manager.name],
+        branchIds: [report.branchId],
+      );
+
+      if (managerIds.isEmpty) return;
+
+      await notificationService.sendNotificationToUsers(
+        userIds: managerIds,
+        title: 'تقرير إصلاح جديد - فرع ${report.branchName}',
+        body: '${report.deviceName}: ${report.notes}',
+        type: NotificationType.newMaintenanceReport,
+        additionalData: {
+          'reportId': report.id,
+          'branchId': report.branchId,
+          'deviceName': report.deviceName,
+        },
+      );
+    } catch (e) {
+      print('Error sending repair report notification: $e');
     }
   }
 

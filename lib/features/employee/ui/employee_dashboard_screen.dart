@@ -59,7 +59,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           bool isLogged = await checkIsLogged();
           if (isLogged) {
             setState(() {
-
+              getIt<RequestCubit>().fetchRequests();
             });
           }
 
@@ -259,7 +259,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 /// Job Opportunity Section
                 Row(
                   children: [
-                    Text('Job Opportunities', style: GoogleFonts.pacifico(fontSize: 25)),
+                    Text('Job Opportunities', style: GoogleFonts.pacifico(fontSize: 22)),
                     Spacer(),
                     ElevatedButton.icon(
                       onPressed: () {

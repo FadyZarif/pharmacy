@@ -20,25 +20,34 @@ class RequestsListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<RequestCubit, RequestState>(
       buildWhen: (_, current) {
-        return current is FetchRequestsSuccess || current is FetchRequestsLoading || current is FetchRequestsFailure;
+        return current is FetchRequestsSuccess ||
+               current is FetchRequestsLoading ||
+               current is FetchRequestsFailure ||
+               current is DeleteRequestSuccess;
       },
       builder: (context, state) {
-        if (state is FetchRequestsLoading) {
+        final cubit = getIt<RequestCubit>();
+
+        if (state is FetchRequestsLoading && cubit.requests.isEmpty) {
+          // Show loading only if no data is available yet
           return const Center(child: CircularProgressIndicator());
-        } else if (state is FetchRequestsFailure) {
+        } else if (state is FetchRequestsFailure && cubit.requests.isEmpty) {
+          // Show error only if no data is available
           return Center(child: Text('Error: ${state.error}',style: TextStyle(color: Colors.red),));
-        } else if (state is FetchRequestsSuccess) {
-          final requests = getIt<RequestCubit>().requests;
-          if (requests.isEmpty) {
-            return const Center(child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.info_outline, size: 48, color: Colors.grey),
-                SizedBox(height: 8),
-                Text('No requests found.'),
-              ],
-            ));
-          }
+        }
+
+        // Show data (or empty state if no requests)
+        final requests = cubit.requests;
+        if (requests.isEmpty) {
+          return const Center(child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.info_outline, size: 48, color: Colors.grey),
+              SizedBox(height: 8),
+              Text('No requests found.'),
+            ],
+          ));
+        }
           return ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -144,7 +153,7 @@ class RequestsListView extends StatelessWidget {
                             '${request.status == RequestStatus.approved ? 'Approved' : 'Rejected'} by ${request.processedByName}',
                             style: TextStyle(
                               fontSize: 11,
-                              color: request.statusColor,
+                              color: request.status.color,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -179,9 +188,6 @@ class RequestsListView extends StatelessWidget {
             },
             separatorBuilder: (context, index) => const SizedBox(height: 5),
           );
-
-        }
-        return const SizedBox.shrink(child: Text('not State'),);
       },
     );
   }
