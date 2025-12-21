@@ -165,7 +165,6 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
             // Close AddRequestScreenUnified and go back to previous screen
             if (context.mounted) {
               Navigator.pop(context, true);
-              Navigator.pop(context, true);
             }
           } else if (state is AddRequestFailure) {
             // Close loading dialog first
@@ -183,7 +182,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
             appBar: AppBar(
-              title: Text(_getTitle(),style: TextStyle(fontWeight: FontWeight.bold),),
+              title: Text(widget.requestType.enName,style: TextStyle(fontWeight: FontWeight.bold),),
               backgroundColor: ColorsManger.primary,
               foregroundColor: Colors.white,
               centerTitle: true,
@@ -250,7 +249,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
     return Row(
       children: [
         Text(
-          '${_getTitle()} Details',
+          '${widget.requestType.enName} Details',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -260,7 +259,11 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _getStatusColor(),
+              color: widget.existingRequest!.status == RequestStatus.approved
+                  ? Colors.green
+                  : widget.existingRequest!.status == RequestStatus.rejected
+                      ? Colors.red
+                      : Colors.orange,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -916,36 +919,6 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
         ),
       ],
     );
-  }
-
-  String _getTitle() {
-    switch (widget.requestType) {
-      case RequestType.annualLeave:
-        return 'Annual Leave';
-      case RequestType.sickLeave:
-        return 'Sick Leave';
-      case RequestType.extraHours:
-        return 'Extra Hours';
-      case RequestType.coverageShift:
-        return 'Coverage Shift';
-      case RequestType.attend:
-        return 'Attendance';
-      case RequestType.permission:
-        return 'Early Leave Permission';
-    }
-  }
-
-  Color _getStatusColor() {
-    if (widget.existingRequest == null) return Colors.grey;
-
-    switch (widget.existingRequest!.status) {
-      case RequestStatus.approved:
-        return Colors.green;
-      case RequestStatus.rejected:
-        return Colors.red;
-      case RequestStatus.pending:
-        return Colors.orange;
-    }
   }
 
   Future<void> _previewPrescription() async {

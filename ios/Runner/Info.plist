@@ -25,6 +25,9 @@
 		<string>This app needs permission to save photos to your photo library.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>This app needs access to the microphone for video recording.</string>
+		<!-- Notification Permission -->
+		<key>NSUserNotificationsUsageDescription</key>
+		<string>This app needs to send you notifications about requests, reports, and salary updates.</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

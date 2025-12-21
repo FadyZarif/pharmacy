@@ -1,10 +1,14 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/enums/notification_type.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/core/services/notification_service.dart';
 import 'package:pharmacy/features/report/data/helpers/report_firestore_helper.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/shift_report_state.dart';
+import 'package:pharmacy/features/user/data/models/user_model.dart';
 
 class ShiftReportCubit extends Cubit<ShiftReportState> {
   ShiftReportCubit() : super(ShiftReportInitial());
@@ -275,6 +279,9 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         report,
       );
 
+      // Send notification to subManagers, managers and admins
+      await _sendNewShiftReportNotification(report, _formatDate(currentDate));
+
       emit(ShiftReportSubmitted(report));
     } catch (e) {
       emit(ShiftReportError('Failed to submit report: ${e.toString()}'));
@@ -342,6 +349,38 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   /// Helper: Format date to yyyy-MM-dd
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Helper: Send notification when new shift report is added
+  Future<void> _sendNewShiftReportNotification(ShiftReportModel report, String date) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get subManagers, managers and admins for this branch
+      final managerIds = await notificationService.getUserIdsByRoleAndBranches(
+        roles: [Role.subManager.name, Role.manager.name, Role.admin.name],
+        branchIds: [report.branchId],
+      );
+
+      if (managerIds.isEmpty) return;
+
+      // Get shift type name in Arabic
+      String shiftTypeName = report.shiftNameAr;
+
+      await notificationService.sendNotificationToUsers(
+        userIds: managerIds,
+        title: 'تقرير شيفت جديد - فرع ${report.branchName}',
+        body: 'تم إضافة تقرير شيفت $shiftTypeName بتاريخ $date',
+        type: NotificationType.newShiftReport,
+        additionalData: {
+          'branchId': report.branchId,
+          'shiftType': report.shiftType.name,
+          'date': date,
+        },
+      );
+    } catch (e) {
+      print('Error sending new shift report notification: $e');
+    }
   }
 }
 

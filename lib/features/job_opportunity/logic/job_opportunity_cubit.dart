@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/features/job_opportunity/data/models/job_opportunity_model.dart';
 
 import '../../../core/helpers/constants.dart';
+import '../../../core/enums/notification_type.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/di/dependency_injection.dart';
+import '../../user/data/models/user_model.dart';
 
 part 'job_opportunity_state.dart';
 
@@ -38,6 +42,10 @@ class JobOpportunityCubit extends Cubit<JobOpportunityState> {
       );
 
       await docRef.set(jobOpportunity.toJson());
+
+      // Send notification to managers/admin
+      await _sendNewJobOpportunityNotification(jobOpportunity);
+
       emit(JobOpportunityAdded('Job opportunity added successfully'));
     } catch (e) {
       emit(JobOpportunityAddingError(e.toString()));
@@ -82,6 +90,34 @@ class JobOpportunityCubit extends Cubit<JobOpportunityState> {
       emit(JobOpportunityAdded('Job opportunity deleted successfully'));
     } catch (e) {
       emit(JobOpportunityError(e.toString()));
+    }
+  }
+
+  // Helper: Send notification to managers/admin when new job opportunity is added
+  Future<void> _sendNewJobOpportunityNotification(JobOpportunityModel opportunity) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get managers and admins for this branch
+      final managerIds = await notificationService.getUserIdsByRoleAndBranches(
+        roles: [Role.admin.name, Role.manager.name],
+        branchIds: [opportunity.branchId],
+      );
+
+      if (managerIds.isEmpty) return;
+
+      await notificationService.sendNotificationToUsers(
+        userIds: managerIds,
+        title: 'فرصة عمل جديدة - فرع ${opportunity.branchName}',
+        body: '${opportunity.fullName} - ${opportunity.qualification}',
+        type: NotificationType.newJobOpportunity,
+        additionalData: {
+          'opportunityId': opportunity.id,
+          'branchId': opportunity.branchId,
+        },
+      );
+    } catch (e) {
+      print('Error sending job opportunity notification: $e');
     }
   }
 }

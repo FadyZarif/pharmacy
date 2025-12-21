@@ -6,6 +6,11 @@ import 'package:pharmacy/features/report/data/helpers/report_firestore_helper.da
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 
+import '../../../core/enums/notification_type.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/di/dependency_injection.dart';
+import '../../user/data/models/user_model.dart';
+
 class ViewReportsCubit extends Cubit<ViewReportsState> {
   ViewReportsCubit() : super(ViewReportsInitial());
 
@@ -140,6 +145,11 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
         newStatus,
       );
 
+      // Send notification if profit was collected (newStatus = true)
+      if (newStatus) {
+        await _sendNetProfitCollectedNotification(dateKey);
+      }
+
       emit(CollectionStatusUpdated(isCollected: newStatus));
 
       // Refresh reports to update UI
@@ -161,6 +171,55 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       emit(CollectionStatusLoaded(isCollected: isCollected));
     } catch (e) {
       emit(CollectionStatusError(message: e.toString()));
+    }
+  }
+
+  /// Helper: Send notification when net profit is collected
+  Future<void> _sendNetProfitCollectedNotification(String dateKey) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get managers and admins for this branch
+      final managerIds = await notificationService.getUserIdsByRoleAndBranches(
+        roles: [Role.admin.name, Role.manager.name],
+        branchIds: [currentUser.currentBranch.id],
+      );
+
+      if (managerIds.isEmpty) return;
+
+      // Calculate net profit for this day
+      final shiftsSnapshot = await _db
+          .collection('daily_reports')
+          .doc(dateKey)
+          .collection('branches')
+          .doc(currentUser.currentBranch.id)
+          .collection('shifts')
+          .get();
+
+      double totalSales = 0.0;
+      double totalExpenses = 0.0;
+
+      for (var doc in shiftsSnapshot.docs) {
+        final report = ShiftReportModel.fromJson(doc.data());
+        totalSales += report.drawerAmount;
+        totalExpenses += report.totalExpenses;
+      }
+
+      final netProfit = totalSales - totalExpenses;
+
+      await notificationService.sendNotificationToUsers(
+        userIds: managerIds,
+        title: 'تم تحصيل صافي الربح - ${currentUser.currentBranch.name}',
+        body: 'تم تحصيل ${netProfit.toStringAsFixed(2)} جنيه من فرع ${currentUser.currentBranch.name} بتاريخ $dateKey',
+        type: NotificationType.netProfitCollected,
+        additionalData: {
+          'branchId': currentUser.currentBranch.id,
+          'date': dateKey,
+          'netProfit': netProfit.toString(),
+        },
+      );
+    } catch (e) {
+      print('Error sending net profit collected notification: $e');
     }
   }
 }

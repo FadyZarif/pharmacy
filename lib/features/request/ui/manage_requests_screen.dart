@@ -514,7 +514,7 @@ class _ManageRequestsBody extends StatelessWidget {
                             ? Icons.check_circle
                             : Icons.cancel,
                           size: 14,
-                          color: request.statusColor,
+                          color: request.status.color,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -522,7 +522,7 @@ class _ManageRequestsBody extends StatelessWidget {
                             '${request.status == RequestStatus.approved ? 'Approved' : 'Rejected'} by ${request.processedByName}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: request.statusColor,
+                              color: request.status.color,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

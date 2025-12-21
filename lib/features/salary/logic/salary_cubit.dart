@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/enums/notification_type.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/core/services/notification_service.dart';
 import 'package:pharmacy/features/salary/data/models/employee_monthly_salary.dart';
 import 'package:pharmacy/features/salary/data/models/month_salary_model.dart';
 import 'package:pharmacy/features/salary/data/models/salary_model.dart';
@@ -261,6 +264,9 @@ class SalaryCubit extends Cubit<SalaryState> {
       await uploadBatch.commit();
       print('Uploaded ${salaries.length} new employee records');
 
+      // Send notification to all employees who received salary
+      await _sendSalaryUploadedNotification(salaries, monthKey, year, month);
+
       emit(SalaryUploadSuccess(employeeCount: salaries.length));
     } catch (e) {
       emit(SalaryError(error: 'Failed to upload data: $e'));
@@ -299,6 +305,47 @@ class SalaryCubit extends Cubit<SalaryState> {
       // أي نوع آخر، نحوله لنص
       final str = value.toString().trim();
       return str.isEmpty ? '0' : str;
+    }
+  }
+
+  /// Helper: Send notification to all employees when salary is uploaded
+  Future<void> _sendSalaryUploadedNotification(
+    List<SalaryModel> salaries,
+    String monthKey,
+    int year,
+    int month,
+  ) async {
+    try {
+      final notificationService = getIt<NotificationService>();
+
+      // Get all employee IDs who received salary
+      final employeeIds = salaries
+          .map((salary) => salary.employeeUid)
+          .where((uid) => uid.isNotEmpty && uid != '0')
+          .toList();
+
+      if (employeeIds.isEmpty) return;
+
+      // Get month name in Arabic
+      final monthNames = [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      ];
+      final monthName = monthNames[month - 1];
+
+      await notificationService.sendNotificationToUsers(
+        userIds: employeeIds,
+        title: 'تم رفع المرتب',
+        body: 'تم رفع مرتب شهر $monthName $year',
+        type: NotificationType.salaryAdded,
+        additionalData: {
+          'monthKey': monthKey,
+          'year': year.toString(),
+          'month': month.toString(),
+        },
+      );
+    } catch (e) {
+      print('Error sending salary uploaded notification: $e');
     }
   }
 
