@@ -171,6 +171,47 @@ class SalaryCubit extends Cubit<SalaryState> {
           // العمود 26: المتبقي من السلف (remainingAdvance)
           // العمود 27: ملاحظات (notes) - اختياري
 
+          // استخراج القيم الرقمية لحساب netSalary و remainingAdvance
+          final basicSalary = _parseDouble(_getCellValue(row, 9));
+          final incentive = _parseDouble(_getCellValue(row, 10));
+          final additional = _parseDouble(_getCellValue(row, 11));
+          final quarterlySalesIncentive = _parseDouble(_getCellValue(row, 12));
+          final workBonus = _parseDouble(_getCellValue(row, 13));
+          final administrativeBonus = _parseDouble(_getCellValue(row, 14));
+          final transportAllowance = _parseDouble(_getCellValue(row, 15));
+          final employerShare = _parseDouble(_getCellValue(row, 16));
+          final eideya = _parseDouble(_getCellValue(row, 17));
+          final hourlyDeduction = _parseDouble(_getCellValue(row, 18));
+          final penalties = _parseDouble(_getCellValue(row, 19));
+          final pharmacyCodeDeduction = _parseDouble(_getCellValue(row, 20));
+          final visaDeduction = _parseDouble(_getCellValue(row, 21));
+          final advanceDeduction = _parseDouble(_getCellValue(row, 22));
+          final quarterlyShiftDeficitDeduction = _parseDouble(_getCellValue(row, 23));
+          final insuranceDeduction = _parseDouble(_getCellValue(row, 24));
+
+          // حساب ما يستحقه العامل (netSalary)
+          // =J4+K4+L4+M4+N4+O4+P4+Q4+R4-S4-T4-U4-V4-W4-X4-Y4
+          final calculatedNetSalary = basicSalary +
+              incentive +
+              additional +
+              quarterlySalesIncentive +
+              workBonus +
+              administrativeBonus +
+              transportAllowance +
+              employerShare +
+              eideya -
+              hourlyDeduction -
+              penalties -
+              pharmacyCodeDeduction -
+              visaDeduction -
+              advanceDeduction -
+              quarterlyShiftDeficitDeduction -
+              insuranceDeduction;
+
+          // حساب المتبقي من السلف على العامل
+          // =0-W4
+          final calculatedRemainingAdvance = 0 - advanceDeduction;
+
           final salary = SalaryModel(
             employeeUid: _getCellValue(row, 1), // كود الموظف
             pharmacyCode: _getCellValue(row, 2), // كود الصيدلية
@@ -180,27 +221,24 @@ class SalaryCubit extends Cubit<SalaryState> {
             nameArabic: _getCellValue(row, 6), // الاسم بالعربية
             hourlyRate: _getCellValue(row, 7), // الساعة الشهرية
             hoursWorked: _getCellValue(row, 8), // نظام العمل بالساعات
-            basicSalary: _getCellValue(row, 9), // المرتب
-            incentive: _getCellValue(row, 10), // الحافز
-            additional: _getCellValue(row, 11), // الإضافي
-            quarterlySalesIncentive:
-            _getCellValue(row, 12), // حوافز مبيعات ربع سنوية
-            workBonus: _getCellValue(row, 13), // مكافأة عن العمل
-            administrativeBonus: _getCellValue(row, 14), // المكافآت الإدارية
-            transportAllowance: _getCellValue(row, 15), // بدل مواصلات
-            employerShare: _getCellValue(row, 16), // صاحب عمل
-            eideya: _getCellValue(row, 17), // العيديات
-            hourlyDeduction: _getCellValue(row, 18), // الخصم بالساعات
-            penalties: _getCellValue(row, 19), // جزاءات
-            pharmacyCodeDeduction:
-            _getCellValue(row, 20), // خصم من كود السحب الدوائي
-            visaDeduction: _getCellValue(row, 21), // خصم مصاريف فتح فيزا
-            advanceDeduction: _getCellValue(row, 22), // خصم سلف
-            quarterlyShiftDeficitDeduction:
-            _getCellValue(row, 23), // خصم عجز الشيفتات
-            insuranceDeduction: _getCellValue(row, 24), // خصم تأمينات
-            netSalary: _getCellValue(row, 25), // ما يستحقه العامل
-            remainingAdvance: _getCellValue(row, 26), // المتبقي من السلف
+            basicSalary: basicSalary.toString(), // المرتب
+            incentive: incentive.toString(), // الحافز
+            additional: additional.toString(), // الإضافي
+            quarterlySalesIncentive: quarterlySalesIncentive.toString(), // حوافز مبيعات ربع سنوية
+            workBonus: workBonus.toString(), // مكافأة عن العمل
+            administrativeBonus: administrativeBonus.toString(), // المكافآت الإدارية
+            transportAllowance: transportAllowance.toString(), // بدل مواصلات
+            employerShare: employerShare.toString(), // صاحب عمل
+            eideya: eideya.toString(), // العيديات
+            hourlyDeduction: hourlyDeduction.toString(), // الخصم بالساعات
+            penalties: penalties.toString(), // جزاءات
+            pharmacyCodeDeduction: pharmacyCodeDeduction.toString(), // خصم من كود السحب الدوائي
+            visaDeduction: visaDeduction.toString(), // خصم مصاريف فتح فيزا
+            advanceDeduction: advanceDeduction.toString(), // خصم سلف
+            quarterlyShiftDeficitDeduction: quarterlyShiftDeficitDeduction.toString(), // خصم عجز الشيفتات
+            insuranceDeduction: insuranceDeduction.toString(), // خصم تأمينات
+            netSalary: calculatedNetSalary.toString(), // ما يستحقه العامل (محسوب)
+            remainingAdvance: calculatedRemainingAdvance.toString(), // المتبقي من السلف (محسوب)
             notes: notes ?? _getCellValue(row, 27), // ملاحظات من الملف أو المدخلة
             uploadedAt: DateTime.now(),
             uploadedBy: currentUser.uid,
@@ -270,6 +308,16 @@ class SalaryCubit extends Cubit<SalaryState> {
       emit(SalaryUploadSuccess(employeeCount: salaries.length));
     } catch (e) {
       emit(SalaryError(error: 'Failed to upload data: $e'));
+    }
+  }
+
+  /// مساعد لتحويل القيمة النصية إلى رقم
+  double _parseDouble(String value) {
+    if (value.isEmpty || value == '0') return 0.0;
+    try {
+      return double.parse(value);
+    } catch (e) {
+      return 0.0;
     }
   }
 
