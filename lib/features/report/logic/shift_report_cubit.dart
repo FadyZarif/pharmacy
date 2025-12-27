@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
@@ -22,7 +22,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   String? notes;
   final List<ExpenseItem> expenses = [];
   String? attachmentUrl; // Single attachment URL
-  File? attachmentFile; // Local file before upload
+  Uint8List? attachmentBytes; // Attachment data for upload (web & mobile)
+  String? attachmentFileName; // Original file name
 
   // Current date
   DateTime currentDate = DateTime.now();
@@ -176,31 +177,48 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   }
 
   /// Pick and store attachment locally (will be uploaded on submit)
-  void pickAttachment(File file) {
-    attachmentFile = file;
+  void pickAttachment(Uint8List bytes, String fileName) {
+    attachmentBytes = bytes;
+    attachmentFileName = fileName;
     emit(ShiftReportUpdated());
   }
 
   /// Remove attachment
   void removeAttachment() {
-    attachmentFile = null;
+    attachmentBytes = null;
+    attachmentFileName = null;
     attachmentUrl = null;
     emit(AttachmentRemoved());
   }
 
   /// Upload attachment to Firebase Storage
-  Future<String?> _uploadAttachment(File file) async {
+  Future<String?> _uploadAttachment(Uint8List bytes, String fileName) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = file.path.split('.').last;
+      final extension = fileName.split('.').last.toLowerCase();
       final dateStr = _formatDate(currentDate);
-      final fileName = '${timestamp}_${selectedShiftType!.name}.$extension';
+      final uploadFileName = '${timestamp}_${selectedShiftType!.name}.$extension';
 
       final storageRef = FirebaseStorage.instance.ref().child(
-        'shift_reports/${currentUser.currentBranch.id}/$dateStr/$fileName',
+        'shift_reports/${currentUser.currentBranch.id}/$dateStr/$uploadFileName',
       );
 
-      final uploadTask = await storageRef.putFile(file);
+      // Determine content type based on file extension
+      String contentType;
+      if (extension == 'pdf') {
+        contentType = 'application/pdf';
+      } else if (extension == 'jpg' || extension == 'jpeg') {
+        contentType = 'image/jpeg';
+      } else if (extension == 'png') {
+        contentType = 'image/png';
+      } else {
+        contentType = 'application/octet-stream';
+      }
+
+      final uploadTask = await storageRef.putData(
+        bytes,
+        SettableMetadata(contentType: contentType),
+      );
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
       return downloadUrl;
@@ -243,9 +261,9 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       // Upload attachment if exists
       String? uploadedUrl;
-      if (attachmentFile != null) {
+      if (attachmentBytes != null && attachmentFileName != null) {
         try {
-          uploadedUrl = await _uploadAttachment(attachmentFile!);
+          uploadedUrl = await _uploadAttachment(attachmentBytes!, attachmentFileName!);
         } catch (e) {
           emit(AttachmentUploadError(e.toString()));
           return;
@@ -342,7 +360,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     notes = null;
     expenses.clear();
     attachmentUrl = null;
-    attachmentFile = null;
+    attachmentBytes = null;
+    attachmentFileName = null;
     emit(ShiftReportInitial());
   }
 

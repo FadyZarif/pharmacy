@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/features/request/data/services/coverage_shift_service.dart';
 
@@ -63,12 +64,11 @@ Future<void> defToast2({
   required String msg,
   required DialogType dialogType,
   int? sec,
-
-})async{
+}) async {
   await AwesomeDialog(
     context: context,
-    animType: AnimType.scale,
-    autoHide: Duration(seconds: sec??2),
+    animType: kIsWeb ? AnimType.topSlide : AnimType.scale, // Use simpler animation on web
+    autoHide: Duration(seconds: sec ?? 2),
     title: msg,
     dialogType: dialogType,
 

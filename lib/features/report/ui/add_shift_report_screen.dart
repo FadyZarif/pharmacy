@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -278,8 +280,8 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   }
 
   Widget _buildAttachmentSection(ShiftReportCubit cubit) {
-    final hasAttachment = cubit.attachmentFile != null || cubit.attachmentUrl != null;
-    final isLocalFile = cubit.attachmentFile != null;
+    final hasAttachment = cubit.attachmentBytes != null || cubit.attachmentUrl != null;
+    final isLocalFile = cubit.attachmentBytes != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,8 +490,9 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
       );
 
       if (image != null) {
-        final file = File(image.path);
-        cubit.pickAttachment(file);
+        final bytes = await image.readAsBytes();
+        final fileName = image.name;
+        cubit.pickAttachment(bytes, fileName);
       }
     } catch (e) {
       if (!mounted) return;
@@ -511,8 +514,9 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
       );
 
       if (image != null) {
-        final file = File(image.path);
-        cubit.pickAttachment(file);
+        final bytes = await image.readAsBytes();
+        final fileName = image.name;
+        cubit.pickAttachment(bytes, fileName);
       }
     } catch (e) {
       if (!mounted) return;
@@ -530,11 +534,21 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
+        withData: true, // Important for web support
       );
 
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        cubit.pickAttachment(file);
+      if (result != null) {
+        final bytes = result.files.single.bytes;
+        final fileName = result.files.single.name;
+
+        if (bytes != null) {
+          cubit.pickAttachment(bytes, fileName);
+        } else if (!kIsWeb && result.files.single.path != null) {
+          // Fallback for mobile when bytes are not available
+          final file = File(result.files.single.path!);
+          final fileBytes = await file.readAsBytes();
+          cubit.pickAttachment(fileBytes, fileName);
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -548,8 +562,8 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   }
 
   IconData _getFileIcon(ShiftReportCubit cubit) {
-    if (cubit.attachmentFile != null) {
-      final extension = cubit.attachmentFile!.path.split('.').last.toLowerCase();
+    if (cubit.attachmentFileName != null) {
+      final extension = cubit.attachmentFileName!.split('.').last.toLowerCase();
       return extension == 'pdf' ? Icons.picture_as_pdf : Icons.image;
     } else if (cubit.attachmentUrl != null) {
       final extension = cubit.attachmentUrl!.split('.').last.toLowerCase();
@@ -559,8 +573,8 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   }
 
   String _getFileName(ShiftReportCubit cubit) {
-    if (cubit.attachmentFile != null) {
-      return cubit.attachmentFile!.path.split('/').last;
+    if (cubit.attachmentFileName != null) {
+      return cubit.attachmentFileName!;
     } else if (cubit.attachmentUrl != null) {
       return 'Attachment';
     }
@@ -1244,7 +1258,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   void _handleSubmit(ShiftReportCubit cubit) async {
     if (_formKey.currentState!.validate()) {
       // Validate attachment is required
-      if (cubit.attachmentFile == null && cubit.attachmentUrl == null) {
+      if (cubit.attachmentBytes == null && cubit.attachmentUrl == null) {
         defToast2(
           context: context,
           msg: 'Please attach an image or PDF file',
@@ -1291,16 +1305,35 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
               final fileName = 'expenses/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
               final storageRef = FirebaseStorage.instance.ref().child(fileName);
 
-              UploadTask uploadTask;
-              if (file.bytes != null) {
-                uploadTask = storageRef.putData(file.bytes!);
-              } else if (file.path != null) {
+              Uint8List? bytes = file.bytes;
+
+              // If bytes not available (mobile), read from path
+              if (bytes == null && file.path != null && !kIsWeb) {
                 final ioFile = File(file.path!);
-                uploadTask = storageRef.putFile(ioFile);
-              } else {
+                bytes = await ioFile.readAsBytes();
+              }
+
+              if (bytes == null) {
                 throw Exception('File has no bytes or path');
               }
 
+              // Determine content type based on file extension
+              final extension = file.name.split('.').last.toLowerCase();
+              String contentType;
+              if (extension == 'pdf') {
+                contentType = 'application/pdf';
+              } else if (extension == 'jpg' || extension == 'jpeg') {
+                contentType = 'image/jpeg';
+              } else if (extension == 'png') {
+                contentType = 'image/png';
+              } else {
+                contentType = 'application/octet-stream';
+              }
+
+              final uploadTask = storageRef.putData(
+                bytes,
+                SettableMetadata(contentType: contentType),
+              );
               final snapshot = await uploadTask;
               final fileUrl = await snapshot.ref.getDownloadURL();
 

@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
@@ -33,7 +35,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   Role _selectedRole = Role.staff;
   bool _isActive = true;
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
 
   @override
   void initState() {
@@ -123,10 +125,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               CircleAvatar(
                                 radius: 60,
                                 backgroundColor: ColorsManger.primary.withValues(alpha: 0.2),
-                                backgroundImage: _selectedImage != null
-                                    ? FileImage(_selectedImage!)
+                                backgroundImage: _selectedImageBytes != null
+                                    ? MemoryImage(_selectedImageBytes!)
                                     : null,
-                                child: _selectedImage == null
+                                child: _selectedImageBytes == null
                                     ? const Icon(
                                         Icons.person,
                                         size: 60,
@@ -440,7 +442,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       vocationBalanceHours: vocationBalanceHours,
       role: _selectedRole,
       isActive: _isActive,
-      imageFile: _selectedImage,
+      imageBytes: _selectedImageBytes,
     );
   }
 
@@ -448,12 +450,23 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: false,
+      withData: true, // Important for web support
     );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _selectedImage = File(result.files.single.path!);
-      });
+    if (result != null) {
+      Uint8List? bytes = result.files.single.bytes;
+
+      // If bytes not available (mobile), read from path
+      if (bytes == null && result.files.single.path != null && !kIsWeb) {
+        final file = File(result.files.single.path!);
+        bytes = await file.readAsBytes();
+      }
+
+      if (bytes != null) {
+        setState(() {
+          _selectedImageBytes = bytes;
+        });
+      }
     }
   }
 }

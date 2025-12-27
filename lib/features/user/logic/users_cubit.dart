@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -69,7 +71,35 @@ class UsersCubit extends Cubit<UsersState> {
           .child('profile')
           .child('$userId.jpg');
 
-      final uploadTask = await storageRef.putFile(imageFile);
+      // Read file as bytes for cross-platform compatibility
+      final bytes = await imageFile.readAsBytes();
+
+      // Upload using putData with proper content type (works on both web and mobile)
+      final uploadTask = await storageRef.putData(
+        bytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      final imageUrl = await uploadTask.ref.getDownloadURL();
+
+      return imageUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
+    }
+  }
+
+  /// Upload image bytes to Firebase Storage (for web compatibility)
+  Future<String> uploadUserImageBytes(Uint8List bytes, String userId) async {
+    try {
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile')
+          .child('$userId.jpg');
+
+      // Upload using putData with proper content type (works on both web and mobile)
+      final uploadTask = await storageRef.putData(
+        bytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
       final imageUrl = await uploadTask.ref.getDownloadURL();
 
       return imageUrl;
@@ -89,7 +119,7 @@ class UsersCubit extends Cubit<UsersState> {
     required int vocationBalanceHours,
     required Role role,
     required bool isActive,
-    File? imageFile,
+    Uint8List? imageBytes,
   }) async {
     emit(AddUserLoading());
 
@@ -117,9 +147,9 @@ class UsersCubit extends Cubit<UsersState> {
       final uid = createdUser!.uid;
 
       // Step 2: Upload image if provided (يجب أن تنجح قبل المتابعة)
-      if (imageFile != null) {
+      if (imageBytes != null) {
         try {
-          photoUrl = await uploadUserImage(imageFile, uid);
+          photoUrl = await uploadUserImageBytes(imageBytes, uid);
         } catch (uploadError) {
           // إذا فشل رفع الصورة، احذف المستخدم من Auth
           await createdUser.delete();
@@ -199,7 +229,7 @@ class UsersCubit extends Cubit<UsersState> {
     required Role role,
     required bool isActive,
     bool? hasRequestsPermission,
-    File? imageFile,
+    Uint8List? imageBytes,
   }) async {
     emit(UpdateUserLoading());
 
@@ -219,8 +249,8 @@ class UsersCubit extends Cubit<UsersState> {
       }
 
       // Step 2: Upload new image if provided
-      if (imageFile != null) {
-        newPhotoUrl = await uploadUserImage(imageFile, uid);
+      if (imageBytes != null) {
+        newPhotoUrl = await uploadUserImageBytes(imageBytes, uid);
       }
 
       // Step 3: Update user document
@@ -250,7 +280,7 @@ class UsersCubit extends Cubit<UsersState> {
 
       // Step 4: Delete old photo AFTER successful update
       // حذف الصورة القديمة بعد نجاح التحديث فقط
-      if (imageFile != null && oldPhotoUrl != null && oldPhotoUrl.isNotEmpty) {
+      if (imageBytes != null && oldPhotoUrl != null && oldPhotoUrl.isNotEmpty) {
         try {
           // Extract filename from old URL to delete it
           final oldFileName = Uri.parse(oldPhotoUrl).pathSegments.last.split('?').first;

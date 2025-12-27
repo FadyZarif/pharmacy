@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/enums/notification_type.dart';
@@ -43,20 +45,30 @@ class RequestCubit extends Cubit<RequestState> {
   }
 
   Future<String> uploadFileAndGetUrl(PlatformFile pickedFile) async {
-
     try {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
       final ref = FirebaseStorage.instance.ref().child('sick/$fileName');
 
-      // ابدأ الرفع (ويب: bytes | موبايل/ديسكتوب: ملف من المسار)
-        final file = File(pickedFile.path!);
-     final snapshot = await ref.putFile(
-          file,
-          SettableMetadata(contentType: pickedFile.xFile.mimeType),
-        );
+      // Get bytes for upload (works on both web and mobile)
+      Uint8List? bytes = pickedFile.bytes;
 
-      // انتظار الاكتمال
+      // If bytes not available (mobile), read from path
+      if (bytes == null && pickedFile.path != null && !kIsWeb) {
+        final file = File(pickedFile.path!);
+        bytes = await file.readAsBytes();
+      }
+
+      if (bytes == null) {
+        throw Exception('File has no bytes or path');
+      }
+
+      // Upload using putData (works on both web and mobile)
+      final snapshot = await ref.putData(
+        bytes,
+        SettableMetadata(contentType: pickedFile.xFile.mimeType),
+      );
+
+      // Get download URL
       final url = await snapshot.ref.getDownloadURL();
 
       return url;

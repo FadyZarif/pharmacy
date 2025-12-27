@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -669,16 +671,35 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
             final fileName = 'expenses/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
             final storageRef = FirebaseStorage.instance.ref().child(fileName);
 
-            UploadTask uploadTask;
-            if (file.bytes != null) {
-              uploadTask = storageRef.putData(file.bytes!);
-            } else if (file.path != null) {
+            Uint8List? bytes = file.bytes;
+
+            // If bytes not available (mobile), read from path
+            if (bytes == null && file.path != null && !kIsWeb) {
               final ioFile = File(file.path!);
-              uploadTask = storageRef.putFile(ioFile);
-            } else {
+              bytes = await ioFile.readAsBytes();
+            }
+
+            if (bytes == null) {
               throw Exception('File has no bytes or path');
             }
 
+            // Determine content type based on file extension
+            final extension = file.name.split('.').last.toLowerCase();
+            String contentType;
+            if (extension == 'pdf') {
+              contentType = 'application/pdf';
+            } else if (extension == 'jpg' || extension == 'jpeg') {
+              contentType = 'image/jpeg';
+            } else if (extension == 'png') {
+              contentType = 'image/png';
+            } else {
+              contentType = 'application/octet-stream';
+            }
+
+            final uploadTask = storageRef.putData(
+              bytes,
+              SettableMetadata(contentType: contentType),
+            );
             final snapshot = await uploadTask;
             final fileUrl = await snapshot.ref.getDownloadURL();
 
