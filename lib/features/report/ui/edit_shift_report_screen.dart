@@ -130,7 +130,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                       children: [
                         ShiftReportWidgets.buildInfoSection(
                           branchName: widget.report.branchName,
-                          date: DateTime.parse(widget.date),
+                          date: widget.report.submittedAt!,
                           employeeName: widget.report.employeeName,
                           shiftType: _getShiftLabel(widget.report.shiftType),
                         ),

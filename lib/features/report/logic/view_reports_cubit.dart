@@ -65,6 +65,9 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       double totalMedicinesExpenses = 0.0;
       double totalElectronicPaymentExpenses = 0.0;
       double vaultAmount = 0.0; // مجموع الأرباح غير المحصلة
+      double totalSurplus = 0.0; // مجموع الزيادة
+      double totalDeficit = 0.0; // مجموع العجز
+      List<ExpenseItem> allExpenses = []; // جميع المصاريف
 
       // Fetch reports for each day in the month
       for (int day = 1; day <= lastDay.day; day++) {
@@ -95,6 +98,16 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
 
             totalMedicinesExpenses += report.medicineExpenses;
             totalElectronicPaymentExpenses += report.electronicWalletExpenses;
+
+            // جمع جميع المصاريف
+            allExpenses.addAll(report.expenses);
+
+            // حساب الزيادة والعجز
+            if (report.computerDifferenceType == ComputerDifferenceType.excess) {
+              totalSurplus += report.computerDifference;
+            } else if (report.computerDifferenceType == ComputerDifferenceType.shortage) {
+              totalDeficit += report.computerDifference;
+            }
           }
 
           // Check if this day's profit is collected
@@ -125,6 +138,9 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
         totalMedicinesExpenses: totalMedicinesExpenses,
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         vaultAmount: vaultAmount,
+        totalSurplus: totalSurplus,
+        totalDeficit: totalDeficit,
+        allExpenses: allExpenses,
       ));
     } catch (e) {
       emit(MonthlySummaryError(message: e.toString()));

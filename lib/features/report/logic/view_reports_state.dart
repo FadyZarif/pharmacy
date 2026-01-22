@@ -30,6 +30,9 @@ class MonthlySummaryLoaded extends ViewReportsState {
   final double totalMedicinesExpenses;
   final double totalElectronicPaymentExpenses;
   final double vaultAmount; // مجموع الأرباح غير المحصلة (في الخزنة)
+  final double totalSurplus; // مجموع الزيادة
+  final double totalDeficit; // مجموع العجز
+  final List<ExpenseItem> allExpenses; // جميع المصاريف
 
   MonthlySummaryLoaded({
     required this.totalSales,
@@ -38,6 +41,9 @@ class MonthlySummaryLoaded extends ViewReportsState {
     required this.totalMedicinesExpenses,
     required this.totalElectronicPaymentExpenses,
     required this.vaultAmount,
+    required this.totalSurplus,
+    required this.totalDeficit,
+    required this.allExpenses,
   });
 }
 

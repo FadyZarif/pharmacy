@@ -8,6 +8,7 @@ import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 import 'package:pharmacy/features/report/ui/edit_shift_report_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/themes/colors.dart';
 
@@ -188,12 +189,24 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Text(
-                                            'EGP ${report.netAmount}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
-                                            ),
+                                          Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                'EGP ${report.drawerAmount}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                              Text(
+                                                'EGP ${report.netAmount}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                           const SizedBox(width: 8),
                                           const Icon(Icons.arrow_forward_ios),
@@ -329,6 +342,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       (sum, report) => sum + (report as ShiftReportModel).totalExpenses,
     );
 
+    // جمع كل المصاريف من جميع التقارير
+    final allExpenses = reports.expand((report) => (report as ShiftReportModel).expenses).toList();
+
     // حساب صافي الربح (Net Profit)
     final netProfit = totalSales - totalExpenses;
 
@@ -352,6 +368,30 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       },
     );
 
+    // حساب مجموع الزيادة (Total Surplus)
+    final totalSurplus = reports.fold<double>(
+      0.0,
+      (sum, report) {
+        final shiftReport = report as ShiftReportModel;
+        if (shiftReport.computerDifferenceType == ComputerDifferenceType.excess) {
+          return sum + shiftReport.computerDifference;
+        }
+        return sum;
+      },
+    );
+
+    // حساب مجموع العجز (Total Deficit)
+    final totalDeficit = reports.fold<double>(
+      0.0,
+      (sum, report) {
+        final shiftReport = report as ShiftReportModel;
+        if (shiftReport.computerDifferenceType == ComputerDifferenceType.shortage) {
+          return sum + shiftReport.computerDifference;
+        }
+        return sum;
+      },
+    );
+
     return Container(
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
@@ -367,18 +407,6 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // const Padding(
-          //   padding: EdgeInsets.only(bottom: 12.0),
-          //   child: Text(
-          //     'Daily Summary',
-          //     style: TextStyle(
-          //       fontSize: 16,
-          //       fontWeight: FontWeight.bold,
-          //       color: Colors.black87,
-          //     ),
-          //   ),
-          // ),
-
           // First Row: Total Sales & Total Expenses
           Row(
             children: [
@@ -397,6 +425,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                   amount: totalExpenses,
                   icon: Icons.money_off,
                   color: Colors.orange,
+                  onTap: () => _showExpensesBottomSheet(context, allExpenses),
                 ),
               ),
             ],
@@ -435,6 +464,30 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                   amount: totalElectronicPaymentExpenses,
                   icon: Icons.credit_card,
                   color: Colors.teal,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Fourth Row: Excess & Shortage
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Total Excess',
+                  amount: totalSurplus,
+                  icon: Icons.add_circle,
+                  color: Colors.lightGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Total Shortage',
+                  amount: totalDeficit,
+                  icon: Icons.remove_circle,
+                  color: Colors.redAccent,
                 ),
               ),
             ],
@@ -623,12 +676,19 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Total Expenses Card
-              _buildMonthlySummaryCard(
-                title: 'Total Expenses',
-                amount: state.totalExpenses,
-                icon: Icons.money_off,
-                color: Colors.orange,
+              // Total Expenses Card (Clickable)
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context); // Close the monthly summary dialog
+                  _showExpensesBottomSheet(context, state.allExpenses);
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: _buildMonthlySummaryCard(
+                  title: 'Total Expenses',
+                  amount: state.totalExpenses,
+                  icon: Icons.money_off,
+                  color: Colors.orange,
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -656,6 +716,22 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 amount: state.totalElectronicPaymentExpenses,
                 icon: Icons.credit_card,
                 color: Colors.teal,
+              ),
+              const SizedBox(height: 16),
+
+              // Excess and Shortage Row
+              _buildMonthlySummaryCard(
+                title: 'Total Excess',
+                amount: state.totalSurplus,
+                icon: Icons.add_circle,
+                color: Colors.lightGreen,
+              ),
+              const SizedBox(height: 16),
+              _buildMonthlySummaryCard(
+                title: 'Total Shortage',
+                amount: state.totalDeficit,
+                icon: Icons.remove_circle,
+                color: Colors.redAccent,
               ),
               const SizedBox(height: 16),
 
@@ -759,6 +835,213 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// عرض المصاريف في bottom sheet
+  void _showExpensesBottomSheet(BuildContext context, List<ExpenseItem> expenses) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 16),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  const Icon(Icons.receipt_long, color: ColorsManger.primary, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'All Expenses',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${expenses.length} items',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'EGP ${expenses.fold<double>(0.0, (sum, e) => sum + e.amount).toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: ColorsManger.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            // Expenses list
+            Expanded(
+              child: expenses.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inbox, size: 64, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No expenses found',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(20),
+                      itemCount: expenses.length,
+                      itemBuilder: (context, index) {
+                        final expense = expenses[index];
+                        return _buildExpenseCard(expense: expense);
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build individual expense card
+  Widget _buildExpenseCard({required ExpenseItem expense}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: ColorsManger.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.receipt,
+              color: ColorsManger.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        expense.description,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (expense.fileUrl != null) ...[
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () async {
+                          final url = Uri.parse(expense.fileUrl!);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: ColorsManger.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(
+                            expense.fileUrl!.toLowerCase().contains('pdf')
+                                ? Icons.picture_as_pdf
+                                : Icons.image,
+                            color: ColorsManger.primary,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (expense.notes != null && expense.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    expense.notes!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'EGP ${expense.amount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: ColorsManger.primary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
