@@ -573,7 +573,7 @@ class _ManageRequestsBody extends StatelessWidget {
       case RequestType.permission:
         final details = PermissionDetails.fromJson(request.details);
         if (details.type == PermissionType.lateArrival) {
-          color = Colors.amber;
+          color = Colors.red;
           icon = Icons.login;
           label = 'Late Arrival';
         } else {
