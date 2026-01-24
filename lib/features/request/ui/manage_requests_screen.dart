@@ -406,7 +406,7 @@ class _ManageRequestsBody extends StatelessWidget {
                       ],
                     ),
                   ),
-                  _buildRequestTypeChip(request.type),
+                  _buildRequestTypeChip(request),
                 ],
               ),
               const SizedBox(height: 12),
@@ -539,34 +539,48 @@ class _ManageRequestsBody extends StatelessWidget {
     );
   }
 
-  Widget _buildRequestTypeChip(RequestType type) {
+  Widget _buildRequestTypeChip(RequestModel request) {
     Color color;
     IconData icon;
+    String label;
 
-    switch (type) {
+    switch (request.type) {
       case RequestType.annualLeave:
         color = Colors.blue;
         icon = Icons.beach_access;
+        label = request.type.name;
         break;
       case RequestType.sickLeave:
         color = Colors.orange;
         icon = Icons.local_hospital;
+        label = request.type.name;
         break;
       case RequestType.extraHours:
         color = Colors.purple;
         icon = Icons.access_time;
+        label = request.type.name;
         break;
       case RequestType.coverageShift:
         color = Colors.teal;
         icon = Icons.swap_horiz;
+        label = request.type.name;
         break;
       case RequestType.attend:
         color = Colors.green;
         icon = Icons.fingerprint;
+        label = request.type.name;
         break;
       case RequestType.permission:
-        color = Colors.indigo;
-        icon = Icons.exit_to_app;
+        final details = PermissionDetails.fromJson(request.details);
+        if (details.type == PermissionType.lateArrival) {
+          color = Colors.amber;
+          icon = Icons.login;
+          label = 'Late Arrival';
+        } else {
+          color = Colors.indigo;
+          icon = Icons.logout;
+          label = 'Early Leave';
+        }
         break;
     }
 
@@ -583,7 +597,7 @@ class _ManageRequestsBody extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
           Text(
-            type.name,
+            label,
             style: TextStyle(
               color: color,
               fontSize: 12,
@@ -663,10 +677,27 @@ class _ManageRequestsBody extends StatelessWidget {
 
       case RequestType.permission:
         final details = PermissionDetails.fromJson(request.details);
-        return _buildDetailRow(
-          'Early Leave',
-          '${details.hours}h on ${DateFormat('MMM dd, yyyy').format(details.date)}',
-          Icons.logout,
+        final permissionTypeText = details.type == PermissionType.lateArrival
+            ? 'Late Arrival'
+            : 'Early Leave';
+        final icon = details.type == PermissionType.lateArrival
+            ? Icons.login
+            : Icons.logout;
+
+        return Column(
+          children: [
+            _buildDetailRow(
+              'Type',
+              permissionTypeText,
+              icon,
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Duration',
+              '${details.hours}h ${details.minutes}m on ${DateFormat('MMM dd, yyyy').format(details.date)}',
+              Icons.schedule,
+            ),
+          ],
         );
     }
   }
