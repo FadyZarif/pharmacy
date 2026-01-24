@@ -29,7 +29,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final _passwordController = TextEditingController();
   final _printCodeController = TextEditingController();
   final _shiftHoursController = TextEditingController();
-  final _vocationBalanceHoursController = TextEditingController();
+  final _vocationBalanceMinutesController = TextEditingController();
 
   Role _selectedRole = Role.staff;
   bool _isActive = true;
@@ -39,7 +39,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   void initState() {
     super.initState();
     _shiftHoursController.text = '8';
-    _vocationBalanceHoursController.text = '${8*21}'; // Default 21 days
+    _vocationBalanceMinutesController.text = '${8*21*60}'; // Default 21 days in minutes
   }
 
   @override
@@ -50,7 +50,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     _passwordController.dispose();
     _printCodeController.dispose();
     _shiftHoursController.dispose();
-    _vocationBalanceHoursController.dispose();
+    _vocationBalanceMinutesController.dispose();
     super.dispose();
   }
 
@@ -302,14 +302,14 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 const SizedBox(height: 16),
 
                 AppTextFormField(
-                  controller: _vocationBalanceHoursController,
-                  labelText: 'Vacation Hours Balance',
+                  controller: _vocationBalanceMinutesController,
+                  labelText: 'Vacation Balance (Minutes)',
                   fillColor: Colors.white,
                   prefixIcon: const Icon(Icons.beach_access),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter vacation hours balance';
+                      return 'Please enter vacation balance in minutes';
                     }
                     if (int.tryParse(value) == null) {
                       return 'Please enter valid number';
@@ -324,7 +324,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    'Vacation balance is ${((int.tryParse(_vocationBalanceHoursController.text) ?? 0) ~/ (int.tryParse(_shiftHoursController.text) ?? 1))} days and ${((int.tryParse(_vocationBalanceHoursController.text) ?? 0) % (int.tryParse(_shiftHoursController.text) ?? 1))} hours',
+                    () {
+                      final totalMinutes = int.tryParse(_vocationBalanceMinutesController.text) ?? 0;
+                      final shiftHours = int.tryParse(_shiftHoursController.text) ?? 1;
+                      final shiftMinutes = shiftHours * 60;
+                      final days = totalMinutes ~/ shiftMinutes;
+                      final remainingMinutes = totalMinutes % shiftMinutes;
+                      final hours = remainingMinutes ~/ 60;
+                      final minutes = remainingMinutes % 60;
+                      return 'Vacation balance is $days days, $hours hours and $minutes minutes';
+                    }(),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade700,
@@ -424,9 +433,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     final cubit = getIt<UsersCubit>();
 
-    // Calculate vacation balance hours from days
+    // Get vacation balance in minutes
     final shiftHours = int.parse(_shiftHoursController.text);
-    final vocationBalanceHours = int.parse(_vocationBalanceHoursController.text);
+    final vocationBalanceMinutes = int.parse(_vocationBalanceMinutesController.text);
 
     await cubit.addUser(
       name: _nameController.text,
@@ -437,7 +446,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           ? null
           : _printCodeController.text,
       shiftHours: shiftHours,
-      vocationBalanceHours: vocationBalanceHours,
+      vocationBalanceMinutes: vocationBalanceMinutes,
       role: _selectedRole,
       isActive: _isActive,
       imageFile: _selectedImage,

@@ -497,54 +497,55 @@ class RequestCubit extends Cubit<RequestState> {
       final employee = UserModel.fromJson(employeeDoc.data()!);
 
       // Calculate hours to add/subtract based on request type
-      int vocationHoursChange = 0;
+      int vocationMinutesChange = 0;
       int overTimeHoursChange = 0;
 
       switch (request.type) {
         case RequestType.annualLeave:
           final details = AnnualLeaveDetails.fromJson(request.details);
           final days = details.endDate.difference(details.startDate).inDays + 1;
-          final requiredHours = days * employee.shiftHours;
+          final requiredMinutes = days * employee.shiftHours * 60;
 
           // Check if employee has enough vacation balance
-          if (employee.vocationBalanceHours < requiredHours) {
+          if (employee.vocationBalanceMinutes < requiredMinutes) {
             emit(AddRequestFailure(
-              error: 'Employee does not have enough vacation balance. Required: $requiredHours hours, Available: ${employee.vocationBalanceHours} hours'
+              error: 'Employee does not have enough vacation balance. Required: ${requiredMinutes ~/ 60} hours ${requiredMinutes % 60} minutes, Available: ${employee.vocationBalanceMinutes ~/ 60} hours ${employee.vocationBalanceMinutes % 60} minutes'
             ));
             return;
           }
 
-          vocationHoursChange = -requiredHours; // Negative to subtract from balance
+          vocationMinutesChange = -requiredMinutes; // Negative to subtract from balance
           break;
 
         case RequestType.sickLeave:
           final details = SickLeaveDetails.fromJson(request.details);
           final days = details.endDate.difference(details.startDate).inDays + 1;
-          final requiredHours = days * employee.shiftHours;
+          final requiredMinutes = days * employee.shiftHours * 60;
 
           // Check if employee has enough vacation balance
-          if (employee.vocationBalanceHours < requiredHours) {
+          if (employee.vocationBalanceMinutes < requiredMinutes) {
             emit(AddRequestFailure(
-              error: 'Employee does not have enough vacation balance. Required: $requiredHours hours, Available: ${employee.vocationBalanceHours} hours'
+              error: 'Employee does not have enough vacation balance. Required: ${requiredMinutes ~/ 60} hours ${requiredMinutes % 60} minutes, Available: ${employee.vocationBalanceMinutes ~/ 60} hours ${employee.vocationBalanceMinutes % 60} minutes'
             ));
             return;
           }
 
-          vocationHoursChange = -requiredHours; // Negative to subtract from balance
+          vocationMinutesChange = -requiredMinutes; // Negative to subtract from balance
           break;
 
         case RequestType.permission:
           final details = PermissionDetails.fromJson(request.details);
+          final requiredMinutes = details.totalMinutes; // Use total minutes (hours * 60 + minutes)
 
           // Check if employee has enough vacation balance
-          if (employee.vocationBalanceHours < details.hours) {
+          if (employee.vocationBalanceMinutes < requiredMinutes) {
             emit(AddRequestFailure(
-              error: 'Employee does not have enough vacation balance. Required: ${details.hours} hours, Available: ${employee.vocationBalanceHours} hours'
+              error: 'Employee does not have enough vacation balance. Required: ${details.hours}h ${details.minutes}m, Available: ${employee.vocationBalanceMinutes ~/ 60} hours ${employee.vocationBalanceMinutes % 60} minutes'
             ));
             return;
           }
 
-          vocationHoursChange = -details.hours; // Negative to subtract from balance
+          vocationMinutesChange = -requiredMinutes; // Negative to subtract from balance
           break;
 
         case RequestType.extraHours:
@@ -565,11 +566,11 @@ class RequestCubit extends Cubit<RequestState> {
       });
 
       // Update user hours if needed
-      if (vocationHoursChange != 0 || overTimeHoursChange != 0) {
+      if (vocationMinutesChange != 0 || overTimeHoursChange != 0) {
         final updates = <String, dynamic>{};
 
-        if (vocationHoursChange != 0) {
-          updates['vocationBalanceHours'] = employee.vocationBalanceHours + vocationHoursChange;
+        if (vocationMinutesChange != 0) {
+          updates['vocationBalanceMinutes'] = employee.vocationBalanceMinutes + vocationMinutesChange;
         }
 
         if (overTimeHoursChange != 0) {
@@ -629,25 +630,25 @@ class RequestCubit extends Cubit<RequestState> {
         final employee = UserModel.fromJson(employeeDoc.data()!);
 
         // Calculate hours to reverse based on request type
-        int vocationHoursChange = 0;
+        int vocationMinutesChange = 0;
         int overTimeHoursChange = 0;
 
         switch (request.type) {
           case RequestType.annualLeave:
             final details = AnnualLeaveDetails.fromJson(request.details);
             final days = details.endDate.difference(details.startDate).inDays + 1;
-            vocationHoursChange = (days * employee.shiftHours); // Positive to restore balance
+            vocationMinutesChange = (days * employee.shiftHours * 60); // Positive to restore balance
             break;
 
           case RequestType.sickLeave:
             final details = SickLeaveDetails.fromJson(request.details);
             final days = details.endDate.difference(details.startDate).inDays + 1;
-            vocationHoursChange = (days * employee.shiftHours); // Positive to restore balance
+            vocationMinutesChange = (days * employee.shiftHours * 60); // Positive to restore balance
             break;
 
           case RequestType.permission:
             final details = PermissionDetails.fromJson(request.details);
-            vocationHoursChange = details.hours; // Positive to restore balance
+            vocationMinutesChange = details.totalMinutes; // Positive to restore balance (hours * 60 + minutes)
             break;
 
           case RequestType.extraHours:
@@ -661,11 +662,11 @@ class RequestCubit extends Cubit<RequestState> {
         }
 
         // Update user hours if needed
-        if (vocationHoursChange != 0 || overTimeHoursChange != 0) {
+        if (vocationMinutesChange != 0 || overTimeHoursChange != 0) {
           final updates = <String, dynamic>{};
 
-          if (vocationHoursChange != 0) {
-            updates['vocationBalanceHours'] = employee.vocationBalanceHours + vocationHoursChange;
+          if (vocationMinutesChange != 0) {
+            updates['vocationBalanceMinutes'] = employee.vocationBalanceMinutes + vocationMinutesChange;
           }
 
           if (overTimeHoursChange != 0) {

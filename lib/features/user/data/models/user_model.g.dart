@@ -15,7 +15,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   branches: (json['branches'] as List<dynamic>)
       .map((e) => Branch.fromJson(e as Map<String, dynamic>))
       .toList(),
-  vocationBalanceHours: (json['vocationBalanceHours'] as num).toInt(),
+  vocationBalanceMinutes: (json['vocationBalanceMinutes'] as num).toInt(),
   overTimeHours: (json['overTimeHours'] as num).toInt(),
   shiftHours: (json['shiftHours'] as num).toInt(),
   role: $enumDecode(_$RoleEnumMap, json['role']),
@@ -32,7 +32,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'email': instance.email,
   'printCode': instance.printCode,
   'branches': instance.branches.map((e) => e.toJson()).toList(),
-  'vocationBalanceHours': instance.vocationBalanceHours,
+  'vocationBalanceMinutes': instance.vocationBalanceMinutes,
   'overTimeHours': instance.overTimeHours,
   'shiftHours': instance.shiftHours,
   'role': _$RoleEnumMap[instance.role]!,

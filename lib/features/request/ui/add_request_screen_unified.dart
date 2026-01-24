@@ -37,6 +37,10 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
 
+  // Permission controllers
+  final _permissionHoursController = TextEditingController();
+  final _permissionMinutesController = TextEditingController();
+
   // Annual & Sick Leave
   DateTime? _startDate;
   DateTime? _endDate;
@@ -46,7 +50,10 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
 
   // Extra Hours & Permission
   DateTime? _selectedDate;
-  int? _hours;
+  int? _hours; // Used for Extra Hours only
+
+  // Permission specific
+  PermissionType? _permissionType;
 
   // Attend
   DateTime? _attendDate;
@@ -111,7 +118,9 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
       case RequestType.permission:
         final details = PermissionDetails.fromJson(request.details);
         _selectedDate = details.date;
-        _hours = details.hours;
+        _permissionType = details.type;
+        _permissionHoursController.text = details.hours.toString();
+        _permissionMinutesController.text = details.minutes.toString();
         break;
     }
   }
@@ -119,6 +128,8 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
   @override
   void dispose() {
     _notesController.dispose();
+    _permissionHoursController.dispose();
+    _permissionMinutesController.dispose();
 
     // Reset coverage shift selections
     if (widget.requestType == RequestType.coverageShift) {
@@ -295,12 +306,22 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
         );
 
       case RequestType.extraHours:
-      case RequestType.permission:
         return Column(
           children: [
             _buildSingleDatePicker(),
             const SizedBox(height: 20),
             _buildHoursInput(),
+          ],
+        );
+
+      case RequestType.permission:
+        return Column(
+          children: [
+            _buildSingleDatePicker(),
+            const SizedBox(height: 20),
+            _buildPermissionTypeSelector(),
+            const SizedBox(height: 20),
+            _buildPermissionTimeInputs(),
           ],
         );
 
@@ -520,6 +541,194 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
           _hours = int.tryParse(value);
         });
       },
+    );
+  }
+
+  Widget _buildPermissionTypeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Permission Type',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: widget.isReadOnly ? null : () {
+                    setState(() {
+                      _permissionType = PermissionType.lateArrival;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _permissionType == PermissionType.lateArrival
+                            ? ColorsManger.primary
+                            : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      color: _permissionType == PermissionType.lateArrival
+                          ? ColorsManger.primary.withValues(alpha: 0.1)
+                          : Colors.white,
+                    ),
+                    child: Row(
+                      children: [
+                        Radio<PermissionType>(
+                          value: PermissionType.lateArrival,
+                          groupValue: _permissionType,
+                          activeColor: ColorsManger.primary,
+                          onChanged: widget.isReadOnly ? null : (value) {
+                            setState(() {
+                              _permissionType = value;
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Late Arrival\n(متأخر في الحضور)',
+                            style: TextStyle(
+                              color: _permissionType == PermissionType.lateArrival
+                                  ? ColorsManger.primary
+                                  : Colors.black87,
+                              fontWeight: _permissionType == PermissionType.lateArrival
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: widget.isReadOnly ? null : () {
+                    setState(() {
+                      _permissionType = PermissionType.earlyLeave;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _permissionType == PermissionType.earlyLeave
+                            ? ColorsManger.primary
+                            : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      color: _permissionType == PermissionType.earlyLeave
+                          ? ColorsManger.primary.withValues(alpha: 0.1)
+                          : Colors.white,
+                    ),
+                    child: Row(
+                      children: [
+                        Radio<PermissionType>(
+                          value: PermissionType.earlyLeave,
+                          groupValue: _permissionType,
+                          activeColor: ColorsManger.primary,
+                          onChanged: widget.isReadOnly ? null : (value) {
+                            setState(() {
+                              _permissionType = value;
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Early Leave\n(انصراف مبكر)',
+                            style: TextStyle(
+                              color: _permissionType == PermissionType.earlyLeave
+                                  ? ColorsManger.primary
+                                  : Colors.black87,
+                              fontWeight: _permissionType == PermissionType.earlyLeave
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPermissionTimeInputs() {
+    return Row(
+      children: [
+        Expanded(
+          child: AppTextFormField(
+            controller: _permissionHoursController,
+            labelText: 'Hours (ساعات)',
+            keyboardType: TextInputType.number,
+            fillColor: Colors.white,
+            prefixIcon: const Icon(Icons.access_time),
+            readOnly: widget.isReadOnly,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Required';
+              }
+              final parsed = int.tryParse(value);
+              if (parsed == null || parsed < 0 || parsed > 12) {
+                return 'Invalid (0-12)';
+              }
+              // Check if both hours and minutes are zero
+              final minutes = int.tryParse(_permissionMinutesController.text) ?? 0;
+              if (parsed == 0 && minutes == 0) {
+                return 'Time required';
+              }
+              return null;
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: AppTextFormField(
+            controller: _permissionMinutesController,
+            labelText: 'Minutes (دقائق)',
+            keyboardType: TextInputType.number,
+            fillColor: Colors.white,
+            prefixIcon: const Icon(Icons.timer),
+            readOnly: widget.isReadOnly,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Required';
+              }
+              final parsed = int.tryParse(value);
+              if (parsed == null || parsed < 0 || parsed > 59) {
+                return 'Invalid (0-59)';
+              }
+              // Check if both hours and minutes are zero
+              final hours = int.tryParse(_permissionHoursController.text) ?? 0;
+              if (parsed == 0 && hours == 0) {
+                return 'Time required';
+              }
+              return null;
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1032,12 +1241,19 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
           break;
 
         case RequestType.permission:
-          if (_selectedDate == null || _hours == null) {
-            throw 'Please fill all fields';
+          if (_selectedDate == null || _permissionType == null) {
+            throw 'Please fill all required fields';
+          }
+          final hours = int.tryParse(_permissionHoursController.text) ?? 0;
+          final minutes = int.tryParse(_permissionMinutesController.text) ?? 0;
+          if (hours == 0 && minutes == 0) {
+            throw 'Please enter hours and/or minutes';
           }
           details = PermissionDetails(
             date: _selectedDate!,
-            hours: _hours!,
+            type: _permissionType!,
+            hours: hours,
+            minutes: minutes,
           ).toJson();
           break;
       }

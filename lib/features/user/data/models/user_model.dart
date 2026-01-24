@@ -11,7 +11,7 @@ class UserModel {
   final List<Branch> branches;
   @JsonKey(includeFromJson: false, includeToJson: false)
   Branch currentBranch = Branch(id: '', name: '');
-  final int vocationBalanceHours;
+  final int vocationBalanceMinutes;
   final int overTimeHours;
   final int shiftHours;
   final Role role;
@@ -27,7 +27,7 @@ class UserModel {
     required this.email,
     this.printCode,
     required this.branches,
-    required this.vocationBalanceHours,
+    required this.vocationBalanceMinutes,
     required this.overTimeHours,
     required this.shiftHours,
     required this.role,
@@ -50,10 +50,13 @@ class UserModel {
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   String get vocationBalance{
-    final hours = vocationBalanceHours;
-    final days = hours ~/ shiftHours;
-    final remainingHours = hours % shiftHours;
-    return '${days}d ${remainingHours}h';
+    final totalMinutes = vocationBalanceMinutes;
+    final shiftMinutes = shiftHours * 60;
+    final days = totalMinutes ~/ shiftMinutes;
+    final remainingMinutes = totalMinutes % shiftMinutes;
+    final hours = remainingMinutes ~/ 60;
+    final minutes = remainingMinutes % 60;
+    return '${days}d ${hours}h ${minutes}m';
   }
 
   bool get isManagement{

@@ -160,6 +160,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                             ),
                             Text(
                               currentUser.vocationBalance,
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -193,7 +194,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                           children: [
                             Icon(Icons.schedule, color: Colors.blue, size: 45),
                             Text(
-                              '${currentUser.overTimeHours}h',
+                              '${currentUser.overTimeHours}h\n',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -233,7 +234,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                               buildWhen: (_, current) => current is FetchRequestsSuccess,
                               builder: (context, state) {
                                 return Text(
-                                  '${getIt<RequestCubit>().pendingRequestsCount}',
+                                  '${getIt<RequestCubit>().pendingRequestsCount}\n',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -449,8 +450,8 @@ Future<void> showNewRequestSheet(BuildContext context) async {
     ),
     RequestItem(
       type: RequestType.permission,
-      title: 'Permission Early Leave',
-      subtitle: 'طلب إذن انصراف بدري',
+      title: 'Permission',
+      subtitle: 'تأخير أو انصراف مبكر',
       icon: Icons.exit_to_app,
       screen: const AddRequestScreenUnified(requestType: RequestType.permission),
     ),

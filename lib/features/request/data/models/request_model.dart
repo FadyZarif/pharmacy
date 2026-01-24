@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:pharmacy/core/helpers/server_timestamp_helper.dart';
 
@@ -21,7 +22,7 @@ extension RequestTypeExtension on RequestType {
       case RequestType.attend:
         return 'Attendance';
       case RequestType.permission:
-        return 'Early Leave Permission';
+        return 'Permission';
     }
   }
   String get arName {
@@ -37,7 +38,7 @@ extension RequestTypeExtension on RequestType {
       case RequestType.attend:
         return 'حضور';
       case RequestType.permission:
-        return 'انصراف مبكر';
+        return 'اذن';
     }
   }
   IconData get icon {
@@ -280,15 +281,30 @@ class AttendDetails {
 class PermissionDetails {
   @ServerTimestampConverter()
   final DateTime date;
+  @Default(PermissionType.earlyLeave) final PermissionType type; // late arrival or early leave
   final int hours;
+  final int minutes;
 
   PermissionDetails({
     required this.date,
+    required this.type,
     required this.hours,
+    required this.minutes,
   });
 
   factory PermissionDetails.fromJson(Map<String, dynamic> json) =>
       _$PermissionDetailsFromJson(json);
 
   Map<String, dynamic> toJson() => _$PermissionDetailsToJson(this);
+
+  // Get total minutes
+  int get totalMinutes => (hours * 60) + minutes;
+}
+
+enum PermissionType {
+  @JsonValue('lateArrival')
+  lateArrival,
+
+  @JsonValue('earlyLeave')
+  earlyLeave,
 }

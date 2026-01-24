@@ -506,6 +506,13 @@ class RequestDetailsScreen extends StatelessWidget {
   List<Widget> _buildPermissionDetails() {
     final details = PermissionDetails.fromJson(request.details);
 
+    final typeLabel = details.type == PermissionType.lateArrival
+        ? 'Late Arrival (متأخر في الحضور)'
+        : 'Early Leave (انصراف مبكر)';
+    final typeIcon = details.type == PermissionType.lateArrival
+        ? Icons.login
+        : Icons.logout;
+
     return [
       _buildDetailRow(
         'Date',
@@ -515,9 +522,16 @@ class RequestDetailsScreen extends StatelessWidget {
       ),
       const SizedBox(height: 12),
       _buildDetailRow(
-        'Early Leave Duration',
-        '${details.hours} hour${details.hours > 1 ? 's' : ''}',
-        Icons.logout,
+        'Permission Type',
+        typeLabel,
+        typeIcon,
+        Colors.indigo,
+      ),
+      const SizedBox(height: 12),
+      _buildDetailRow(
+        'Duration',
+        '${details.hours}h ${details.minutes}m',
+        Icons.access_time,
         Colors.indigo,
       ),
     ];

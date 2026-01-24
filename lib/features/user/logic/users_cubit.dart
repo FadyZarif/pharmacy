@@ -86,7 +86,7 @@ class UsersCubit extends Cubit<UsersState> {
     required String password,
     String? printCode,
     required int shiftHours,
-    required int vocationBalanceHours,
+    required int vocationBalanceMinutes,
     required Role role,
     required bool isActive,
     File? imageFile,
@@ -138,7 +138,7 @@ class UsersCubit extends Cubit<UsersState> {
         phone: phone.trim(),
         printCode: printCode?.trim(),
         branches: [currentUser.currentBranch], // استخدام نسخة محلية بدلاً من global
-        vocationBalanceHours: vocationBalanceHours,
+        vocationBalanceMinutes: vocationBalanceMinutes,
         overTimeHours: 0,
         shiftHours: shiftHours,
         role: role,

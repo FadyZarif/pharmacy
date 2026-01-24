@@ -141,11 +141,20 @@ Map<String, dynamic> _$AttendDetailsToJson(AttendDetails instance) =>
 PermissionDetails _$PermissionDetailsFromJson(Map<String, dynamic> json) =>
     PermissionDetails(
       date: const ServerTimestampConverter().fromJson(json['date'] as Object),
+      type: $enumDecode(_$PermissionTypeEnumMap, json['type']),
       hours: (json['hours'] as num).toInt(),
+      minutes: (json['minutes'] as num).toInt(),
     );
 
 Map<String, dynamic> _$PermissionDetailsToJson(PermissionDetails instance) =>
     <String, dynamic>{
       'date': const ServerTimestampConverter().toJson(instance.date),
+      'type': _$PermissionTypeEnumMap[instance.type]!,
       'hours': instance.hours,
+      'minutes': instance.minutes,
     };
+
+const _$PermissionTypeEnumMap = {
+  PermissionType.lateArrival: 'lateArrival',
+  PermissionType.earlyLeave: 'earlyLeave',
+};
