@@ -33,6 +33,7 @@ class MonthlySummaryLoaded extends ViewReportsState {
   final double totalSurplus; // مجموع الزيادة
   final double totalDeficit; // مجموع العجز
   final List<ExpenseItem> allExpenses; // جميع المصاريف
+  final double? monthlyTarget; // الهدف الشهري
 
   MonthlySummaryLoaded({
     required this.totalSales,
@@ -44,6 +45,7 @@ class MonthlySummaryLoaded extends ViewReportsState {
     required this.totalSurplus,
     required this.totalDeficit,
     required this.allExpenses,
+    this.monthlyTarget,
   });
 }
 

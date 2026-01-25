@@ -131,6 +131,24 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
 
       final netProfit = totalSales - totalExpenses;
 
+      // جلب الهدف الشهري
+      final monthKey = DateFormat('yyyy-MM').format(selectedDate);
+      double? monthlyTarget;
+      try {
+        final targetDoc = await _db
+            .collection('branches')
+            .doc(currentUser.currentBranch.id)
+            .collection('monthly_target')
+            .doc(monthKey)
+            .get();
+
+        if (targetDoc.exists) {
+          monthlyTarget = (targetDoc.data()?['monthlyTarget'] as num?)?.toDouble();
+        }
+      } catch (e) {
+        print('Error fetching monthly target: $e');
+      }
+
       emit(MonthlySummaryLoaded(
         totalSales: totalSales,
         totalExpenses: totalExpenses,
@@ -141,6 +159,7 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
         allExpenses: allExpenses,
+        monthlyTarget: monthlyTarget,
       ));
     } catch (e) {
       emit(MonthlySummaryError(message: e.toString()));
@@ -187,6 +206,29 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       emit(CollectionStatusLoaded(isCollected: isCollected));
     } catch (e) {
       emit(CollectionStatusError(message: e.toString()));
+    }
+  }
+
+  /// تحديد الهدف الشهري (Admin only)
+  Future<void> setMonthlyTarget(DateTime selectedDate, double target) async {
+    try {
+      final monthKey = DateFormat('yyyy-MM').format(selectedDate);
+
+      await _db
+          .collection('branches')
+          .doc(currentUser.currentBranch.id)
+          .collection('monthly_target')
+          .doc(monthKey)
+          .set({
+        'monthlyTarget': target,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': currentUser.uid,
+      });
+
+      // Refresh monthly summary to show the new target
+      await fetchMonthlySummary(selectedDate);
+    } catch (e) {
+      emit(MonthlySummaryError(message: e.toString()));
     }
   }
 

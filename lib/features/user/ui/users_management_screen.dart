@@ -11,6 +11,8 @@ import 'package:pharmacy/features/user/ui/profile_screen.dart';
 import 'package:pharmacy/features/user/ui/add_user_screen.dart';
 import 'package:pharmacy/features/job_opportunity/ui/view_job_opportunities_screen.dart';
 import 'package:pharmacy/features/job_opportunity/logic/job_opportunity_cubit.dart';
+import 'package:pharmacy/features/branch/ui/branch_monthly_target_screen.dart';
+import 'package:pharmacy/features/branch/logic/branch_target_cubit.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -36,6 +38,23 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           backgroundColor: ColorsManger.primary,
           foregroundColor: Colors.white,
           actions: [
+            // Monthly Target button - Admin only
+            if (currentUser.role == Role.admin)
+              IconButton(
+                icon: const Icon(Icons.bar_chart),
+                tooltip: 'Monthly Target',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider(
+                        create: (_) => getIt<BranchTargetCubit>(),
+                        child: const BranchMonthlyTargetScreen(),
+                      ),
+                    ),
+                  );
+                },
+              ),
             IconButton(
               icon: const Icon(Icons.work),
               tooltip: 'Job Opportunities',

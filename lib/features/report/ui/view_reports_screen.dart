@@ -676,6 +676,15 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               ),
               const SizedBox(height: 16),
 
+              // Target Achievement Card (if target is set)
+              if (state.monthlyTarget != null) ...[
+                _buildTargetAchievementCard(
+                  totalSales: state.totalSales,
+                  monthlyTarget: state.monthlyTarget!,
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Total Expenses Card (Clickable)
               InkWell(
                 onTap: () {
@@ -746,6 +755,36 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
 
               const SizedBox(height: 24),
 
+              // Set Monthly Target Button (Admin only)
+              if (currentUser.isAdmin || currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context); // Close dialog
+                      _showSetMonthlyTargetDialog(context, _selectedDate, state.monthlyTarget);
+                    },
+                    icon: const Icon(Icons.flag),
+                    label: Text(
+                      state.monthlyTarget == null ? 'Set Monthly Target' : 'Update Monthly Target',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColorsManger.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: ColorsManger.primary, width: 2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               // Close Button
               SizedBox(
                 width: double.infinity,
@@ -771,6 +810,93 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTargetAchievementCard({
+    required double totalSales,
+    required double monthlyTarget,
+  }) {
+    final achievementPercentage = (totalSales / monthlyTarget * 100).clamp(0, 999);
+    final isAchieved = achievementPercentage >= 100;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isAchieved ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isAchieved ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isAchieved ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isAchieved ? Icons.check_circle : Icons.trending_up,
+                  color: isAchieved ? Colors.green : Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Target Achievement',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${achievementPercentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isAchieved ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Target: EGP ${monthlyTarget.toStringAsFixed(1)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Progress Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (achievementPercentage / 100).clamp(0, 1),
+              minHeight: 8,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isAchieved ? Colors.green : Colors.orange,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1095,6 +1221,121 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     if (confirmed == true && mounted) {
       _cubit.toggleCollectionStatus(_formattedDate, _isCollected);
     }
+  }
+
+  /// عرض dialog لتحديد الهدف الشهري
+  Future<void> _showSetMonthlyTargetDialog(BuildContext context, DateTime selectedDate, double? currentTarget) async {
+    final TextEditingController targetController = TextEditingController(
+      text: currentTarget?.toStringAsFixed(0) ?? '',
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.flag,
+              color: ColorsManger.primary,
+            ),
+            const SizedBox(width: 12),
+            const Text('Set Monthly Target'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Month: ${DateFormat('MMMM yyyy').format(selectedDate)}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: targetController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Monthly Target (EGP)',
+                hintText: 'Enter target amount',
+                prefixIcon: const Icon(Icons.attach_money),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorsManger.primary,
+            ),
+            child: const Text(
+              'Save',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final targetText = targetController.text.trim();
+      if (targetText.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid target amount'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final target = double.tryParse(targetText);
+      if (target == null || target <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid positive number'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: ColorsManger.primary),
+        ),
+      );
+
+      await _cubit.setMonthlyTarget(selectedDate, target);
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Monthly target updated successfully ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
+
+    targetController.dispose();
   }
 }
 

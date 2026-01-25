@@ -12,6 +12,7 @@ import 'package:pharmacy/features/request/data/services/coverage_shift_service.d
 import '../../features/salary/logic/salary_cubit.dart';
 import '../../features/user/logic/users_cubit.dart';
 import '../../features/job_opportunity/logic/job_opportunity_cubit.dart';
+import '../../features/branch/logic/branch_target_cubit.dart';
 import '../services/notification_service.dart';
 
 
@@ -51,6 +52,9 @@ Future setupGetIt() async{
 
   ///Job Opportunity
   getIt.registerLazySingleton<JobOpportunityCubit>(()=>JobOpportunityCubit());
+
+  ///Branch Target
+  getIt.registerFactory<BranchTargetCubit>(()=>BranchTargetCubit());
 
   ///Notification Service
   getIt.registerLazySingleton<NotificationService>(()=>NotificationService());
