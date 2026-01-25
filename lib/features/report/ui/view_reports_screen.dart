@@ -117,13 +117,13 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 centerTitle: true,
                 backgroundColor: ColorsManger.primary,
                 foregroundColor: Colors.white,
-                actions: (currentUser.isManagement || currentUser.uid=='7DUwUuQ0rIUUb94NCK2vdnrZCLo1')? [
+                actions: [
                   IconButton(
                     icon: const Icon(Icons.calendar_view_month, color: Colors.white),
                     tooltip: 'Monthly Summary',
                     onPressed: () => _cubit.fetchMonthlySummary(_selectedDate),
                   ),
-                ]:null,
+                ],
               ),
               body: Column(
               children: [
@@ -684,7 +684,8 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-
+              if(currentUser.isManagement || currentUser.uid=='7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+              ...[
               // Total Expenses Card (Clickable)
               InkWell(
                 onTap: () {
@@ -756,7 +757,8 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               const SizedBox(height: 24),
 
               // Set Monthly Target Button (Admin only)
-              if (currentUser.isAdmin || currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+              if (currentUser.isAdmin)
+                ...[
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -782,9 +784,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
               ],
-
+],
+              const SizedBox(height: 12),
               // Close Button
               SizedBox(
                 width: double.infinity,
