@@ -27,6 +27,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   late final TextEditingController _phoneController;
   late final TextEditingController _printCodeController;
   late final TextEditingController _shiftHoursController;
+  late final TextEditingController _vocationBalanceMinutesController;
 
   late Role _selectedRole;
   late bool _isActive;
@@ -42,6 +43,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     _phoneController = TextEditingController(text: widget.user.phone);
     _printCodeController = TextEditingController(text: widget.user.printCode ?? '');
     _shiftHoursController = TextEditingController(text: widget.user.shiftHours.toString());
+    _vocationBalanceMinutesController = TextEditingController(text: widget.user.vocationBalanceMinutes.toString());
 
 
     _selectedRole = widget.user.role;
@@ -56,6 +58,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     _phoneController.dispose();
     _printCodeController.dispose();
     _shiftHoursController.dispose();
+    _vocationBalanceMinutesController.dispose();
     super.dispose();
   }
 
@@ -304,23 +307,47 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                     /* AppTextFormField(
-                        controller: _vocationBalanceController,
-                        labelText: 'Vacation Balance (Hours)',
+                      AppTextFormField(
+                        controller: _vocationBalanceMinutesController,
+                        labelText: 'Vacation Balance (Minutes)',
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.beach_access),
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter vacation balance';
+                            return 'Please enter vacation balance in minutes';
                           }
                           if (int.tryParse(value) == null) {
                             return 'Please enter valid number';
                           }
                           return null;
                         },
+                        onChanged: (_) {
+                          setState(() {});
+                        },
                       ),
-                      const SizedBox(height: 16),*/
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          () {
+                            final totalMinutes = int.tryParse(_vocationBalanceMinutesController.text) ?? 0;
+                            final shiftHours = int.tryParse(_shiftHoursController.text) ?? 1;
+                            final shiftMinutes = shiftHours * 60;
+                            final days = totalMinutes ~/ shiftMinutes;
+                            final remainingMinutes = totalMinutes % shiftMinutes;
+                            final hours = remainingMinutes ~/ 60;
+                            final minutes = remainingMinutes % 60;
+                            return 'Vacation balance is $days days, $hours hours and $minutes minutes';
+                          }(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Active Status Switch
                       Container(
@@ -465,6 +492,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
       phone: _phoneController.text,
       printCode: _printCodeController.text.isEmpty ? null : _printCodeController.text,
       shiftHours: int.parse(_shiftHoursController.text),
+      vocationBalanceMinutes: int.parse(_vocationBalanceMinutesController.text),
       role: _selectedRole,
       isActive: _isActive,
       hasRequestsPermission: _selectedRole == Role.subManager ? _hasRequestsPermission : null,

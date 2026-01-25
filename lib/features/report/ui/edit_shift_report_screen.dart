@@ -182,11 +182,11 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Attachment Section
-                        if (widget.report.attachmentUrl != null)
-                          _buildAttachmentSection(widget.report.attachmentUrl!),
+                        // Attachments Section
+                        if (widget.report.attachmentUrls.isNotEmpty)
+                          _buildAttachmentsSection(widget.report.attachmentUrls),
 
-                        if (widget.report.attachmentUrl != null)
+                        if (widget.report.attachmentUrls.isNotEmpty)
                           const SizedBox(height: 24),
 
                         ShiftReportWidgets.buildExpensesSection(
@@ -732,77 +732,92 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
     context.read<EditReportCubit>().updateReport(updatedReport, widget.date);
   }
 
-  Widget _buildAttachmentSection(String attachmentUrl) {
-    final isPdf = attachmentUrl.toLowerCase().contains('.pdf');
+  Widget _buildAttachmentsSection(List<String> attachmentUrls) {
+    if (attachmentUrls.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Attachment',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Attachments',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: ColorsManger.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${attachmentUrls.length} file(s)',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: ColorsManger.primary,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
 
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+        // Grid of attachments
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1,
           ),
-          child: Row(
-            children: [
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: ColorsManger.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isPdf ? Icons.picture_as_pdf : Icons.image,
-                  color: ColorsManger.primary,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 16),
+          itemCount: attachmentUrls.length,
+          itemBuilder: (context, index) {
+            final url = attachmentUrls[index];
+            final isPdf = url.toLowerCase().contains('.pdf');
 
-              // File info
-              Expanded(
+            return InkWell(
+              onTap: () => _openAttachment(url),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      isPdf ? 'PDF Document' : 'Image',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Icon(
+                      isPdf ? Icons.picture_as_pdf : Icons.image,
+                      size: 40,
+                      color: ColorsManger.primary,
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Tap to view',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        isPdf ? 'PDF ${index + 1}' : 'Image ${index + 1}',
+                        style: const TextStyle(fontSize: 10),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // View button
-              IconButton(
-                icon: Icon(Icons.open_in_new, color: ColorsManger.primary),
-                onPressed: () => _openAttachment(attachmentUrl),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
@@ -815,20 +830,18 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open attachment'),
-            backgroundColor: Colors.red,
-          ),
+        defToast2(
+          context: context,
+          msg: 'Cannot open file',
+          dialogType: DialogType.error,
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error opening attachment: $e'),
-          backgroundColor: Colors.red,
-        ),
+      defToast2(
+        context: context,
+        msg: 'Error opening file: $e',
+        dialogType: DialogType.error,
       );
     }
   }

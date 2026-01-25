@@ -382,7 +382,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
               : () async {
                   final picked = await showDateRangePicker(
                     context: context,
-                    firstDate: DateTime.now(),
+                    firstDate: DateTime.now().subtract(const Duration(days: 30)),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                     initialEntryMode: DatePickerEntryMode.calendarOnly,
                     builder: (context, child) {

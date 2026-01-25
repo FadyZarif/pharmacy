@@ -21,8 +21,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   double electronicWalletAmount = 0.0;
   String? notes;
   final List<ExpenseItem> expenses = [];
-  String? attachmentUrl; // Single attachment URL
-  File? attachmentFile; // Local file before upload
+  List<String> attachmentUrls = []; // Multiple attachment URLs
+  List<File> attachmentFiles = []; // Local files before upload
 
   // Current date
   DateTime currentDate = DateTime.now();
@@ -68,7 +68,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         notes = existingShift.notes;
         expenses.clear();
         expenses.addAll(existingShift.expenses);
-        attachmentUrl = existingShift.attachmentUrl;
+        attachmentUrls = List.from(existingShift.attachmentUrls);
 
         emit(ShiftAlreadyExists(existingShift));
       } else {
@@ -108,7 +108,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         notes = myShift.notes;
         expenses.clear();
         expenses.addAll(myShift.expenses);
-        attachmentUrl = myShift.attachmentUrl;
+        attachmentUrls = List.from(myShift.attachmentUrls);
 
         emit(ShiftReportLoaded(myShift));
       } else {
@@ -177,19 +177,26 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
   /// Pick and store attachment locally (will be uploaded on submit)
   void pickAttachment(File file) {
-    attachmentFile = file;
+    attachmentFiles.add(file);
     emit(ShiftReportUpdated());
   }
 
-  /// Remove attachment
-  void removeAttachment() {
-    attachmentFile = null;
-    attachmentUrl = null;
+  /// Remove attachment by index
+  void removeAttachment(int index) {
+    if (index < attachmentFiles.length) {
+      attachmentFiles.removeAt(index);
+    } else {
+      // Remove from uploaded URLs
+      final urlIndex = index - attachmentFiles.length;
+      if (urlIndex >= 0 && urlIndex < attachmentUrls.length) {
+        attachmentUrls.removeAt(urlIndex);
+      }
+    }
     emit(AttachmentRemoved());
   }
 
   /// Upload attachment to Firebase Storage
-  Future<String?> _uploadAttachment(File file) async {
+  Future<String> _uploadAttachment(File file) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = file.path.split('.').last;
@@ -241,11 +248,14 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
       emit(ShiftReportLoading());
 
-      // Upload attachment if exists
-      String? uploadedUrl;
-      if (attachmentFile != null) {
+      // Upload all attachments if exist
+      final List<String> uploadedUrls = List.from(attachmentUrls);
+      if (attachmentFiles.isNotEmpty) {
         try {
-          uploadedUrl = await _uploadAttachment(attachmentFile!);
+          for (var file in attachmentFiles) {
+            final url = await _uploadAttachment(file);
+            uploadedUrls.add(url);
+          }
         } catch (e) {
           emit(AttachmentUploadError(e.toString()));
           return;
@@ -267,7 +277,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         computerDifferenceType: computerDifferenceType,
         computerDifference: computerDifference,
         electronicWalletAmount: electronicWalletAmount,
-        attachmentUrl: uploadedUrl ?? attachmentUrl,
+        attachmentUrls: uploadedUrls,
         submittedAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -315,7 +325,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         computerDifferenceType: computerDifferenceType,
         computerDifference: computerDifference,
         electronicWalletAmount: electronicWalletAmount,
-        attachmentUrl: attachmentUrl,
+        attachmentUrls: List.from(attachmentUrls),
         updatedAt: DateTime.now(),
       );
 
@@ -341,8 +351,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     electronicWalletAmount = 0.0;
     notes = null;
     expenses.clear();
-    attachmentUrl = null;
-    attachmentFile = null;
+    attachmentUrls.clear();
+    attachmentFiles.clear();
     emit(ShiftReportInitial());
   }
 

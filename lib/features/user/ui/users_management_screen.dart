@@ -22,6 +22,7 @@ class UsersManagementScreen extends StatefulWidget {
 class _UsersManagementScreenState extends State<UsersManagementScreen> {
   String _searchQuery = '';
   Role? _selectedRoleFilter;
+  bool? _selectedActiveFilter; // null = all, true = active only, false = inactive only
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +104,21 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // Active/Inactive Filter
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildActiveFilterChip('All Status', null),
+                        const SizedBox(width: 8),
+                        _buildActiveFilterChip('Active Only', true),
+                        const SizedBox(width: 8),
+                        _buildActiveFilterChip('Inactive Only', false),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -154,6 +170,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     var users = context.read<UsersCubit>().filterUsers(
                       searchQuery: _searchQuery,
                       selectedRole: _selectedRoleFilter,
+                      isActive: _selectedActiveFilter,
                     );
 
                     if (users.isEmpty) {
@@ -194,6 +211,50 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
+  Widget _buildActiveFilterChip(String label, bool? isActive) {
+    final isSelected = _selectedActiveFilter == isActive;
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isActive != null)
+            Icon(
+              isActive ? Icons.check_circle : Icons.cancel,
+              size: 16,
+              color: isSelected
+                  ? (isActive ? Colors.green : Colors.red)
+                  : Colors.grey[600],
+            ),
+          if (isActive != null) const SizedBox(width: 4),
+          Text(label),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedActiveFilter = selected ? isActive : null;
+        });
+      },
+      selectedColor: isActive == null
+          ? ColorsManger.primary.withValues(alpha: 0.2)
+          : (isActive
+              ? Colors.green.withValues(alpha: 0.2)
+              : Colors.red.withValues(alpha: 0.2)),
+      checkmarkColor: isActive == null
+          ? ColorsManger.primary
+          : (isActive ? Colors.green : Colors.red),
+      backgroundColor: Colors.white,
+      labelStyle: TextStyle(
+        color: isSelected
+            ? (isActive == null
+                ? ColorsManger.primary
+                : (isActive ? Colors.green : Colors.red))
+            : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
+  }
+
   Widget _buildFilterChip(String label, Role? role) {
     final isSelected = _selectedRoleFilter == role;
     return FilterChip(
@@ -215,85 +276,133 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   }
 
   Widget _buildUserCard(UserModel user) {
-    return Card(
-      elevation: 2,
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          navigateTo(context, ProfileScreen(user: user));
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Profile Picture
-              ProfileCircle(photoUrl: user.photoUrl, size: 40),
-              const SizedBox(width: 16),
-
-              // User Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Opacity(
+      opacity: user.isActive ? 1.0 : 0.6, // Dim inactive users
+      child: Card(
+        elevation: 2,
+        color: user.isActive ? Colors.white : Colors.grey[100],
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: user.isActive
+              ? BorderSide.none
+              : BorderSide(color: Colors.red.withValues(alpha: 0.3), width: 2),
+        ),
+        child: InkWell(
+          onTap: () {
+            navigateTo(context, ProfileScreen(user: user));
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Profile Picture
+                Stack(
                   children: [
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.phone,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getRoleColor(user.role).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        user.role.name.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: _getRoleColor(user.role),
+                    ProfileCircle(photoUrl: user.photoUrl, size: 40),
+                    if (!user.isActive)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.block,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
-              ),
+                const SizedBox(width: 16),
 
-              // Status Indicator
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: user.isActive
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.red.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+                // User Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              user.name,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                decoration: user.isActive ? null : TextDecoration.lineThrough,
+                                color: user.isActive ? Colors.black : Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                          if (!user.isActive)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'INACTIVE',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.phone,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getRoleColor(user.role).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          user.role.name.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _getRoleColor(user.role),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(
-                  user.isActive ? Icons.check_circle : Icons.cancel,
-                  color: user.isActive ? Colors.green : Colors.red,
-                  size: 24,
-                ),
-              ),
 
-              // Arrow
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
+                // Status Indicator
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: user.isActive
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    user.isActive ? Icons.check_circle : Icons.cancel,
+                    color: user.isActive ? Colors.green : Colors.red,
+                    size: 24,
+                  ),
+                ),
+
+                // Arrow
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
           ),
         ),
       ),

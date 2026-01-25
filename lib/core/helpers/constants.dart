@@ -23,10 +23,19 @@ Future<bool> checkIsLogged() async {
     return false;
   } else {
     uid = FirebaseAuth.instance.currentUser?.uid;
-    isLogged = true;
     final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     currentUser = UserModel.fromJson(doc.data()!);
+
+    // Check if user is active
+    if (!currentUser.isActive) {
+      // Sign out inactive user
+      await FirebaseAuth.instance.signOut();
+      isLogged = false;
+      return false;
+    }
+
+    isLogged = true;
 
     // Check if user has coverage shift today
     if (!currentUser.isManagement) {

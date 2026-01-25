@@ -47,6 +47,7 @@ class UsersCubit extends Cubit<UsersState> {
   List<UserModel> filterUsers({
     required String searchQuery,
     Role? selectedRole,
+    bool? isActive,
   }) {
     return allUsers.where((user) {
       // Search filter
@@ -57,7 +58,10 @@ class UsersCubit extends Cubit<UsersState> {
       // Role filter
       final matchesRole = selectedRole == null || user.role == selectedRole;
 
-      return matchesSearch && matchesRole;
+      // Active status filter
+      final matchesActive = isActive == null || user.isActive == isActive;
+
+      return matchesSearch && matchesRole && matchesActive;
     }).toList();
   }
 
@@ -196,6 +200,7 @@ class UsersCubit extends Cubit<UsersState> {
     required String phone,
     String? printCode,
     required int shiftHours,
+    required int vocationBalanceMinutes, // Vacation balance in minutes
     required Role role,
     required bool isActive,
     bool? hasRequestsPermission,
@@ -229,6 +234,7 @@ class UsersCubit extends Cubit<UsersState> {
         'phone': phone.trim(),
         'printCode': printCode?.trim(),
         'shiftHours': shiftHours,
+        'vocationBalanceMinutes': vocationBalanceMinutes,
         'role': role.name,
         'isActive': isActive,
         'updatedAt': FieldValue.serverTimestamp(),

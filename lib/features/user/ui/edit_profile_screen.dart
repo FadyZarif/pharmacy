@@ -231,6 +231,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       phone: _phoneController.text,
       printCode: widget.user.printCode, // Keep same
       shiftHours: widget.user.shiftHours, // Keep same
+      vocationBalanceMinutes: widget.user.vocationBalanceMinutes, // Keep same
       role: widget.user.role, // Keep same
       isActive: widget.user.isActive, // Keep same
       hasRequestsPermission: widget.user.hasRequestsPermission, // Keep same

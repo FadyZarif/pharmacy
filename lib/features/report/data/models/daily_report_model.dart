@@ -133,8 +133,8 @@ class ShiftReportModel {
   /// المحفظة الإلكترونية - خاصة بالشيفت
   final double electronicWalletAmount;
 
-  /// مرفق واحد (صورة أو PDF) - خاصة بالشيفت
-  final String? attachmentUrl;
+  /// مرفقات متعددة (صور أو PDFs) - خاصة بالشيفت
+  final List<String> attachmentUrls;
 
   @ServerNullableTimestampConverter()
   final DateTime? updatedAt; // آخر تعديل
@@ -156,13 +156,34 @@ class ShiftReportModel {
     this.computerDifferenceType,
     this.computerDifference = 0.0,
     this.electronicWalletAmount = 0.0,
-    this.attachmentUrl,
+    this.attachmentUrls = const [],
     this.updatedAt,
     this.submittedAt,
   });
 
-  factory ShiftReportModel.fromJson(Map<String, dynamic> json) =>
-      _$ShiftReportModelFromJson(json);
+  factory ShiftReportModel.fromJson(Map<String, dynamic> json) {
+    // Migration logic: handle old 'attachmentUrl' field
+    List<String> urls = [];
+
+    // Check for new format (attachmentUrls list)
+    if (json.containsKey('attachmentUrls') && json['attachmentUrls'] != null) {
+      urls = (json['attachmentUrls'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList();
+    }
+    // Check for old format (single attachmentUrl string)
+    else if (json.containsKey('attachmentUrl') && json['attachmentUrl'] != null) {
+      final oldUrl = json['attachmentUrl'] as String;
+      if (oldUrl.isNotEmpty) {
+        urls = [oldUrl]; // Convert single URL to list
+      }
+    }
+
+    // Add the migrated URLs to json for processing
+    json['attachmentUrls'] = urls;
+
+    return _$ShiftReportModelFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$ShiftReportModelToJson(this);
 
@@ -218,7 +239,7 @@ class ShiftReportModel {
     ComputerDifferenceType? computerDifferenceType,
     double? computerDifference,
     double? electronicWalletAmount,
-    String? attachmentUrl,
+    List<String>? attachmentUrls,
     DateTime? updatedAt,
     DateTime? submittedAt,
   }) {
@@ -236,7 +257,7 @@ class ShiftReportModel {
       computerDifferenceType: computerDifferenceType ?? this.computerDifferenceType,
       computerDifference: computerDifference ?? this.computerDifference,
       electronicWalletAmount: electronicWalletAmount ?? this.electronicWalletAmount,
-      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      attachmentUrls: attachmentUrls ?? this.attachmentUrls,
       updatedAt: updatedAt ?? this.updatedAt,
       submittedAt: submittedAt ?? this.submittedAt,
     );

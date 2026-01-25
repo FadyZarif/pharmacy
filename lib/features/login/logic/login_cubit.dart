@@ -21,13 +21,25 @@ class LoginCubit extends Cubit<LoginStates>{
 
     FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password).then((value) async {
       uid = value.user!.uid;
+
+      // Check if user is logged and active
+      bool userIsActive = await checkIsLogged();
+
+      if (!userIsActive || !isLogged) {
+        // User is inactive, sign them out and show error
+        await FirebaseAuth.instance.signOut();
+        btnController.error();
+        emit(LoginErrorState('Your account has been deactivated. Please contact your administrator.'));
+        Future.delayed(const Duration(seconds: 3), () {
+          btnController.reset();
+        });
+        return;
+      }
+
       btnController.success();
-      await checkIsLogged();
 
       // Update FCM token after login
-      if (isLogged) {
-        await NotificationService().updateUserToken(currentUser.uid);
-      }
+      await NotificationService().updateUserToken(currentUser.uid);
 
       emit(LoginSuccessState());
       Future.delayed(const Duration(seconds: 3), () {
