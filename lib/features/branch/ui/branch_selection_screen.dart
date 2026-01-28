@@ -548,6 +548,15 @@ class BranchSelectionScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
 
+                      // Target Achievement Card (if monthly target is set and it's monthly report)
+                      if (isMonthly && state.monthlyTarget != null) ...[
+                        _buildTargetAchievementCard(
+                          totalSales: state.totalSales,
+                          monthlyTarget: state.monthlyTarget!,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       // Total Expenses
                       InkWell(
                         onTap: () {
@@ -678,6 +687,94 @@ class BranchSelectionScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// بطاقة تحقيق الهدف الشهري
+  Widget _buildTargetAchievementCard({
+    required double totalSales,
+    required double monthlyTarget,
+  }) {
+    final achievementPercentage = (totalSales / monthlyTarget * 100).clamp(0, 999);
+    final isAchieved = achievementPercentage >= 100;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isAchieved ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isAchieved ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isAchieved ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isAchieved ? Icons.check_circle : Icons.trending_up,
+                  color: isAchieved ? Colors.green : Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Target Achievement (All Branches)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${achievementPercentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isAchieved ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Target: EGP ${monthlyTarget.toStringAsFixed(1)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Progress Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (achievementPercentage / 100).clamp(0, 1),
+              minHeight: 8,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isAchieved ? Colors.green : Colors.orange,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

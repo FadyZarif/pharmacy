@@ -27,6 +27,7 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
   final double totalDeficit;
   final List<ExpenseItem> allExpenses;
   final Map<String, BranchSummary> branchSummaries; // ملخص كل فرع
+  final double? monthlyTarget; // الهدف الشهري الموحد
 
   ConsolidatedReportsLoaded({
     required this.totalSales,
@@ -39,6 +40,7 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
     required this.totalDeficit,
     required this.allExpenses,
     required this.branchSummaries,
+    this.monthlyTarget,
   });
 }
 

@@ -60,72 +60,36 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       // Get last day of selected month
       final lastDay = DateTime(selectedDate.year, selectedDate.month + 1, 0);
 
+      // Fetch all days in parallel for speed ⚡
+      final dayResults = await Future.wait(
+        List.generate(lastDay.day, (index) {
+          final day = index + 1;
+          final date = DateTime(selectedDate.year, selectedDate.month, day);
+          return _fetchDayData(date);
+        }),
+        eagerError: false, // Continue even if some days fail
+      );
+
+      // Aggregate results
       double totalSales = 0.0;
       double totalExpenses = 0.0;
       double totalMedicinesExpenses = 0.0;
       double totalElectronicPaymentExpenses = 0.0;
-      double vaultAmount = 0.0; // مجموع الأرباح غير المحصلة
-      double totalSurplus = 0.0; // مجموع الزيادة
-      double totalDeficit = 0.0; // مجموع العجز
-      List<ExpenseItem> allExpenses = []; // جميع المصاريف
+      double vaultAmount = 0.0;
+      double totalSurplus = 0.0;
+      double totalDeficit = 0.0;
+      List<ExpenseItem> allExpenses = [];
 
-      // Fetch reports for each day in the month
-      for (int day = 1; day <= lastDay.day; day++) {
-        final date = DateTime(selectedDate.year, selectedDate.month, day);
-        final dateStr = DateFormat('yyyy-MM-dd').format(date);
-
-        try {
-          // جلب كل الشيفتات للفرع في هذا اليوم
-          final shiftsSnapshot = await _db
-              .collection('daily_reports')
-              .doc(dateStr)
-              .collection('branches')
-              .doc(currentUser.currentBranch.id)
-              .collection('shifts')
-              .get();
-
-          // Calculate daily totals
-          double dailySales = 0.0;
-          double dailyExpenses = 0.0;
-
-          for (var doc in shiftsSnapshot.docs) {
-            final report = ShiftReportModel.fromJson(doc.data());
-
-            dailySales += report.drawerAmount;
-            dailyExpenses += report.totalExpenses;
-            totalSales += report.drawerAmount;
-            totalExpenses += report.totalExpenses;
-
-            totalMedicinesExpenses += report.medicineExpenses;
-            totalElectronicPaymentExpenses += report.electronicWalletExpenses;
-
-            // جمع جميع المصاريف
-            allExpenses.addAll(report.expenses);
-
-            // حساب الزيادة والعجز
-            if (report.computerDifferenceType == ComputerDifferenceType.excess) {
-              totalSurplus += report.computerDifference;
-            } else if (report.computerDifferenceType == ComputerDifferenceType.shortage) {
-              totalDeficit += report.computerDifference;
-            }
-          }
-
-          // Check if this day's profit is collected
-          if (dailySales > 0 || dailyExpenses > 0) {
-            final isCollected = await ReportFirestoreHelper.getCollectionStatus(
-              date,
-              currentUser.currentBranch.id,
-            );
-
-            // If not collected, add to vault
-            if (!isCollected) {
-              final dailyNetProfit = dailySales - dailyExpenses;
-              vaultAmount += dailyNetProfit;
-            }
-          }
-        } catch (e) {
-          // Continue even if one day fails
-          continue;
+      for (var dayResult in dayResults) {
+        if (dayResult != null) {
+          totalSales += dayResult['sales'] as double;
+          totalExpenses += dayResult['expenses'] as double;
+          totalMedicinesExpenses += dayResult['medicinesExpenses'] as double;
+          totalElectronicPaymentExpenses += dayResult['electronicPaymentExpenses'] as double;
+          vaultAmount += dayResult['vaultAmount'] as double;
+          totalSurplus += dayResult['surplus'] as double;
+          totalDeficit += dayResult['deficit'] as double;
+          allExpenses.addAll(dayResult['allExpenses'] as List<ExpenseItem>);
         }
       }
 
@@ -278,6 +242,72 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       );
     } catch (e) {
       print('Error sending net profit collected notification: $e');
+    }
+  }
+
+  /// Helper: جلب بيانات يوم واحد
+  Future<Map<String, dynamic>?> _fetchDayData(DateTime date) async {
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+
+      final shiftsSnapshot = await _db
+          .collection('daily_reports')
+          .doc(dateStr)
+          .collection('branches')
+          .doc(currentUser.currentBranch.id)
+          .collection('shifts')
+          .get();
+
+      double dailySales = 0.0;
+      double dailyExpenses = 0.0;
+      double medicinesExpenses = 0.0;
+      double electronicPaymentExpenses = 0.0;
+      double surplus = 0.0;
+      double deficit = 0.0;
+      List<ExpenseItem> expenses = [];
+
+      for (var doc in shiftsSnapshot.docs) {
+        final report = ShiftReportModel.fromJson(doc.data());
+
+        dailySales += report.drawerAmount;
+        dailyExpenses += report.totalExpenses;
+        medicinesExpenses += report.medicineExpenses;
+        electronicPaymentExpenses += report.electronicWalletExpenses;
+        expenses.addAll(report.expenses);
+
+        if (report.computerDifferenceType == ComputerDifferenceType.excess) {
+          surplus += report.computerDifference;
+        } else if (report.computerDifferenceType == ComputerDifferenceType.shortage) {
+          deficit += report.computerDifference;
+        }
+      }
+
+      // Check if this day's profit is collected
+      double vaultAmount = 0.0;
+      if (dailySales > 0 || dailyExpenses > 0) {
+        final isCollected = await ReportFirestoreHelper.getCollectionStatus(
+          date,
+          currentUser.currentBranch.id,
+        );
+
+        if (!isCollected) {
+          vaultAmount = dailySales - dailyExpenses;
+        }
+      }
+
+      return {
+        'sales': dailySales,
+        'expenses': dailyExpenses,
+        'medicinesExpenses': medicinesExpenses,
+        'electronicPaymentExpenses': electronicPaymentExpenses,
+        'vaultAmount': vaultAmount,
+        'surplus': surplus,
+        'deficit': deficit,
+        'allExpenses': expenses,
+      };
+    } catch (e) {
+      // Return null if day fails, continue with other days
+      return null;
     }
   }
 }
