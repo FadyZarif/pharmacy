@@ -30,13 +30,6 @@ class BranchSelectionScreen extends StatelessWidget {
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
-          // Consolidated Reports Button (Admin only)
-          if (currentUser.isAdmin || currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
-            IconButton(
-              onPressed: () => _showConsolidatedReportsOptions(context),
-              icon: const Icon(Icons.bar_chart, color: Colors.white),
-              tooltip: 'All Branches Report',
-            ),
           IconButton(
             onPressed: () => _showLogoutDialog(context),
             icon: const Icon(Icons.logout, color: Colors.white),
@@ -65,6 +58,12 @@ class BranchSelectionScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
+            // All Branches Monthly Report (Management Only)
+            if (currentUser.isAdmin || currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+              ...[
+                _buildAllBranchesReportCard(context),
+                const SizedBox(height: 16),
+              ],
             // Branch List
             Expanded(
               child: currentUser.branches.isEmpty
@@ -228,6 +227,87 @@ class BranchSelectionScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildAllBranchesReportCard(BuildContext context) {
+    return Card(
+      color: ColorsManger.primary,
+      elevation: 6,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () {
+          _showConsolidatedReportsOptions(context);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [
+                ColorsManger.primary,
+                ColorsManger.primary.withValues(alpha: 0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.assessment,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'All Branches Report',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'View monthly summary for all branches',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Arrow
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// عرض خيارات التقرير الموحد
   void _showConsolidatedReportsOptions(BuildContext context) {
     showModalBottomSheet(
@@ -295,7 +375,7 @@ class BranchSelectionScreen extends StatelessWidget {
                 _selectDateAndShowReport(context, isMonthly: true);
               },
             ),
-            const SizedBox(height: 16),
+            // const SizedBox(height: 16),
           ],
         ),
       ),
