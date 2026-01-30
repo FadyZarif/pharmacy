@@ -49,6 +49,7 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
+        withData: true, // Important for web
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -109,8 +110,18 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
       return;
     }
 
+    if (_selectedFile!.bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File data not available. Please try selecting the file again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     _salaryCubit.uploadSalaryFromExcel(
-      filePath: _selectedFile!.path!,
+      fileBytes: _selectedFile!.bytes!,
       year: _selectedMonth.year,
       month: _selectedMonth.month,
       notes: _notesController.text.trim().isEmpty

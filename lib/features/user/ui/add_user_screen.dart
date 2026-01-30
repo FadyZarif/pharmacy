@@ -1,11 +1,13 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/app_regex.dart';
 import 'package:pharmacy/core/helpers/extensions.dart';
+import 'package:pharmacy/core/helpers/file_helper.dart' as file_helper;
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -33,7 +35,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   Role _selectedRole = Role.staff;
   bool _isActive = true;
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
 
   @override
   void initState() {
@@ -123,10 +126,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               CircleAvatar(
                                 radius: 60,
                                 backgroundColor: ColorsManger.primary.withValues(alpha: 0.2),
-                                backgroundImage: _selectedImage != null
-                                    ? FileImage(_selectedImage!)
+                                backgroundImage: _selectedImageBytes != null
+                                    ? MemoryImage(_selectedImageBytes!)
                                     : null,
-                                child: _selectedImage == null
+                                child: _selectedImageBytes == null
                                     ? const Icon(
                                         Icons.person,
                                         size: 60,
@@ -449,7 +452,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
       vocationBalanceMinutes: vocationBalanceMinutes,
       role: _selectedRole,
       isActive: _isActive,
-      imageFile: _selectedImage,
+      imageBytes: _selectedImageBytes,
+      imageName: _selectedImageName,
     );
   }
 
@@ -457,12 +461,25 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: false,
+      withData: true, // Important for web
     );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _selectedImage = File(result.files.single.path!);
-      });
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      Uint8List? bytes;
+
+      if (file.bytes != null) {
+        bytes = file.bytes!;
+      } else if (file.path != null && !kIsWeb) {
+        bytes = await file_helper.readFileBytes(file.path!);
+      }
+
+      if (bytes != null) {
+        setState(() {
+          _selectedImageBytes = bytes;
+          _selectedImageName = file.name;
+        });
+      }
     }
   }
 }

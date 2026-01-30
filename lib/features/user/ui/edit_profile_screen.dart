@@ -1,10 +1,12 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/helpers/extensions.dart';
+import 'package:pharmacy/core/helpers/file_helper.dart' as file_helper;
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -25,7 +27,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _phoneController;
 
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
   String? _currentPhotoUrl;
 
   @override
@@ -115,12 +118,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               CircleAvatar(
                                 radius: 60,
                                 backgroundColor: ColorsManger.primary.withValues(alpha: 0.2),
-                                backgroundImage: _selectedImage != null
-                                    ? FileImage(_selectedImage!)
+                                backgroundImage: _selectedImageBytes != null
+                                    ? MemoryImage(_selectedImageBytes!)
                                     : (_currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty
                                         ? NetworkImage(_currentPhotoUrl!)
                                         : null) as ImageProvider?,
-                                child: (_selectedImage == null &&
+                                child: (_selectedImageBytes == null &&
                                        (_currentPhotoUrl == null || _currentPhotoUrl!.isEmpty))
                                     ? const Icon(
                                         Icons.person,
@@ -235,7 +238,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       role: widget.user.role, // Keep same
       isActive: widget.user.isActive, // Keep same
       hasRequestsPermission: widget.user.hasRequestsPermission, // Keep same
-      imageFile: _selectedImage,
+      imageBytes: _selectedImageBytes,
+      imageName: _selectedImageName,
     );
   }
 
@@ -243,12 +247,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: false,
+      withData: true, // Important for web
     );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _selectedImage = File(result.files.single.path!);
-      });
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      Uint8List? bytes;
+
+      if (file.bytes != null) {
+        bytes = file.bytes!;
+      } else if (file.path != null && !kIsWeb) {
+        bytes = await file_helper.readFileBytes(file.path!);
+      }
+
+      if (bytes != null) {
+        setState(() {
+          _selectedImageBytes = bytes;
+          _selectedImageName = file.name;
+        });
+      }
     }
   }
 }

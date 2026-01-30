@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart';
@@ -100,7 +100,7 @@ class SalaryCubit extends Cubit<SalaryState> {
 
   /// رفع بيانات المرتبات من ملف Excel
   Future<void> uploadSalaryFromExcel({
-    required String filePath,
+    required Uint8List fileBytes,
     required int year,
     required int month,
     String? notes,
@@ -108,9 +108,8 @@ class SalaryCubit extends Cubit<SalaryState> {
     emit(SalaryUploading());
 
     try {
-      // قراءة ملف Excel
-      final bytes = File(filePath).readAsBytesSync();
-      final excel = Excel.decodeBytes(bytes);
+      // قراءة ملف Excel من bytes
+      final excel = Excel.decodeBytes(fileBytes);
 
       // الحصول على أول ورقة عمل
       if (excel.tables.isEmpty) {

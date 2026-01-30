@@ -1,12 +1,14 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/core/helpers/file_helper.dart' as file_helper;
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/shift_report_cubit.dart';
@@ -370,20 +372,26 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
 
   Widget _buildAttachmentTile(ShiftReportCubit cubit, int index) {
     final isLocalFile = index < cubit.attachmentFiles.length;
-    final IconData icon;
+    final bool isPdf;
     final String fileName;
+    final Uint8List? imageBytes;
+    final String? imageUrl;
 
     if (isLocalFile) {
       final file = cubit.attachmentFiles[index];
-      final extension = file.path.split('.').last.toLowerCase();
-      icon = extension == 'pdf' ? Icons.picture_as_pdf : Icons.image;
-      fileName = file.path.split('/').last;
+      final extension = file.name.split('.').last.toLowerCase();
+      isPdf = extension == 'pdf';
+      fileName = file.name;
+      imageBytes = isPdf ? null : file.bytes;
+      imageUrl = null;
     } else {
       final urlIndex = index - cubit.attachmentFiles.length;
       final url = cubit.attachmentUrls[urlIndex];
       final extension = url.split('.').last.toLowerCase();
-      icon = extension.contains('pdf') ? Icons.picture_as_pdf : Icons.image;
+      isPdf = extension.contains('pdf');
       fileName = 'File ${urlIndex + 1}';
+      imageBytes = null;
+      imageUrl = isPdf ? null : url;
     }
 
     return Container(
@@ -394,25 +402,62 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
       ),
       child: Stack(
         children: [
-          // File icon and name
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 40, color: ColorsManger.primary),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    fileName,
-                    style: const TextStyle(fontSize: 10),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
+          // File preview or icon
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: isPdf
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.picture_as_pdf, size: 40, color: ColorsManger.primary),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            fileName,
+                            style: const TextStyle(fontSize: 10),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : (imageBytes != null
+                    ? Image.memory(
+                        imageBytes,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      )
+                    : (imageUrl != null
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                              );
+                            },
+                          )
+                        : Center(
+                            child: Icon(Icons.image, size: 40, color: ColorsManger.primary),
+                          ))),
           ),
 
           // Delete button
@@ -558,8 +603,13 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
       );
 
       if (image != null) {
-        final file = File(image.path);
-        cubit.pickAttachment(file);
+        final bytes = await image.readAsBytes();
+        final fileData = AttachmentFileData(
+          name: image.name,
+          bytes: bytes,
+          path: kIsWeb ? null : image.path,
+        );
+        cubit.pickAttachment(fileData);
       }
     } catch (e) {
       if (!mounted) return;
@@ -582,8 +632,13 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
 
       if (images.isNotEmpty) {
         for (var image in images) {
-          final file = File(image.path);
-          cubit.pickAttachment(file);
+          final bytes = await image.readAsBytes();
+          final fileData = AttachmentFileData(
+            name: image.name,
+            bytes: bytes,
+            path: kIsWeb ? null : image.path,
+          );
+          cubit.pickAttachment(fileData);
         }
 
         if (!mounted) return;
@@ -612,14 +667,28 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
         type: FileType.custom,
         allowedExtensions: ['pdf'],
         allowMultiple: true, // Allow multiple PDFs
+        withData: true, // Important for web
       );
 
       if (result != null && result.files.isNotEmpty) {
         int addedCount = 0;
         for (var file in result.files) {
-          if (file.path != null) {
-            final fileObj = File(file.path!);
-            cubit.pickAttachment(fileObj);
+          // Get bytes (works on both web and mobile)
+          Uint8List? bytes;
+          if (file.bytes != null) {
+            bytes = file.bytes!;
+          } else if (file.path != null && !kIsWeb) {
+            // Fallback for mobile if bytes not available
+            bytes = await file_helper.readFileBytes(file.path!);
+          }
+
+          if (bytes != null) {
+            final fileData = AttachmentFileData(
+              name: file.name,
+              bytes: bytes,
+              path: kIsWeb ? null : file.path,
+            );
+            cubit.pickAttachment(fileData);
             addedCount++;
           }
         }
@@ -1370,11 +1439,8 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
               UploadTask uploadTask;
               if (file.bytes != null) {
                 uploadTask = storageRef.putData(file.bytes!);
-              } else if (file.path != null) {
-                final ioFile = File(file.path!);
-                uploadTask = storageRef.putFile(ioFile);
               } else {
-                throw Exception('File has no bytes or path');
+                throw Exception('File bytes not available');
               }
 
               final snapshot = await uploadTask;

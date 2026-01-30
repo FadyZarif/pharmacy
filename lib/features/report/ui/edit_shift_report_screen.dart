@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -553,6 +554,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                           FilePickerResult? result = await FilePicker.platform.pickFiles(
                             type: FileType.custom,
                             allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                            withData: true, // Important for web
                           );
 
                           if (result != null) {
@@ -672,11 +674,8 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
             UploadTask uploadTask;
             if (file.bytes != null) {
               uploadTask = storageRef.putData(file.bytes!);
-            } else if (file.path != null) {
-              final ioFile = File(file.path!);
-              uploadTask = storageRef.putFile(ioFile);
             } else {
-              throw Exception('File has no bytes or path');
+              throw Exception('File bytes not available');
             }
 
             final snapshot = await uploadTask;
@@ -794,26 +793,57 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isPdf ? Icons.picture_as_pdf : Icons.image,
-                      size: 40,
-                      color: ColorsManger.primary,
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        isPdf ? 'PDF ${index + 1}' : 'Image ${index + 1}',
-                        style: const TextStyle(fontSize: 10),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: isPdf
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.picture_as_pdf,
+                              size: 40,
+                              color: ColorsManger.primary,
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                'PDF ${index + 1}',
+                                style: const TextStyle(fontSize: 10),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                const SizedBox(height: 4),
+                                const Text('Failed to load', style: TextStyle(fontSize: 8)),
+                              ],
+                            );
+                          },
+                        ),
                 ),
               ),
             );

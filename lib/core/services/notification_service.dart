@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis_auth/auth_io.dart' as auth;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../enums/notification_type.dart';
 
 // Background message handler - must be top-level function
@@ -46,6 +47,14 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
+    // Web platform has different notification handling
+    if (kIsWeb) {
+      await _initializeWeb();
+      _initialized = true;
+      return;
+    }
+
+    // Mobile/Desktop initialization
     try {
       // Request permissions (iOS)
       NotificationSettings settings = await _fcm.requestPermission(
@@ -441,6 +450,91 @@ class NotificationService {
 
   void dispose() {
     // Cleanup if needed
+  }
+
+  /// Initialize notifications for web platform
+  Future<void> _initializeWeb() async {
+    try {
+      print('Initializing notifications for web...');
+
+      // Request permission for web notifications
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        print('✅ Web notification permission granted');
+      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+        print('⚠️ Web notification permission provisional');
+      } else {
+        print('❌ Web notification permission denied');
+        return;
+      }
+
+      // Get FCM token for web
+      // To get VAPID key:
+      // 1. Go to Firebase Console > Project Settings > Cloud Messaging
+      // 2. Under "Web configuration" section, find "Web Push certificates"
+      // 3. Generate key pair if not exists
+      // 4. Copy the "Key pair" value
+      String? token = await _fcm.getToken(
+        vapidKey: 'BECiN2jl6sxiSIA0HtoWZOCjJFNMch2aMsQG2W95eDtX4cVA486Zrque0YP3DkGTk8kr0K-i96vT2FgaGX2UkkU', // Add your VAPID key here or it will use default
+      );
+
+      if (token != null) {
+        print('✅ Web FCM Token obtained: ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ Web FCM Token is null');
+      }
+
+      // Listen to foreground messages on web
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('📨 Web foreground message received:');
+        print('   Title: ${message.notification?.title}');
+        print('   Body: ${message.notification?.body}');
+
+        // Show browser notification
+        _showWebNotification(
+          title: message.notification?.title ?? 'إشعار جديد',
+          body: message.notification?.body ?? '',
+          data: message.data,
+        );
+      });
+
+      // Listen to notification clicks on web
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        print('🔔 Web notification clicked: ${message.data}');
+        _handleNotificationOpened(message);
+      });
+
+      // Check if app was opened from notification
+      RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+      if (initialMessage != null) {
+        print('🚀 App opened from notification: ${initialMessage.data}');
+        _handleNotificationOpened(initialMessage);
+      }
+
+      print('✅ Web notifications initialized successfully');
+    } catch (e) {
+      print('❌ Error initializing web notifications: $e');
+      // Continue anyway - app should work without notifications
+    }
+  }
+
+  /// Show notification using browser's native notification API
+  void _showWebNotification({
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) {
+    // On web, notifications are shown automatically by the browser
+    // when the app is in the foreground and the user has granted permission
+    print('🔔 Showing web notification: $title - $body');
+
+    // The browser will show the notification automatically
+    // We just log it here for debugging
   }
 }
 

@@ -910,6 +910,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
                                   final result = await FilePicker.platform.pickFiles(
                                     type: FileType.custom,
                                     allowedExtensions: ['pdf'],
+                                    withData: true, // Important for web
                                   );
 
                                   if (result != null && result.files.isNotEmpty) {

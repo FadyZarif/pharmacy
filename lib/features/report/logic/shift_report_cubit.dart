@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
@@ -9,6 +9,19 @@ import 'package:pharmacy/features/report/data/helpers/report_firestore_helper.da
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/shift_report_state.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
+
+// Model to hold file data for both web and mobile
+class AttachmentFileData {
+  final String name;
+  final Uint8List bytes;
+  final String? path; // null on web
+
+  AttachmentFileData({
+    required this.name,
+    required this.bytes,
+    this.path,
+  });
+}
 
 class ShiftReportCubit extends Cubit<ShiftReportState> {
   ShiftReportCubit() : super(ShiftReportInitial());
@@ -22,7 +35,7 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   String? notes;
   final List<ExpenseItem> expenses = [];
   List<String> attachmentUrls = []; // Multiple attachment URLs
-  List<File> attachmentFiles = []; // Local files before upload
+  List<AttachmentFileData> attachmentFiles = []; // Local files before upload
 
   // Current date
   DateTime currentDate = DateTime.now();
@@ -176,8 +189,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   }
 
   /// Pick and store attachment locally (will be uploaded on submit)
-  void pickAttachment(File file) {
-    attachmentFiles.add(file);
+  void pickAttachment(AttachmentFileData fileData) {
+    attachmentFiles.add(fileData);
     emit(ShiftReportUpdated());
   }
 
@@ -196,10 +209,10 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
   }
 
   /// Upload attachment to Firebase Storage
-  Future<String> _uploadAttachment(File file) async {
+  Future<String> _uploadAttachment(AttachmentFileData fileData) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = file.path.split('.').last;
+      final extension = fileData.name.split('.').last;
       final dateStr = _formatDate(currentDate);
       final fileName = '${timestamp}_${selectedShiftType!.name}.$extension';
 
@@ -207,12 +220,33 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         'shift_reports/${currentUser.currentBranch.id}/$dateStr/$fileName',
       );
 
-      final uploadTask = await storageRef.putFile(file);
+      // Use bytes for upload (works on both web and mobile)
+      final uploadTask = await storageRef.putData(
+        fileData.bytes,
+        SettableMetadata(
+          contentType: _getContentType(extension),
+        ),
+      );
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
       return downloadUrl;
     } catch (e) {
       throw Exception('Failed to upload attachment: ${e.toString()}');
+    }
+  }
+
+  /// Get content type based on file extension
+  String _getContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      default:
+        return 'application/octet-stream';
     }
   }
 
