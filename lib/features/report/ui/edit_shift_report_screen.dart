@@ -837,9 +837,9 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                             return Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                Icon(Icons.image, size: 40, color: Colors.grey),
                                 const SizedBox(height: 4),
-                                const Text('Failed to load', style: TextStyle(fontSize: 8)),
+                                const Text('Tap to open', style: TextStyle(fontSize: 8)),
                               ],
                             );
                           },
