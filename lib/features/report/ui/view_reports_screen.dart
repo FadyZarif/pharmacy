@@ -94,9 +94,11 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(_isCollected
-                    ? 'Net profit marked as collected ✓'
-                    : 'Net profit marked as not collected'),
+                content: Text(
+                  _isCollected
+                      ? 'Net profit marked as collected ✓'
+                      : 'Net profit marked as not collected',
+                ),
                 backgroundColor: _isCollected ? Colors.green : Colors.orange,
               ),
             );
@@ -118,7 +120,8 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             // bottom padding so content won't be covered on mobile.
             const glassNavHeight = 66.0;
             const glassNavOuterPadding = 14.0;
-            final bottomGap = bottomPad + glassNavHeight + glassNavOuterPadding + 10;
+            final bottomGap =
+                bottomPad + glassNavHeight + glassNavOuterPadding + 10;
             return Scaffold(
               backgroundColor: ColorsManger.primaryBackground,
               extendBodyBehindAppBar: true,
@@ -149,9 +152,13 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                     ),
                     actions: [
                       IconButton(
-                        icon: const Icon(Icons.calendar_view_month, color: ColorsManger.primary),
+                        icon: const Icon(
+                          Icons.calendar_view_month,
+                          color: ColorsManger.primary,
+                        ),
                         tooltip: 'Monthly Summary',
-                        onPressed: () => _cubit.fetchMonthlySummary(_selectedDate),
+                        onPressed: () =>
+                            _cubit.fetchMonthlySummary(_selectedDate),
                       ),
                       const SizedBox(width: 6),
                     ],
@@ -175,169 +182,264 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                         const SizedBox(height: 12),
                         Expanded(
                           child: BlocBuilder<ViewReportsCubit, ViewReportsState>(
-                          buildWhen: (previous, current) =>
-                              current is ViewReportsLoading ||
-                              current is ViewReportsLoaded ||
-                              current is ViewReportsEmpty ||
-                              current is ViewReportsError,
-                          builder: (context, state) {
-                            if (state is ViewReportsLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(color: ColorsManger.primary),
-                              );
-                            } else if (state is ViewReportsError) {
-                              return Center(
-                                child: Container(
-                                  margin: const EdgeInsets.all(16),
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
+                            buildWhen: (previous, current) =>
+                                current is ViewReportsLoading ||
+                                current is ViewReportsLoaded ||
+                                current is ViewReportsEmpty ||
+                                current is ViewReportsError,
+                            builder: (context, state) {
+                              if (state is ViewReportsLoading) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: ColorsManger.primary,
                                   ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.error_outline, size: 56, color: Colors.red),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        state.message,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.grey.shade800),
+                                );
+                              } else if (state is ViewReportsError) {
+                                return Center(
+                                  child: Container(
+                                    margin: const EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(18),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.red.withValues(
+                                          alpha: 0.2,
+                                        ),
                                       ),
-                                      const SizedBox(height: 14),
-                                      ElevatedButton.icon(
-                                        onPressed: () => _cubit.fetchDailyReports(_formattedDate),
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Retry'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: ColorsManger.primary,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.04,
+                                          ),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.error_outline,
+                                          size: 56,
+                                          color: Colors.red,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          state.message,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade800,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 14),
+                                        ElevatedButton.icon(
+                                          onPressed: () =>
+                                              _cubit.fetchDailyReports(
+                                                _formattedDate,
+                                              ),
+                                          icon: const Icon(Icons.refresh),
+                                          label: const Text('Retry'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                ColorsManger.primary,
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              } else if (state is ViewReportsEmpty) {
+                                return Center(
+                                  child: Container(
+                                    margin: const EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(18),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.grey.withValues(
+                                          alpha: 0.16,
+                                        ),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.04,
+                                          ),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.receipt_long,
+                                          size: 56,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          'No reports for this date',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              } else if (state is ViewReportsLoaded) {
+                                final isCompact =
+                                    MediaQuery.sizeOf(context).width < 650;
+
+                                // On compact/mobile layouts, make the summary section scroll with the list
+                                // so it doesn't "cover" the shift tiles by permanently taking vertical space.
+                                if (isCompact) {
+                                  return ListView.separated(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      0,
+                                      0,
+                                      0,
+                                      14,
+                                    ),
+                                    itemCount: state.reports.length + 1,
+                                    separatorBuilder: (context, index) {
+                                      if (index == state.reports.length - 1) {
+                                        return const SizedBox(height: 12);
+                                      }
+                                      return const SizedBox(height: 10);
+                                    },
+                                    itemBuilder: (context, index) {
+                                      if (index == state.reports.length) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 8,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const SizedBox(height: 10),
+                                              Divider(
+                                                height: 1,
+                                                color: Colors.black12,
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Text(
+                                                'Totals',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.75),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              _buildSummarySection(
+                                                state.reports,
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+
+                                      final report = state.reports[index];
+                                      return _ShiftReportTile(
+                                        report: report,
+                                        egp: _egp,
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  EditShiftReportScreen(
+                                                    report: report,
+                                                    date: _formattedDate,
+                                                  ),
+                                            ),
+                                          ).then((_) {
+                                            _cubit.fetchDailyReports(
+                                              _formattedDate,
+                                            );
+                                          });
+                                        },
+                                      );
+                                    },
+                                  );
+                                }
+
+                                return Column(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.separated(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          0,
+                                          0,
+                                          0,
+                                          14,
+                                        ),
+                                        itemCount: state.reports.length,
+                                        separatorBuilder: (_, __) =>
+                                            const SizedBox(height: 10),
+                                        itemBuilder: (context, index) {
+                                          final report = state.reports[index];
+                                          return _ShiftReportTile(
+                                            report: report,
+                                            egp: _egp,
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      EditShiftReportScreen(
+                                                        report: report,
+                                                        date: _formattedDate,
+                                                      ),
+                                                ),
+                                              ).then((_) {
+                                                _cubit.fetchDailyReports(
+                                                  _formattedDate,
+                                                );
+                                              });
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Divider(height: 1, color: Colors.black12),
+                                    const SizedBox(height: 12),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'Totals',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.black.withValues(
+                                            alpha: 0.75,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            } else if (state is ViewReportsEmpty) {
-                              return Center(
-                                child: Container(
-                                  margin: const EdgeInsets.all(16),
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.16)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.receipt_long, size: 56, color: Colors.grey.shade400),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        'No reports for this date',
-                                        style: TextStyle(color: Colors.grey.shade700),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            } else if (state is ViewReportsLoaded) {
-                              final isCompact = MediaQuery.sizeOf(context).width < 650;
-
-                              // On compact/mobile layouts, make the summary section scroll with the list
-                              // so it doesn't "cover" the shift tiles by permanently taking vertical space.
-                              if (isCompact) {
-                                return ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 14),
-                                  itemCount: state.reports.length + 1,
-                                  separatorBuilder: (context, index) {
-                                    if (index == state.reports.length - 1) {
-                                      return const SizedBox(height: 12);
-                                    }
-                                    return const SizedBox(height: 10);
-                                  },
-                                  itemBuilder: (context, index) {
-                                    if (index == state.reports.length) {
-                                      return _buildSummarySection(state.reports);
-                                    }
-
-                                    final report = state.reports[index];
-                                    return _ShiftReportTile(
-                                      report: report,
-                                      egp: _egp,
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => EditShiftReportScreen(
-                                              report: report,
-                                              date: _formattedDate,
-                                            ),
-                                          ),
-                                        ).then((_) {
-                                          _cubit.fetchDailyReports(_formattedDate);
-                                        });
-                                      },
-                                    );
-                                  },
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _buildSummarySection(state.reports),
+                                  ],
                                 );
                               }
-
-                              return Column(
-                                children: [
-                                  Expanded(
-                                    child: ListView.separated(
-                                      padding: const EdgeInsets.fromLTRB(0, 0, 0, 14),
-                                      itemCount: state.reports.length,
-                                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                                      itemBuilder: (context, index) {
-                                        final report = state.reports[index];
-                                        return _ShiftReportTile(
-                                          report: report,
-                                          egp: _egp,
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => EditShiftReportScreen(
-                                                  report: report,
-                                                  date: _formattedDate,
-                                                ),
-                                              ),
-                                            ).then((_) {
-                                              _cubit.fetchDailyReports(_formattedDate);
-                                            });
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  _buildSummarySection(state.reports),
-                                ],
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+                              return const SizedBox.shrink();
+                            },
+                          ),
                         ),
-                      ),
                       ],
                     ),
                   ),
@@ -380,11 +482,17 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               decoration: BoxDecoration(
                 color: ColorsManger.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ColorsManger.primary.withValues(alpha: 0.18)),
+                border: Border.all(
+                  color: ColorsManger.primary.withValues(alpha: 0.18),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: ColorsManger.primary, size: 18),
+                  const Icon(
+                    Icons.calendar_today,
+                    color: ColorsManger.primary,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     DateFormat('MMM dd, yyyy').format(_selectedDate),
@@ -403,23 +511,28 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
           IconButton(
             icon: Icon(
               Icons.chevron_right,
-              color: _selectedDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))
+              color:
+                  _selectedDate.isBefore(
+                    DateTime.now().subtract(const Duration(days: 1)),
+                  )
                   ? ColorsManger.primary
                   : Colors.grey,
             ),
             tooltip: 'Next day',
-            onPressed: _selectedDate.isBefore(
-              DateTime.now().subtract(const Duration(days: 1)),
-            )
+            onPressed:
+                _selectedDate.isBefore(
+                  DateTime.now().subtract(const Duration(days: 1)),
+                )
                 ? () {
-              setState(() {
-                _selectedDate = _selectedDate.add(const Duration(days: 1));
-              });
-              context.read<ViewReportsCubit>()
-                ..fetchDailyReports(_formattedDate)
-                ..fetchCollectionStatus(_formattedDate);
-
-            }
+                    setState(() {
+                      _selectedDate = _selectedDate.add(
+                        const Duration(days: 1),
+                      );
+                    });
+                    context.read<ViewReportsCubit>()
+                      ..fetchDailyReports(_formattedDate)
+                      ..fetchCollectionStatus(_formattedDate);
+                  }
                 : null,
           ),
         ],
@@ -441,54 +554,48 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     );
 
     // جمع كل المصاريف من جميع التقارير
-    final allExpenses = reports.expand((report) => (report as ShiftReportModel).expenses).toList();
+    final allExpenses = reports
+        .expand((report) => (report as ShiftReportModel).expenses)
+        .toList();
 
     // حساب صافي الربح (Net Profit)
     final netProfit = totalSales - totalExpenses;
 
     // حساب مجموع مصاريف تبديل الأدوية (Medicines Expenses)
-    final totalMedicinesExpenses = reports.fold<double>(
-      0.0,
-      (sum, report) {
-        final medicinesExpenses = (report as ShiftReportModel).medicineExpenses;
-        return sum + medicinesExpenses;
-      },
-    );
+    final totalMedicinesExpenses = reports.fold<double>(0.0, (sum, report) {
+      final medicinesExpenses = (report as ShiftReportModel).medicineExpenses;
+      return sum + medicinesExpenses;
+    });
 
     // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
-    final totalElectronicPaymentExpenses = reports.fold<double>(
-      0.0,
-      (sum, report) {
-        final electronicExpenses = (report as ShiftReportModel).expenses
-            .where((expense) => expense.type == ExpenseType.electronicPayment)
-            .fold<double>(0.0, (total, expense) => total + expense.amount);
-        return sum + electronicExpenses;
-      },
-    );
+    final totalElectronicPaymentExpenses = reports.fold<double>(0.0, (
+      sum,
+      report,
+    ) {
+      final electronicExpenses = (report as ShiftReportModel).expenses
+          .where((expense) => expense.type == ExpenseType.electronicPayment)
+          .fold<double>(0.0, (total, expense) => total + expense.amount);
+      return sum + electronicExpenses;
+    });
 
     // حساب مجموع الزيادة (Total Surplus)
-    final totalSurplus = reports.fold<double>(
-      0.0,
-      (sum, report) {
-        final shiftReport = report as ShiftReportModel;
-        if (shiftReport.computerDifferenceType == ComputerDifferenceType.excess) {
-          return sum + shiftReport.computerDifference;
-        }
-        return sum;
-      },
-    );
+    final totalSurplus = reports.fold<double>(0.0, (sum, report) {
+      final shiftReport = report as ShiftReportModel;
+      if (shiftReport.computerDifferenceType == ComputerDifferenceType.excess) {
+        return sum + shiftReport.computerDifference;
+      }
+      return sum;
+    });
 
     // حساب مجموع العجز (Total Deficit)
-    final totalDeficit = reports.fold<double>(
-      0.0,
-      (sum, report) {
-        final shiftReport = report as ShiftReportModel;
-        if (shiftReport.computerDifferenceType == ComputerDifferenceType.shortage) {
-          return sum + shiftReport.computerDifference;
-        }
-        return sum;
-      },
-    );
+    final totalDeficit = reports.fold<double>(0.0, (sum, report) {
+      final shiftReport = report as ShiftReportModel;
+      if (shiftReport.computerDifferenceType ==
+          ComputerDifferenceType.shortage) {
+        return sum + shiftReport.computerDifference;
+      }
+      return sum;
+    });
 
     return Container(
       width: double.infinity,
@@ -509,7 +616,11 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
       child: LayoutBuilder(
         builder: (context, c) {
           final width = c.maxWidth;
-          final columns = width >= 980 ? 3 : (width >= 640 ? 2 : 1);
+          // More responsive grid for mobile: use 2 columns on phones to avoid a tall footer.
+          // Fall back to 1 column only on very narrow widths.
+          final columns = width >= 980
+              ? 3
+              : (width >= 640 ? 2 : (width >= 360 ? 2 : 1));
           final spacing = 10.0;
           final cardWidth = (width - (spacing * (columns - 1))) / columns;
 
@@ -533,7 +644,8 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               icon: netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
               color: netProfit >= 0 ? Colors.green : Colors.red,
               isCollected: _isCollected,
-              onTap: (currentUser.isAdmin ||
+              onTap:
+                  (currentUser.isAdmin ||
                       currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
                   ? () => _showCollectionConfirmationDialog(context)
                   : null,
@@ -568,11 +680,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             spacing: spacing,
             runSpacing: spacing,
             children: [
-              for (final w in items)
-                SizedBox(
-                  width: cardWidth,
-                  child: w,
-                ),
+              for (final w in items) SizedBox(width: cardWidth, child: w),
             ],
           );
         },
@@ -588,92 +696,115 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     bool? isCollected,
     VoidCallback? onTap,
   }) {
-    final cardContent = Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: color.withValues(alpha: 0.28),
-          width: 1.5,
+    final amountText = _egp.format(amount);
+
+    Widget statusPill() {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isCollected == true ? Colors.green : Colors.orange,
+          borderRadius: BorderRadius.circular(12),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 18),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isCollected == true ? Icons.check_circle : Icons.pending,
+              color: Colors.white,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isCollected == true ? 'Collected' : 'Pending',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey[700],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final cardContent = LayoutBuilder(
+      builder: (context, c) {
+        final isNarrow = c.maxWidth < 230;
+        final amountFontSize = isNarrow ? 16.0 : 18.0;
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: color.withValues(alpha: 0.28),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.10),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
-              // Show collection status if applicable
-              if (isCollected != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isCollected ? Colors.green : Colors.orange,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isCollected ? Icons.check_circle : Icons.pending,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isCollected ? 'Collected' : 'Pending',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'EGP ${amount.toStringAsFixed(1)}',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: color, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[700],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isCollected != null && !isNarrow) ...[
+                    const SizedBox(width: 6),
+                    statusPill(),
+                  ],
+                ],
+              ),
+              if (isCollected != null && isNarrow) ...[
+                const SizedBox(height: 8),
+                statusPill(),
+              ],
+              const SizedBox(height: 8),
+              // Prevent overflow on narrow cards: scale down if needed.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  amountText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: amountFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
 
     // If onTap is provided, wrap with InkWell
@@ -712,9 +843,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     final monthName = DateFormat('MMMM yyyy').format(_selectedDate);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -779,108 +908,118 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              if(currentUser.isManagement || currentUser.uid=='7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
-              ...[
-              // Total Expenses Card (Clickable)
-              InkWell(
-                onTap: () {
-                  Navigator.pop(context); // Close the monthly summary dialog
-                  _showExpensesBottomSheet(context, state.allExpenses);
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: _buildMonthlySummaryCard(
-                  title: 'Total Expenses',
-                  amount: state.totalExpenses,
-                  icon: Icons.money_off,
-                  color: Colors.orange,
+              if (currentUser.isManagement ||
+                  currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+                // Total Expenses Card (Clickable)
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context); // Close the monthly summary dialog
+                    _showExpensesBottomSheet(context, state.allExpenses);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildMonthlySummaryCard(
+                    title: 'Total Expenses',
+                    amount: state.totalExpenses,
+                    icon: Icons.money_off,
+                    color: Colors.orange,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Net Profit Card
-              _buildMonthlySummaryCard(
-                title: 'Net Profit',
-                amount: state.netProfit,
-                icon: state.netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
-                color: state.netProfit >= 0 ? Colors.green : Colors.red,
-              ),
-              const SizedBox(height: 16),
+                // Net Profit Card
+                _buildMonthlySummaryCard(
+                  title: 'Net Profit',
+                  amount: state.netProfit,
+                  icon: state.netProfit >= 0
+                      ? Icons.trending_up
+                      : Icons.trending_down,
+                  color: state.netProfit >= 0 ? Colors.green : Colors.red,
+                ),
+                const SizedBox(height: 16),
 
-              // Medicines Expenses Card
-              _buildMonthlySummaryCard(
-                title: 'Medicines Expenses',
-                amount: state.totalMedicinesExpenses,
-                icon: Icons.medication,
-                color: Colors.purple,
-              ),
-              const SizedBox(height: 16),
+                // Medicines Expenses Card
+                _buildMonthlySummaryCard(
+                  title: 'Medicines Expenses',
+                  amount: state.totalMedicinesExpenses,
+                  icon: Icons.medication,
+                  color: Colors.purple,
+                ),
+                const SizedBox(height: 16),
 
-              // Electronic Payment Expenses Card
-              _buildMonthlySummaryCard(
-                title: 'Electronic Payment Expenses',
-                amount: state.totalElectronicPaymentExpenses,
-                icon: Icons.credit_card,
-                color: Colors.teal,
-              ),
-              const SizedBox(height: 16),
+                // Electronic Payment Expenses Card
+                _buildMonthlySummaryCard(
+                  title: 'Electronic Payment Expenses',
+                  amount: state.totalElectronicPaymentExpenses,
+                  icon: Icons.credit_card,
+                  color: Colors.teal,
+                ),
+                const SizedBox(height: 16),
 
-              // Excess and Shortage Row
-              _buildMonthlySummaryCard(
-                title: 'Total Excess',
-                amount: state.totalSurplus,
-                icon: Icons.add_circle,
-                color: Colors.lightGreen,
-              ),
-              const SizedBox(height: 16),
-              _buildMonthlySummaryCard(
-                title: 'Total Shortage',
-                amount: state.totalDeficit,
-                icon: Icons.remove_circle,
-                color: Colors.redAccent,
-              ),
-              const SizedBox(height: 16),
+                // Excess and Shortage Row
+                _buildMonthlySummaryCard(
+                  title: 'Total Excess',
+                  amount: state.totalSurplus,
+                  icon: Icons.add_circle,
+                  color: Colors.lightGreen,
+                ),
+                const SizedBox(height: 16),
+                _buildMonthlySummaryCard(
+                  title: 'Total Shortage',
+                  amount: state.totalDeficit,
+                  icon: Icons.remove_circle,
+                  color: Colors.redAccent,
+                ),
+                const SizedBox(height: 16),
 
-              // Vault Amount Card (Uncollected Profits)
-              _buildMonthlySummaryCard(
-                title: 'Vault Amount (Uncollected)',
-                amount: state.vaultAmount,
-                icon: Icons.account_balance_wallet,
-                color: Colors.amber,
-                subtitle: 'Total net profit not yet collected',
-              ),
+                // Vault Amount Card (Uncollected Profits)
+                _buildMonthlySummaryCard(
+                  title: 'Vault Amount (Uncollected)',
+                  amount: state.vaultAmount,
+                  icon: Icons.account_balance_wallet,
+                  color: Colors.amber,
+                  subtitle: 'Total net profit not yet collected',
+                ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Set Monthly Target Button (Admin only)
-              if (currentUser.isAdmin)
-                ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context); // Close dialog
-                      _showSetMonthlyTargetDialog(context, _selectedDate, state.monthlyTarget);
-                    },
-                    icon: const Icon(Icons.flag),
-                    label: Text(
-                      state.monthlyTarget == null ? 'Set Monthly Target' : 'Update Monthly Target',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                // Set Monthly Target Button (Admin only)
+                if (currentUser.isAdmin) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context); // Close dialog
+                        _showSetMonthlyTargetDialog(
+                          context,
+                          _selectedDate,
+                          state.monthlyTarget,
+                        );
+                      },
+                      icon: const Icon(Icons.flag),
+                      label: Text(
+                        state.monthlyTarget == null
+                            ? 'Set Monthly Target'
+                            : 'Update Monthly Target',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorsManger.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: ColorsManger.primary, width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorsManger.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(
+                          color: ColorsManger.primary,
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
-],
               const SizedBox(height: 12),
               // Close Button
               SizedBox(
@@ -915,17 +1054,24 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     required double totalSales,
     required double monthlyTarget,
   }) {
-    final achievementPercentage = (totalSales / monthlyTarget * 100).clamp(0, 999);
+    final achievementPercentage = (totalSales / monthlyTarget * 100).clamp(
+      0,
+      999,
+    );
     final isAchieved = achievementPercentage >= 100;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isAchieved ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+        color: isAchieved
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isAchieved ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+          color: isAchieved
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.orange.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -936,7 +1082,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isAchieved ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+                  color: isAchieved
+                      ? Colors.green.withValues(alpha: 0.2)
+                      : Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -970,10 +1118,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Target: EGP ${monthlyTarget.toStringAsFixed(1)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -1065,7 +1210,10 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
   }
 
   /// عرض المصاريف في bottom sheet
-  void _showExpensesBottomSheet(BuildContext context, List<ExpenseItem> expenses) {
+  void _showExpensesBottomSheet(
+    BuildContext context,
+    List<ExpenseItem> expenses,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1094,7 +1242,11 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(Icons.receipt_long, color: ColorsManger.primary, size: 28),
+                  const Icon(
+                    Icons.receipt_long,
+                    color: ColorsManger.primary,
+                    size: 28,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1190,11 +1342,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               color: ColorsManger.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              Icons.receipt,
-              color: ColorsManger.primary,
-              size: 24,
-            ),
+            child: Icon(Icons.receipt, color: ColorsManger.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1218,7 +1366,10 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                         onTap: () async {
                           final url = Uri.parse(expense.fileUrl!);
                           if (await canLaunchUrl(url)) {
-                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
                           }
                         },
                         child: Container(
@@ -1243,10 +1394,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     expense.notes!,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
                 ],
               ],
@@ -1278,9 +1426,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(
@@ -1321,7 +1467,11 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
   }
 
   /// عرض dialog لتحديد الهدف الشهري
-  Future<void> _showSetMonthlyTargetDialog(BuildContext context, DateTime selectedDate, double? currentTarget) async {
+  Future<void> _showSetMonthlyTargetDialog(
+    BuildContext context,
+    DateTime selectedDate,
+    double? currentTarget,
+  ) async {
     final TextEditingController targetController = TextEditingController(
       text: currentTarget?.toStringAsFixed(0) ?? '',
     );
@@ -1329,15 +1479,10 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(
-              Icons.flag,
-              color: ColorsManger.primary,
-            ),
+            const Icon(Icons.flag, color: ColorsManger.primary),
             const SizedBox(width: 12),
             const Text('Set Monthly Target'),
           ],
@@ -1348,10 +1493,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
           children: [
             Text(
               'Month: ${DateFormat('MMMM yyyy').format(selectedDate)}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -1378,10 +1520,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorsManger.primary,
             ),
-            child: const Text(
-              'Save',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1477,17 +1616,17 @@ class _ReportBackground extends StatelessWidget {
 }
 
 List<BoxShadow> _panelShadow() => [
-      BoxShadow(
-        color: ColorsManger.primary.withValues(alpha: 0.14),
-        blurRadius: 22,
-        offset: const Offset(0, 12),
-      ),
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 10),
-      ),
-    ];
+  BoxShadow(
+    color: ColorsManger.primary.withValues(alpha: 0.14),
+    blurRadius: 22,
+    offset: const Offset(0, 12),
+  ),
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.06),
+    blurRadius: 18,
+    offset: const Offset(0, 10),
+  ),
+];
 
 class _PanelCard extends StatelessWidget {
   final Widget child;
@@ -1561,6 +1700,7 @@ class _ShiftReportTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final netColor = report.netAmount >= 0 ? Colors.green : Colors.red;
+    final isNarrow = MediaQuery.sizeOf(context).width < 380;
 
     return InkWell(
       onTap: onTap,
@@ -1581,10 +1721,7 @@ class _ShiftReportTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ProfileCircle(
-              photoUrl: report.employeePhoto,
-              size: 38,
-            ),
+            ProfileCircle(photoUrl: report.employeePhoto, size: 38),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1593,7 +1730,10 @@ class _ShiftReportTile extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: ColorsManger.primary.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(999),
@@ -1626,18 +1766,25 @@ class _ShiftReportTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  // Keep pills side-by-side even on small phones by shrinking text/padding.
                   Row(
                     children: [
-                      _AmountPill(
-                        label: 'Sales',
-                        value: egp.format(report.drawerAmount),
-                        color: Colors.blue,
+                      Expanded(
+                        child: _AmountPill(
+                          label: 'Sales',
+                          value: egp.format(report.drawerAmount),
+                          color: Colors.blue,
+                          compact: isNarrow,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      _AmountPill(
-                        label: 'Net',
-                        value: egp.format(report.netAmount),
-                        color: netColor,
+                      Expanded(
+                        child: _AmountPill(
+                          label: 'Net',
+                          value: egp.format(report.netAmount),
+                          color: netColor,
+                          compact: isNarrow,
+                        ),
                       ),
                     ],
                   ),
@@ -1657,17 +1804,22 @@ class _AmountPill extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final bool compact;
 
   const _AmountPill({
     required this.label,
     required this.value,
     required this.color,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 9 : 10,
+        vertical: compact ? 6 : 7,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(12),
@@ -1679,17 +1831,27 @@ class _AmountPill extends StatelessWidget {
           Text(
             '$label · ',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: compact ? 10 : 11,
               fontWeight: FontWeight.w800,
-              color: color.withValues(alpha: 0.95),
+              color: color.withValues(alpha: 0.92),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: color,
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: compact ? 11 : 12,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
+              ),
             ),
           ),
         ],
@@ -1697,4 +1859,3 @@ class _AmountPill extends StatelessWidget {
     );
   }
 }
-

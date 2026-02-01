@@ -38,7 +38,11 @@ class JobOpportunityCard extends StatelessWidget {
                   color: ColorsManger.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.work_outline, color: ColorsManger.primary, size: 22),
+                child: const Icon(
+                  Icons.work_outline,
+                  color: ColorsManger.primary,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -61,19 +65,41 @@ class JobOpportunityCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          _InfoRow(icon: Icons.school, label: 'Qualification', value: opportunity.qualification),
-          _InfoRow(icon: Icons.calendar_today, label: 'Graduation Year', value: opportunity.graduationYear),
-          _InfoRow(icon: Icons.location_on, label: 'Address', value: opportunity.address),
+          _InfoRow(
+            icon: Icons.school,
+            label: 'Qualification',
+            value: opportunity.qualification,
+          ),
+          _InfoRow(
+            icon: Icons.calendar_today,
+            label: 'Graduation Year',
+            value: opportunity.graduationYear,
+          ),
+          _InfoRow(
+            icon: Icons.location_on,
+            label: 'Address',
+            value: opportunity.address,
+          ),
 
           const Divider(height: 22),
 
-          _InfoRow(icon: Icons.business, label: 'Branch', value: opportunity.branchName),
-          _InfoRow(icon: Icons.person, label: 'Added By', value: opportunity.addedByEmployeeName),
+          _InfoRow(
+            icon: Icons.business,
+            label: 'Branch',
+            value: opportunity.branchName,
+          ),
+          _InfoRow(
+            icon: Icons.person,
+            label: 'Added By',
+            value: opportunity.addedByEmployeeName,
+          ),
           if (opportunity.createdAt != null)
             _InfoRow(
               icon: Icons.access_time,
               label: 'Added On',
-              value: DateFormat('dd/MM/yyyy hh:mm a').format(opportunity.createdAt!),
+              value: DateFormat(
+                'dd/MM/yyyy hh:mm a',
+              ).format(opportunity.createdAt!),
             ),
 
           const SizedBox(height: 12),
@@ -83,9 +109,15 @@ class JobOpportunityCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => _openWhatsApp(opportunity.whatsappPhone),
               icon: const Icon(Icons.chat),
-              label: Text(
-                'WhatsApp: ${opportunity.whatsappPhone}',
-                style: const TextStyle(fontWeight: FontWeight.w900),
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'WhatsApp: ${opportunity.whatsappPhone}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF25D366),
@@ -106,26 +138,23 @@ class JobOpportunityCard extends StatelessWidget {
 }
 
 List<BoxShadow> _panelShadow() => [
-      BoxShadow(
-        color: ColorsManger.primary.withValues(alpha: 0.14),
-        blurRadius: 22,
-        offset: const Offset(0, 12),
-      ),
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 10),
-      ),
-    ];
+  BoxShadow(
+    color: ColorsManger.primary.withValues(alpha: 0.14),
+    blurRadius: 22,
+    offset: const Offset(0, 12),
+  ),
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.06),
+    blurRadius: 18,
+    offset: const Offset(0, 10),
+  ),
+];
 
 class _PanelCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry margin;
 
-  const _PanelCard({
-    required this.child,
-    this.margin = EdgeInsets.zero,
-  });
+  const _PanelCard({required this.child, this.margin = EdgeInsets.zero});
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +201,8 @@ class _InfoRow extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 color: Colors.black.withValues(alpha: 0.55),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 10),
@@ -185,6 +216,8 @@ class _InfoRow extends StatelessWidget {
                 color: Colors.black.withValues(alpha: 0.82),
               ),
               textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -192,4 +225,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-

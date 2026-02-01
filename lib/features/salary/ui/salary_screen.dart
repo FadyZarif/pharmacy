@@ -16,7 +16,6 @@ class SalaryScreen extends StatefulWidget {
 }
 
 class _SalaryScreenState extends State<SalaryScreen> {
-
   late DateTime _selectedDate;
   EmployeeMonthlySalary? _currentSalary;
   late final SalaryCubit _salaryCubit;
@@ -32,7 +31,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
     _salaryCubit.fetchSalaryByMonthKey(_monthKey);
   }
 
-  String get _monthKey => MonthSalaryModel.createMonthKey(_selectedDate.year, _selectedDate.month);
+  String get _monthKey =>
+      MonthSalaryModel.createMonthKey(_selectedDate.year, _selectedDate.month);
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +95,9 @@ class _SalaryScreenState extends State<SalaryScreen> {
                         const SizedBox(height: 12),
                         const Expanded(
                           child: Center(
-                            child: CircularProgressIndicator(color: ColorsManger.primary),
+                            child: CircularProgressIndicator(
+                              color: ColorsManger.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -119,16 +121,19 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                   const SizedBox(height: 12),
                                   Text(
                                     'No Data',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w900),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     state.error,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Colors.black.withValues(alpha: 0.55),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.55,
+                                      ),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -147,7 +152,9 @@ class _SalaryScreenState extends State<SalaryScreen> {
                         Expanded(
                           child: SingleChildScrollView(
                             padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
-                            child: SalaryDetailsCard(monthlySalary: _currentSalary!),
+                            child: SalaryDetailsCard(
+                              monthlySalary: _currentSalary!,
+                            ),
                           ),
                         ),
                       ],
@@ -178,7 +185,10 @@ class _SalaryScreenState extends State<SalaryScreen> {
                 if (_selectedDate.month == 1) {
                   _selectedDate = DateTime(_selectedDate.year - 1, 12);
                 } else {
-                  _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1);
+                  _selectedDate = DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month - 1,
+                  );
                 }
                 _currentSalary = null; // Clear current data
               });
@@ -192,11 +202,17 @@ class _SalaryScreenState extends State<SalaryScreen> {
             decoration: BoxDecoration(
               color: ColorsManger.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ColorsManger.primary.withValues(alpha: 0.18)),
+              border: Border.all(
+                color: ColorsManger.primary.withValues(alpha: 0.18),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today, color: ColorsManger.primary, size: 18),
+                const Icon(
+                  Icons.calendar_today,
+                  color: ColorsManger.primary,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   DateFormat.yMMMM().format(_selectedDate),
@@ -214,30 +230,38 @@ class _SalaryScreenState extends State<SalaryScreen> {
           IconButton(
             icon: Icon(
               Icons.arrow_forward,
-              color: _selectedDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))
+              color:
+                  _selectedDate.isBefore(
+                    DateTime.now().subtract(const Duration(days: 1)),
+                  )
                   ? ColorsManger.primary
                   : Colors.grey,
             ),
-            onPressed: _selectedDate.isBefore(
-              DateTime.now().subtract(const Duration(days: 1)),
-            )? () {
-              setState(() {
-                if (_selectedDate.month == 12) {
-                  _selectedDate = DateTime(_selectedDate.year + 1, 1);
-                } else {
-                  _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1);
-                }
-                _currentSalary = null; // Clear current data
-              });
-              // جلب بيانات الشهر الجديد
-              _salaryCubit.fetchSalaryByMonthKey(_monthKey);
-            }: null,
-          )
+            onPressed:
+                _selectedDate.isBefore(
+                  DateTime.now().subtract(const Duration(days: 1)),
+                )
+                ? () {
+                    setState(() {
+                      if (_selectedDate.month == 12) {
+                        _selectedDate = DateTime(_selectedDate.year + 1, 1);
+                      } else {
+                        _selectedDate = DateTime(
+                          _selectedDate.year,
+                          _selectedDate.month + 1,
+                        );
+                      }
+                      _currentSalary = null; // Clear current data
+                    });
+                    // جلب بيانات الشهر الجديد
+                    _salaryCubit.fetchSalaryByMonthKey(_monthKey);
+                  }
+                : null,
+          ),
         ],
       ),
     );
   }
-
 }
 
 class SalaryDetailsCard extends StatelessWidget {
@@ -272,7 +296,10 @@ class SalaryDetailsCard extends StatelessWidget {
           title: 'نظام العمل بالساعات',
           child: Column(
             children: [
-              _InfoRow(label: 'الساعه الشهريه = مبلغ', value: salary.hourlyRate),
+              _InfoRow(
+                label: 'الساعه الشهريه = مبلغ',
+                value: salary.hourlyRate,
+              ),
               _InfoRow(label: 'نظام العمل بالساعات', value: salary.hoursWorked),
             ],
           ),
@@ -286,9 +313,15 @@ class SalaryDetailsCard extends StatelessWidget {
               _InfoRow(label: 'المرتب', value: salary.basicSalary),
               _InfoRow(label: 'الحافز', value: salary.incentive),
               _InfoRow(label: 'الاضافى', value: salary.additional),
-              _InfoRow(label: 'حوافز مبيعات تبديل ربع سنوى', value: salary.quarterlySalesIncentive),
+              _InfoRow(
+                label: 'حوافز مبيعات تبديل ربع سنوى',
+                value: salary.quarterlySalesIncentive,
+              ),
               _InfoRow(label: 'مكافئه عن العمل', value: salary.workBonus),
-              _InfoRow(label: 'المكافئات الادارايه', value: salary.administrativeBonus),
+              _InfoRow(
+                label: 'المكافئات الادارايه',
+                value: salary.administrativeBonus,
+              ),
               _InfoRow(label: 'بدل مواصلات', value: salary.transportAllowance),
               _InfoRow(label: 'صاحب عمل', value: salary.employerShare),
               _InfoRow(label: 'العيديات', value: salary.eideya),
@@ -309,10 +342,19 @@ class SalaryDetailsCard extends StatelessWidget {
             children: [
               _InfoRow(label: 'الخصم بالساعات', value: salary.hourlyDeduction),
               _InfoRow(label: 'جزاءات', value: salary.penalties),
-              _InfoRow(label: 'خصم من كود السحب الدوائى', value: salary.pharmacyCodeDeduction),
-              _InfoRow(label: 'خصم مصاريف فتح فيزا', value: salary.visaDeduction),
+              _InfoRow(
+                label: 'خصم من كود السحب الدوائى',
+                value: salary.pharmacyCodeDeduction,
+              ),
+              _InfoRow(
+                label: 'خصم مصاريف فتح فيزا',
+                value: salary.visaDeduction,
+              ),
               _InfoRow(label: 'خصم سلف', value: salary.advanceDeduction),
-              _InfoRow(label: 'خصم عجز الشيفتات الربع سنوى', value: salary.quarterlyShiftDeficitDeduction),
+              _InfoRow(
+                label: 'خصم عجز الشيفتات الربع سنوى',
+                value: salary.quarterlyShiftDeficitDeduction,
+              ),
               _InfoRow(label: 'خصم تامينات', value: salary.insuranceDeduction),
               const SizedBox(height: 8),
               _TotalRow(
@@ -334,7 +376,10 @@ class SalaryDetailsCard extends StatelessWidget {
                 value: salary.netSalary,
                 tint: Colors.green,
               ),
-              _InfoRow(label: 'المتبقي من السلف على العامل', value: salary.remainingAdvance),
+              _InfoRow(
+                label: 'المتبقي من السلف على العامل',
+                value: salary.remainingAdvance,
+              ),
             ],
           ),
         ),
@@ -344,7 +389,11 @@ class SalaryDetailsCard extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: 'ملاحظات',
-            child: _InfoRow(label: 'ملاحظات', value: salary.notes!, maxLines: 3),
+            child: _InfoRow(
+              label: 'ملاحظات',
+              value: salary.notes!,
+              maxLines: 3,
+            ),
           ),
         ],
 
@@ -354,10 +403,7 @@ class SalaryDetailsCard extends StatelessWidget {
           Center(
             child: Text(
               'Uploaded: ${_formatDate(monthInfo.uploadedAt!)}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ),
         ],
@@ -394,17 +440,17 @@ class _SalaryBackground extends StatelessWidget {
 }
 
 List<BoxShadow> _panelShadow() => [
-      BoxShadow(
-        color: ColorsManger.primary.withValues(alpha: 0.14),
-        blurRadius: 22,
-        offset: const Offset(0, 12),
-      ),
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 10),
-      ),
-    ];
+  BoxShadow(
+    color: ColorsManger.primary.withValues(alpha: 0.14),
+    blurRadius: 22,
+    offset: const Offset(0, 12),
+  ),
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.06),
+    blurRadius: 18,
+    offset: const Offset(0, 10),
+  ),
+];
 
 class _PanelCard extends StatelessWidget {
   final Widget child;
@@ -463,11 +509,7 @@ class _InfoRow extends StatelessWidget {
   final String value;
   final int maxLines;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.maxLines = 1,
-  });
+  const _InfoRow({required this.label, required this.value, this.maxLines = 1});
 
   @override
   Widget build(BuildContext context) {
@@ -538,15 +580,25 @@ class _TotalRow extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 color: tint,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 10),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              color: tint,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: tint,
+                ),
+              ),
             ),
           ),
         ],
@@ -554,4 +606,3 @@ class _TotalRow extends StatelessWidget {
     );
   }
 }
-

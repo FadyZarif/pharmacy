@@ -1002,4 +1002,3 @@ class _PanelCard extends StatelessWidget {
     );
   }
 }
-

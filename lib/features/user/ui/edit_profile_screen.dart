@@ -386,4 +386,3 @@ class _SectionTitle extends StatelessWidget {
     );
   }
 }
-

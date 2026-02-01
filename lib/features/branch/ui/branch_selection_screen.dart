@@ -18,11 +18,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../report/data/models/daily_report_model.dart';
 
 class BranchSelectionScreen extends StatefulWidget {
-  static const _pagePadding = EdgeInsets.symmetric(horizontal: 16, vertical: 14);
+  static const _pagePadding = EdgeInsets.symmetric(
+    horizontal: 16,
+    vertical: 14,
+  );
 
-  const BranchSelectionScreen({
-    super.key,
-  });
+  const BranchSelectionScreen({super.key});
 
   @override
   State<BranchSelectionScreen> createState() => _BranchSelectionScreenState();
@@ -66,22 +67,24 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
 
     // Firestore doesn't support "group by", so we query per branch.
     // If you have many branches, we can optimize later with a pre-aggregated collection.
-    await Future.wait(branches.map((b) async {
-      try {
-        final c = await countForBranch(b.id);
-        if (!mounted) return;
-        setState(() {
-          _pendingCounts[b.id] = c;
-          _pendingLoading.remove(b.id);
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _pendingCounts[b.id] = 0;
-          _pendingLoading.remove(b.id);
-        });
-      }
-    }));
+    await Future.wait(
+      branches.map((b) async {
+        try {
+          final c = await countForBranch(b.id);
+          if (!mounted) return;
+          setState(() {
+            _pendingCounts[b.id] = c;
+            _pendingLoading.remove(b.id);
+          });
+        } catch (_) {
+          if (!mounted) return;
+          setState(() {
+            _pendingCounts[b.id] = 0;
+            _pendingLoading.remove(b.id);
+          });
+        }
+      }),
+    );
   }
 
   @override
@@ -94,9 +97,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     if (!currentUser.isManagement) return;
 
     final updated = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => EditUserScreen(user: currentUser),
-      ),
+      MaterialPageRoute(builder: (_) => EditUserScreen(user: currentUser)),
     );
 
     if (updated == true) {
@@ -116,11 +117,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF6F8FF),
-              Color(0xFFEAFBFF),
-              Color(0xFFF2ECFF),
-            ],
+            colors: [Color(0xFFF6F8FF), Color(0xFFEAFBFF), Color(0xFFF2ECFF)],
             stops: [0.0, 0.55, 1.0],
           ),
         ),
@@ -160,7 +157,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                         onTap: _openMyProfile,
                         borderRadius: BorderRadius.circular(14),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
@@ -174,7 +174,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.black.withValues(alpha: 0.62),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.62,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -185,7 +187,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.black.withValues(alpha: 0.42),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.42,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -200,7 +204,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                               Icon(
                                 Icons.edit,
                                 size: 16,
-                                color: ColorsManger.primary.withValues(alpha: 0.85),
+                                color: ColorsManger.primary.withValues(
+                                  alpha: 0.85,
+                                ),
                               ),
                             ],
                           ),
@@ -228,15 +234,16 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 child: Text(
                   'Please select a branch to continue',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: ColorsManger.grey,
+                    color: ColorsManger.grey,
                     fontWeight: FontWeight.w800,
-                      ),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
 
               // All Branches Monthly Report (Management Only)
-              if (currentUser.isAdmin || currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+              if (currentUser.isAdmin ||
+                  currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildAllBranchesReportCard(context),
@@ -264,23 +271,46 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                             // (Works nicely on phones and web; cards adapt by aspect ratio.)
                             const crossAxisCount = 2;
                             final width = constraints.maxWidth;
+                            final height = constraints.maxHeight;
                             // Make cards more compact on web (avoid huge/tall cards).
-                            final mainAxisExtent = width >= 1100
+                            final baseMainAxisExtent = width >= 1100
                                 ? 170.0
                                 : width >= 800
-                                    ? 185.0
-                                    : width >= 560
-                                        ? 200.0
-                                        : 160.0;
+                                ? 185.0
+                                : width >= 560
+                                ? 200.0
+                                : 160.0;
+
+                            // On mobile, try to fit all branches without scrolling (when reasonable)
+                            // by computing tile height from available space + number of rows.
+                            final branchCount = currentUser.branches.length;
+                            final rows = (branchCount / crossAxisCount)
+                                .ceil()
+                                .clamp(1, 99);
+                            const gridTop = 6.0;
+                            const gridBottom = 12.0;
+                            const mainAxisSpacing = 12.0;
+                            final fitExtent =
+                                (height -
+                                    (gridTop + gridBottom) -
+                                    (mainAxisSpacing * (rows - 1))) /
+                                rows;
+                            final mainAxisExtent = width < 560
+                                ? fitExtent.clamp(120.0, baseMainAxisExtent)
+                                : baseMainAxisExtent;
 
                             return GridView.builder(
-                              padding: const EdgeInsets.only(top: 6, bottom: 16),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                mainAxisExtent: mainAxisExtent,
+                              padding: const EdgeInsets.only(
+                                top: gridTop,
+                                bottom: gridBottom,
                               ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: mainAxisSpacing,
+                                    mainAxisExtent: mainAxisExtent,
+                                  ),
                               itemCount: currentUser.branches.length,
                               itemBuilder: (context, index) {
                                 final branch = currentUser.branches[index];
@@ -290,7 +320,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                                   branch: branch,
                                   index: index,
                                   pendingCount: _pendingCounts[branch.id],
-                                  pendingLoading: _pendingLoading.contains(branch.id),
+                                  pendingLoading: _pendingLoading.contains(
+                                    branch.id,
+                                  ),
                                   compact: compact,
                                 );
                               },
@@ -304,10 +336,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
         ),
       ),
     );
-
   }
-  void _showLogoutDialog(BuildContext context) {
 
+  void _showLogoutDialog(BuildContext context) {
     AwesomeDialog(
       context: context,
       dialogType: DialogType.warning,
@@ -328,9 +359,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
       );
 
       // Sign out from Firebase
@@ -367,7 +396,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (ctx) => const LoginScreen()),
-              (route) => false,
+          (route) => false,
         );
       }
     } catch (e) {
@@ -377,14 +406,12 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
       // Show error message
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
+
   Widget _buildAnimatedBranchCard({
     required BuildContext context,
     required Branch branch,
@@ -425,9 +452,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
       color: ColorsManger.primary,
       elevation: 6,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
           _showConsolidatedReportsOptions(context);
@@ -527,18 +552,12 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
             // Title
             const Text(
               'All Branches Report',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Select report type',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),
 
@@ -618,10 +637,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -634,8 +650,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
   }
 
   /// اختيار التاريخ وعرض التقرير
-  Future<void> _selectDateAndShowReport(BuildContext context,
-      {required bool isMonthly}) async {
+  Future<void> _selectDateAndShowReport(
+    BuildContext context, {
+    required bool isMonthly,
+  }) async {
     // Get the navigator before async gap
     final navigator = Navigator.of(context);
 
@@ -649,13 +667,20 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
 
     if (picked != null) {
       // Use the navigator's context instead
-      _showConsolidatedReportDialog(navigator.context, picked, isMonthly: isMonthly);
+      _showConsolidatedReportDialog(
+        navigator.context,
+        picked,
+        isMonthly: isMonthly,
+      );
     }
   }
 
   /// عرض تقرير موحد لكل الفروع
-  void _showConsolidatedReportDialog(BuildContext context, DateTime selectedDate,
-      {required bool isMonthly}) {
+  void _showConsolidatedReportDialog(
+    BuildContext context,
+    DateTime selectedDate, {
+    required bool isMonthly,
+  }) {
     final cubit = ConsolidatedReportsCubit();
 
     // Start fetching data
@@ -687,7 +712,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               return _buildLoadingDialog(state);
             } else if (state is ConsolidatedReportsLoaded) {
               return _buildConsolidatedReportDialog(
-                  state, selectedDate, isMonthly);
+                state,
+                selectedDate,
+                isMonthly,
+              );
             }
             // Initial loading
             return const Center(
@@ -710,42 +738,31 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.analytics,
-              size: 48,
-              color: ColorsManger.primary,
-            ),
+            const Icon(Icons.analytics, size: 48, color: ColorsManger.primary),
             const SizedBox(height: 16),
             const Text(
               'Loading Reports',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
             LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.grey[200],
-              valueColor: const AlwaysStoppedAnimation<Color>(ColorsManger.primary),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                ColorsManger.primary,
+              ),
               minHeight: 8,
             ),
             const SizedBox(height: 16),
             Text(
               'Processing: ${state.currentBranchName}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               '${state.completedBranches} / ${state.totalBranches} branches completed',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -834,7 +851,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       InkWell(
                         onTap: () {
                           Navigator.pop(dialogContext); // Close dialog
-                          _showExpensesBottomSheet(dialogContext, state.allExpenses);
+                          _showExpensesBottomSheet(
+                            dialogContext,
+                            state.allExpenses,
+                          );
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: _buildSummaryCard(
@@ -905,7 +925,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
 
                       // Branch Details Expansion
                       ExpansionTile(
-                        leading: const Icon(Icons.store, color: ColorsManger.primary),
+                        leading: const Icon(
+                          Icons.store,
+                          color: ColorsManger.primary,
+                        ),
                         title: const Text(
                           'Branch Details',
                           style: TextStyle(fontWeight: FontWeight.bold),
@@ -913,17 +936,31 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                         children: state.branchSummaries.values.map((branch) {
                           return ListTile(
                             title: Text(branch.branchName),
-                            subtitle: Text(
-                              'Sales: ${branch.totalSales.toStringAsFixed(1)} | '
-                              'Expenses: ${branch.totalExpenses.toStringAsFixed(1)}',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sales: ${branch.totalSales.toStringAsFixed(1)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  'Expenses: ${branch.totalExpenses.toStringAsFixed(1)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            trailing: Text(
-                              'EGP ${branch.netProfit.toStringAsFixed(1)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: branch.netProfit >= 0
-                                    ? Colors.green
-                                    : Colors.red,
+                            trailing: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'EGP ${branch.netProfit.toStringAsFixed(1)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: branch.netProfit >= 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
                               ),
                             ),
                           );
@@ -969,17 +1006,24 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     required double totalSales,
     required double monthlyTarget,
   }) {
-    final achievementPercentage = (totalSales / monthlyTarget * 100).clamp(0, 999);
+    final achievementPercentage = (totalSales / monthlyTarget * 100).clamp(
+      0,
+      999,
+    );
     final isAchieved = achievementPercentage >= 100;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isAchieved ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+        color: isAchieved
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isAchieved ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+          color: isAchieved
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.orange.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -990,7 +1034,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isAchieved ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+                  color: isAchieved
+                      ? Colors.green.withValues(alpha: 0.2)
+                      : Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -1024,10 +1070,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                     const SizedBox(height: 4),
                     Text(
                       'Target: EGP ${monthlyTarget.toStringAsFixed(1)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -1119,7 +1162,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
   }
 
   /// عرض المصاريف في bottom sheet
-  void _showExpensesBottomSheet(BuildContext context, List<ExpenseItem> expenses) {
+  void _showExpensesBottomSheet(
+    BuildContext context,
+    List<ExpenseItem> expenses,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1148,7 +1194,11 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(Icons.receipt_long, color: ColorsManger.primary, size: 28),
+                  const Icon(
+                    Icons.receipt_long,
+                    color: ColorsManger.primary,
+                    size: 28,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1272,7 +1322,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                         onTap: () async {
                           final url = Uri.parse(expense.fileUrl!);
                           if (await canLaunchUrl(url)) {
-                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
                           }
                         },
                         child: Container(
@@ -1297,10 +1350,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                   const SizedBox(height: 4),
                   Text(
                     expense.notes!,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
                 ],
               ],
@@ -1324,7 +1374,6 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
       ),
     );
   }
-
 }
 
 class _BranchTile extends StatefulWidget {
@@ -1355,14 +1404,14 @@ class _BranchTileState extends State<_BranchTile> {
     final scale = _pressed
         ? 0.98
         : _hovered
-            ? 1.02
-            : 1.0;
+        ? 1.02
+        : 1.0;
 
     final glowAlpha = _pressed
         ? 0.10
         : _hovered
-            ? 0.26
-            : 0.16;
+        ? 0.26
+        : 0.16;
     final glowBlur = _hovered ? 34.0 : 26.0;
     final glowSpread = _hovered ? 2.0 : 0.0;
 
@@ -1402,7 +1451,9 @@ class _BranchTileState extends State<_BranchTile> {
                   ),
                   // Soft depth shadow
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: _hovered ? 0.06 : 0.05),
+                    color: Colors.black.withValues(
+                      alpha: _hovered ? 0.06 : 0.05,
+                    ),
                     blurRadius: _hovered ? 24 : 18,
                     offset: const Offset(0, 14),
                   ),
@@ -1426,7 +1477,9 @@ class _BranchTileState extends State<_BranchTile> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(widget.compact ? 16 : 18),
+                          borderRadius: BorderRadius.circular(
+                            widget.compact ? 16 : 18,
+                          ),
                         ),
                         child: Icon(
                           Icons.store_rounded,
@@ -1451,18 +1504,26 @@ class _BranchTileState extends State<_BranchTile> {
                                 vertical: widget.compact ? 5 : 6,
                               ),
                               decoration: BoxDecoration(
-                                color: RequestStatus.pending.color.withValues(alpha: 0.18),
+                                color: RequestStatus.pending.color.withValues(
+                                  alpha: 0.18,
+                                ),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: RequestStatus.pending.color.withValues(alpha: 0.35),
+                                  color: RequestStatus.pending.color.withValues(
+                                    alpha: 0.35,
+                                  ),
                                 ),
                               ),
                               child: Text(
-                                widget.compact ? '${widget.pendingCount}' : '${widget.pendingCount} Pending',
+                                // On mobile (compact) we still show the label for clarity.
+                                '${widget.pendingCount} Pending',
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: widget.compact ? 11 : 12,
+                                  fontSize: widget.compact ? 10.5 : 12,
                                   fontWeight: FontWeight.w800,
-                                  color: RequestStatus.pending.color.withValues(alpha: 0.98),
+                                  color: RequestStatus.pending.color.withValues(
+                                    alpha: 0.98,
+                                  ),
                                 ),
                               ),
                             )
@@ -1473,7 +1534,9 @@ class _BranchTileState extends State<_BranchTile> {
                                 vertical: widget.compact ? 5 : 6,
                               ),
                               decoration: BoxDecoration(
-                                color: ColorsManger.primary.withValues(alpha: 0.09),
+                                color: ColorsManger.primary.withValues(
+                                  alpha: 0.09,
+                                ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
@@ -1481,7 +1544,9 @@ class _BranchTileState extends State<_BranchTile> {
                                 style: TextStyle(
                                   fontSize: widget.compact ? 11 : 12,
                                   fontWeight: FontWeight.w800,
-                                  color: ColorsManger.primary.withValues(alpha: 0.95),
+                                  color: ColorsManger.primary.withValues(
+                                    alpha: 0.95,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1529,4 +1594,3 @@ class _BranchTileState extends State<_BranchTile> {
     );
   }
 }
-

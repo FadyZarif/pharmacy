@@ -31,7 +31,8 @@ class EmployeeDashboardScreen extends StatefulWidget {
   const EmployeeDashboardScreen({super.key});
 
   @override
-  State<EmployeeDashboardScreen> createState() => _EmployeeDashboardScreenState();
+  State<EmployeeDashboardScreen> createState() =>
+      _EmployeeDashboardScreenState();
 }
 
 class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
@@ -70,18 +71,25 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               backgroundColor: Colors.transparent,
               surfaceTintColor: Colors.transparent,
               actions: [
-                if (currentUser.role == Role.subManager && currentUser.hasRequestsPermission)
+                if (currentUser.role == Role.subManager &&
+                    currentUser.hasRequestsPermission)
                   IconButton(
                     onPressed: () {
                       HapticFeedback.mediumImpact();
                       navigateTo(context, const ManageRequestsScreen());
                     },
-                    icon: Icon(Icons.event_note, color: ColorsManger.primary.withValues(alpha: 0.95)),
+                    icon: Icon(
+                      Icons.event_note,
+                      color: ColorsManger.primary.withValues(alpha: 0.95),
+                    ),
                     tooltip: 'Manage Requests',
                   ),
                 IconButton(
                   onPressed: () => _showLogoutDialog(context),
-                  icon: Icon(Icons.logout, color: ColorsManger.primary.withValues(alpha: 0.95)),
+                  icon: Icon(
+                    Icons.logout,
+                    color: ColorsManger.primary.withValues(alpha: 0.95),
+                  ),
                   tooltip: 'Logout',
                 ),
               ],
@@ -117,20 +125,29 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                         name: currentUser.name,
                         branchName: currentUser.currentBranch.name,
                         photoUrl: currentUser.photoUrl,
-                        onView: () => context.read<EmployeeLayoutCubit>().changeBottomNav(4),
+                        onView: () => context
+                            .read<EmployeeLayoutCubit>()
+                            .changeBottomNav(4),
                       ),
                       const SizedBox(height: 18),
 
                       _SectionCard(
                         title: 'Statistics',
-                        subtitle: 'Quick view of your balances and pending requests',
+                        subtitle:
+                            'Quick view of your balances and pending requests',
                         icon: Icons.analytics,
                         child: LayoutBuilder(
                           builder: (context, c) {
                             final w = c.maxWidth;
                             final columns = w >= 900 ? 3 : (w >= 560 ? 3 : 2);
                             const spacing = 12.0;
-                            final cardWidth = (w - (spacing * (columns - 1))) / columns;
+                            final cardWidth =
+                                (w - (spacing * (columns - 1))) / columns;
+                            // Keep stat tiles visually consistent (same height) across different content lengths.
+                            final tileHeight = w >= 560 ? 90.0 : 86.0;
+                            final pendingTileWidth = columns == 2
+                                ? (cardWidth * 2 + spacing)
+                                : cardWidth;
 
                             return Wrap(
                               spacing: spacing,
@@ -138,6 +155,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                               children: [
                                 SizedBox(
                                   width: cardWidth,
+                                  height: tileHeight,
                                   child: _StatCard(
                                     compact: true,
                                     icon: Icons.beach_access,
@@ -148,6 +166,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                 ),
                                 SizedBox(
                                   width: cardWidth,
+                                  height: tileHeight,
                                   child: _StatCard(
                                     compact: true,
                                     icon: Icons.schedule,
@@ -157,16 +176,19 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                   ),
                                 ),
                                 SizedBox(
-                                  width: cardWidth,
+                                  width: pendingTileWidth,
+                                  height: tileHeight,
                                   child: BlocBuilder<RequestCubit, RequestState>(
-                                    buildWhen: (_, current) => current is FetchRequestsSuccess,
+                                    buildWhen: (_, current) =>
+                                        current is FetchRequestsSuccess,
                                     builder: (context, state) {
                                       return _StatCard(
                                         compact: true,
                                         icon: Icons.pending_actions,
                                         iconColor: Colors.orange,
                                         title: 'Pending Requests',
-                                        value: '${getIt<RequestCubit>().pendingRequestsCount}',
+                                        value:
+                                            '${getIt<RequestCubit>().pendingRequestsCount}',
                                         badge: true,
                                       );
                                     },
@@ -181,7 +203,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                       const SizedBox(height: 18),
                       _SectionCard(
                         title: 'Job Opportunities',
-                        subtitle: 'Browse open roles and apply directly from the app.',
+                        subtitle:
+                            'Browse open roles and apply directly from the app.',
                         icon: Icons.work_outline,
                         trailing: _PrimarySmallButton(
                           label: 'View All',
@@ -231,8 +254,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     );
   }
 
-void _showLogoutDialog(BuildContext context) {
-
+  void _showLogoutDialog(BuildContext context) {
     AwesomeDialog(
       context: context,
       dialogType: DialogType.warning,
@@ -245,71 +267,66 @@ void _showLogoutDialog(BuildContext context) {
         _logout(context);
       },
     ).show();
-}
+  }
 
-Future<void> _logout(BuildContext context) async {
-  try {
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    // Sign out from Firebase
-    await FirebaseAuth.instance.signOut();
-
-    // Reset all lazy singletons in GetIt (but keep factories)
-    if (getIt.isRegistered<EmployeeLayoutCubit>()) {
-      await getIt.resetLazySingleton<EmployeeLayoutCubit>();
-    }
-    if (getIt.isRegistered<RequestCubit>()) {
-      await getIt.resetLazySingleton<RequestCubit>();
-    }
-    if (getIt.isRegistered<CoverageShiftService>()) {
-      await getIt.resetLazySingleton<CoverageShiftService>();
-    }
-    if (getIt.isRegistered<RepairCubit>()) {
-      await getIt.resetLazySingleton<RepairCubit>();
-    }
-    if (getIt.isRegistered<SalaryCubit>()) {
-      await getIt.resetLazySingleton<SalaryCubit>();
-    }
-    if (getIt.isRegistered<UsersCubit>()) {
-      await getIt.resetLazySingleton<UsersCubit>();
-    }
-
-    // Update isLogged flag
-    isLogged = false;
-
-    // Pop loading dialog
-    if (context.mounted) Navigator.pop(context);
-
-    // Navigate to login screen
-    if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (ctx) => const LoginScreen()),
-        (route) => false,
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
       );
-    }
-  } catch (e) {
-    // Pop loading dialog if still showing
-    if (context.mounted) Navigator.pop(context);
 
-    // Show error message
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Reset all lazy singletons in GetIt (but keep factories)
+      if (getIt.isRegistered<EmployeeLayoutCubit>()) {
+        await getIt.resetLazySingleton<EmployeeLayoutCubit>();
+      }
+      if (getIt.isRegistered<RequestCubit>()) {
+        await getIt.resetLazySingleton<RequestCubit>();
+      }
+      if (getIt.isRegistered<CoverageShiftService>()) {
+        await getIt.resetLazySingleton<CoverageShiftService>();
+      }
+      if (getIt.isRegistered<RepairCubit>()) {
+        await getIt.resetLazySingleton<RepairCubit>();
+      }
+      if (getIt.isRegistered<SalaryCubit>()) {
+        await getIt.resetLazySingleton<SalaryCubit>();
+      }
+      if (getIt.isRegistered<UsersCubit>()) {
+        await getIt.resetLazySingleton<UsersCubit>();
+      }
+
+      // Update isLogged flag
+      isLogged = false;
+
+      // Pop loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Navigate to login screen
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Pop loading dialog if still showing
+      if (context.mounted) Navigator.pop(context);
+
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
-}
 }
 
 Future<void> showNewRequestSheet(BuildContext context) async {
@@ -319,7 +336,9 @@ Future<void> showNewRequestSheet(BuildContext context) async {
       title: 'Annual Leave',
       subtitle: 'طلب إجازة',
       icon: Icons.flight_takeoff,
-      screen: const AddRequestScreenUnified(requestType: RequestType.annualLeave),
+      screen: const AddRequestScreenUnified(
+        requestType: RequestType.annualLeave,
+      ),
     ),
     RequestItem(
       type: RequestType.sickLeave,
@@ -333,14 +352,18 @@ Future<void> showNewRequestSheet(BuildContext context) async {
       title: 'Extra Hours',
       subtitle: 'طلب ساعات إضافية',
       icon: Icons.access_time,
-      screen: const AddRequestScreenUnified(requestType: RequestType.extraHours),
+      screen: const AddRequestScreenUnified(
+        requestType: RequestType.extraHours,
+      ),
     ),
     RequestItem(
       type: RequestType.coverageShift,
       title: 'Coverage Shift',
       subtitle: 'طلب تغطية وردية',
       icon: Icons.swap_horiz,
-      screen: const AddRequestScreenUnified(requestType: RequestType.coverageShift),
+      screen: const AddRequestScreenUnified(
+        requestType: RequestType.coverageShift,
+      ),
     ),
     RequestItem(
       type: RequestType.attend,
@@ -354,7 +377,9 @@ Future<void> showNewRequestSheet(BuildContext context) async {
       title: 'Permission',
       subtitle: 'تأخير أو انصراف مبكر',
       icon: Icons.exit_to_app,
-      screen: const AddRequestScreenUnified(requestType: RequestType.permission),
+      screen: const AddRequestScreenUnified(
+        requestType: RequestType.permission,
+      ),
     ),
   ];
 
@@ -379,7 +404,12 @@ Future<void> showNewRequestSheet(BuildContext context) async {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
-              ...items.map((item) => RequestTile(item: item, requestCubit: getIt<RequestCubit>(),)),
+              ...items.map(
+                (item) => RequestTile(
+                  item: item,
+                  requestCubit: getIt<RequestCubit>(),
+                ),
+              ),
               const SizedBox(height: 6),
             ],
           ),
@@ -393,10 +423,12 @@ class _AnimatedDashboardBackground extends StatefulWidget {
   const _AnimatedDashboardBackground();
 
   @override
-  State<_AnimatedDashboardBackground> createState() => _AnimatedDashboardBackgroundState();
+  State<_AnimatedDashboardBackground> createState() =>
+      _AnimatedDashboardBackgroundState();
 }
 
-class _AnimatedDashboardBackgroundState extends State<_AnimatedDashboardBackground>
+class _AnimatedDashboardBackgroundState
+    extends State<_AnimatedDashboardBackground>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
   static const _bgAsset = 'assets/images/dashboard_bg.png';
@@ -533,17 +565,17 @@ class _AnimatedGlowBlob extends StatelessWidget {
 }
 
 List<BoxShadow> _cardShadow() => [
-      BoxShadow(
-        color: ColorsManger.primary.withValues(alpha: 0.18),
-        blurRadius: 22,
-        offset: const Offset(0, 12),
-      ),
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 10),
-      ),
-    ];
+  BoxShadow(
+    color: ColorsManger.primary.withValues(alpha: 0.18),
+    blurRadius: 22,
+    offset: const Offset(0, 12),
+  ),
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.06),
+    blurRadius: 18,
+    offset: const Offset(0, 10),
+  ),
+];
 
 class _UserHeaderCard extends StatelessWidget {
   final String name;
@@ -580,12 +612,19 @@ class _UserHeaderCard extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Icon(Icons.store, size: 14, color: Colors.black.withValues(alpha: 0.45)),
+                    Icon(
+                      Icons.store,
+                      size: 14,
+                      color: Colors.black.withValues(alpha: 0.45),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -614,7 +653,9 @@ class _UserHeaderCard extends StatelessWidget {
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               textStyle: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
@@ -718,10 +759,7 @@ class _SectionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
             ],
           ),
           const SizedBox(height: 14),
@@ -751,77 +789,134 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(compact ? 12 : 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.16)),
-        boxShadow: compact ? null : _cardShadow(),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: compact ? 40 : 44,
-            height: compact ? 40 : 44,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: iconColor),
+    return LayoutBuilder(
+      builder: (context, c) {
+        // On very narrow widths, switch to a vertical layout to avoid overflow.
+        final isVeryNarrow = c.maxWidth < 140;
+
+        Widget badgeChip() => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.22)),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black.withValues(alpha: 0.55),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
+          child: const Text(
+            'Pending',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: Colors.orange,
+            ),
+          ),
+        );
+
+        final iconBox = Container(
+          width: compact ? 40 : 44,
+          height: compact ? 40 : 44,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: iconColor),
+        );
+
+        return Container(
+          padding: EdgeInsets.all(compact ? 12 : 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.16)),
+            boxShadow: compact ? null : _cardShadow(),
+          ),
+          child: isVeryNarrow
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        value,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                    Row(
+                      children: [
+                        iconBox,
+                        if (badge) ...[const Spacer(), badgeChip()],
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black.withValues(alpha: 0.55),
                       ),
                     ),
-                    if (badge) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: Colors.orange.withValues(alpha: 0.22)),
-                        ),
-                        child: const Text(
-                          'Pending',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.orange,
-                          ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    iconBox,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black.withValues(alpha: 0.55),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    value,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (badge) ...[
+                                const SizedBox(width: 8),
+                                badgeChip(),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -865,7 +960,10 @@ class _InfoCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
