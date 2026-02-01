@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "412302383494",
+    "project_id": "pharmacy-employee-system-new",
+    "storage_bucket": "pharmacy-employee-system-new.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412302383494:android:c753ccdfe804f788257407",
+        "android_client_info": {
+          "package_name": "com.emadfawzy.pharmacy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGCOy18BQ57hfa-WTPPGCkvSv38GDnpg8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

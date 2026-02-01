@@ -1,0 +1,259 @@
+<!DOCTYPE html><html><head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="pharmacy">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <title>pharmacy</title>
+  <link rel="manifest" href="manifest.json">
+  
+  
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  
+  
+  
+  
+  
+  
+  
+  
+  <style id="splash-screen-style">
+    html {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      /* Web preloader (no logo): animated background only, until Flutter paints. */
+      background-color: #F6F8FF;
+      background: radial-gradient(1200px 700px at 15% 15%, rgba(46, 211, 230, 0.18), rgba(46, 211, 230, 0) 55%),
+                  radial-gradient(900px 600px at 85% 70%, rgba(75, 57, 239, 0.16), rgba(75, 57, 239, 0) 60%),
+                  radial-gradient(900px 700px at 25% 90%, rgba(255, 91, 197, 0.10), rgba(255, 91, 197, 0) 60%),
+                  linear-gradient(120deg, #F6F8FF, #FFFFFF, #EAFBFF, #F2ECFF);
+      background-size: 180% 180%;
+      animation: splashGradient 7s ease-in-out infinite;
+    }
+
+    @keyframes splashGradient {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .center {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    /* Web preloader that MATCHES Flutter SplashScreen */
+    #preload {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      pointer-events: none;
+    }
+
+    #preload-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .preload-logo-wrap {
+      width: 144px;
+      height: 144px;
+      padding: 18px;
+      border-radius: 38px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow:
+        0 18px 30px rgba(23, 213, 230, 0.22),
+        0 10px 18px rgba(0, 0, 0, 0.05);
+      display: grid;
+      place-items: center;
+      animation: logoDrop 900ms cubic-bezier(0.2, 0.9, 0.2, 1) 1,
+                 logoPulse 1200ms ease-in-out 900ms infinite alternate;
+      will-change: transform, opacity;
+    }
+
+    .preload-logo {
+      width: 108px;
+      height: 108px;
+      border-radius: 28px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preload-title {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: rgba(0,0,0,0.88);
+      text-align: center;
+      margin: 0;
+    }
+
+    .preload-subtitle {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(117,117,117,1);
+      text-align: center;
+      margin: -6px 0 0 0;
+    }
+
+    .preload-bar {
+      width: 34px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(75, 57, 239, 0.35);
+      overflow: hidden;
+      position: relative;
+      margin-top: 2px;
+    }
+    .preload-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(75,57,239,0.05), rgba(75,57,239,0.7), rgba(75,57,239,0.05));
+      transform: translateX(-120%);
+      animation: barShimmer 900ms ease-in-out infinite;
+    }
+
+    @keyframes logoDrop {
+      0%   { transform: translateY(-90px) scale(0.78) rotate(-3deg); opacity: 0; }
+      65%  { transform: translateY(8px)   scale(1.06) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(0px)   scale(1.00) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes logoPulse {
+      0%   { transform: translateY(0px) scale(1.00); }
+      100% { transform: translateY(0px) scale(1.06); }
+    }
+
+    @keyframes barShimmer {
+      0%   { transform: translateX(-120%); }
+      100% { transform: translateX(120%); }
+    }
+
+    .contain {
+      display:block;
+      width:100%; height:100%;
+      object-fit: contain;
+    }
+
+    .stretch {
+      display:block;
+      width:100%; height:100%;
+    }
+
+    .cover {
+      display:block;
+      width:100%; height:100%;
+      object-fit: cover;
+    }
+
+    .bottom {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      -ms-transform: translate(-50%, 0);
+      transform: translate(-50%, 0);
+    }
+
+    .bottomLeft {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .bottomRight {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #0B0F1A;
+        background: radial-gradient(1200px 700px at 15% 15%, rgba(46, 211, 230, 0.12), rgba(46, 211, 230, 0) 55%),
+                    radial-gradient(900px 600px at 85% 70%, rgba(75, 57, 239, 0.12), rgba(75, 57, 239, 0) 60%),
+                    radial-gradient(900px 700px at 25% 90%, rgba(255, 91, 197, 0.08), rgba(255, 91, 197, 0) 60%),
+                    linear-gradient(120deg, #0B0F1A, #101726, #0F1D2B, #12102A);
+        background-size: 180% 180%;
+        animation: splashGradient 7s ease-in-out infinite;
+          }
+    }
+  </style>
+  <script id="splash-screen-script">
+    function removeSplashFromWeb() {
+      document.getElementById("splash")?.remove();
+      document.getElementById("splash-branding")?.remove();
+      document.getElementById("preload")?.remove();
+      // Keep the CSS background to avoid a blank/white flash before Flutter paints.
+    }
+  </script>
+</head>
+<body>
+  <div id="preload" aria-hidden="true">
+    <div id="preload-inner">
+      <div class="preload-logo-wrap">
+        <img class="preload-logo" src="assets/images/app_launcher_icon.png" alt="">
+      </div>
+      <p class="preload-title">Emad Fawzy Pharmacy</p>
+      <p class="preload-subtitle">Loading...</p>
+      <div class="preload-bar"></div>
+    </div>
+  </div>
+  <script src="flutter_bootstrap.js" async=""></script>
+
+  <!-- Firebase Messaging Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+          .then((registration) => {
+            console.log('✅ Firebase Messaging Service Worker registered:', registration.scope);
+          })
+          .catch((err) => {
+            console.log('❌ Firebase Messaging Service Worker registration failed:', err);
+          });
+      });
+    }
+  </script>
+
+</body></html>
