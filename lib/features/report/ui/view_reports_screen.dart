@@ -120,8 +120,15 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             // bottom padding so content won't be covered on mobile.
             const glassNavHeight = 66.0;
             const glassNavOuterPadding = 14.0;
-            final bottomGap =
-                bottomPad + glassNavHeight + glassNavOuterPadding + 10;
+            // Space that the glass nav overlaps with the body (inside EmployeeLayout).
+            final navOverlap =
+                bottomPad + glassNavHeight + glassNavOuterPadding;
+            final isCompactLayout = MediaQuery.sizeOf(context).width < 650;
+            // On phones, avoid a large "empty" area at the bottom by keeping the outer
+            // padding small, and reserving the nav overlap inside the scrollable list.
+            final contentBottomPadding = isCompactLayout
+                ? (bottomPad + 10)
+                : (navOverlap + 10);
             return Scaffold(
               backgroundColor: ColorsManger.primaryBackground,
               extendBodyBehindAppBar: true,
@@ -174,7 +181,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                       16,
                       topPad + kToolbarHeight + 12,
                       16,
-                      bottomGap,
+                      contentBottomPadding,
                     ),
                     child: Column(
                       children: [
@@ -301,79 +308,61 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                 final isCompact =
                                     MediaQuery.sizeOf(context).width < 650;
 
-                                // On compact/mobile, dock Totals as a fixed card above the glass bottom nav
-                                // and add bottom padding to the list so it doesn't get covered.
+                                // On compact/mobile, render Totals as part of the scroll (last item),
+                                // so it never overlays and hides the shift list on small screens.
                                 if (isCompact) {
-                                  return LayoutBuilder(
-                                    builder: (context, c) {
-                                      final dockHeight =
-                                          _estimateTotalsDockHeight(
-                                            width: c.maxWidth,
-                                          );
-                                      return Stack(
-                                        children: [
-                                          ListView.separated(
-                                            padding: EdgeInsets.only(
-                                              bottom: dockHeight + 12,
-                                            ),
-                                            itemCount: state.reports.length,
-                                            separatorBuilder: (_, __) =>
-                                                const SizedBox(height: 8),
-                                            itemBuilder: (context, index) {
-                                              final report =
-                                                  state.reports[index];
-                                              return _ShiftReportTile(
-                                                report: report,
-                                                egp: _egp,
-                                                onTap: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (_) =>
-                                                          EditShiftReportScreen(
-                                                            report: report,
-                                                            date:
-                                                                _formattedDate,
-                                                          ),
+                                  return ListView.separated(
+                                    padding: EdgeInsets.only(
+                                      bottom: navOverlap + 12,
+                                    ),
+                                    itemCount: state.reports.length + 1,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 6),
+                                    itemBuilder: (context, index) {
+                                      if (index < state.reports.length) {
+                                        final report = state.reports[index];
+                                        return _ShiftReportTile(
+                                          report: report,
+                                          egp: _egp,
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    EditShiftReportScreen(
+                                                      report: report,
+                                                      date: _formattedDate,
                                                     ),
-                                                  ).then((_) {
-                                                    _cubit.fetchDailyReports(
-                                                      _formattedDate,
-                                                    );
-                                                  });
-                                                },
+                                              ),
+                                            ).then((_) {
+                                              _cubit.fetchDailyReports(
+                                                _formattedDate,
                                               );
-                                            },
-                                          ),
-                                          Positioned(
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            child: _TotalsDockCard(
-                                              reports: state.reports,
-                                              egp: _egp,
-                                              isCollected: _isCollected,
-                                              onToggleCollect:
-                                                  (currentUser.isAdmin ||
-                                                      currentUser.uid ==
-                                                          '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
-                                                  ? () =>
-                                                        _showCollectionConfirmationDialog(
-                                                          context,
-                                                        )
-                                                  : null,
-                                              onShowExpenses: () =>
-                                                  _showExpensesBottomSheet(
+                                            });
+                                          },
+                                        );
+                                      }
+
+                                      return _TotalsDockCard(
+                                        reports: state.reports,
+                                        egp: _egp,
+                                        isCollected: _isCollected,
+                                        onToggleCollect:
+                                            (currentUser.isAdmin ||
+                                                currentUser.uid ==
+                                                    '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+                                            ? () =>
+                                                  _showCollectionConfirmationDialog(
                                                     context,
-                                                    state.reports
-                                                        .expand(
-                                                          (r) => r.expenses,
-                                                        )
-                                                        .toList(),
-                                                  ),
+                                                  )
+                                            : null,
+                                        onShowExpenses: () =>
+                                            _showExpensesBottomSheet(
+                                              context,
+                                              state.reports
+                                                  .expand((r) => r.expenses)
+                                                  .toList(),
                                             ),
-                                          ),
-                                        ],
                                       );
                                     },
                                   );
@@ -1425,13 +1414,19 @@ class _ShiftReportTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final netColor = report.netAmount >= 0 ? Colors.green : Colors.red;
+    final isCompact = MediaQuery.sizeOf(context).width < 650;
     final isNarrow = MediaQuery.sizeOf(context).width < 380;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        padding: EdgeInsets.fromLTRB(
+          isCompact ? 10 : 12,
+          isCompact ? 8 : 10,
+          isCompact ? 10 : 12,
+          isCompact ? 8 : 10,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1446,8 +1441,11 @@ class _ShiftReportTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ProfileCircle(photoUrl: report.employeePhoto, size: 34),
-            const SizedBox(width: 10),
+            ProfileCircle(
+              photoUrl: report.employeePhoto,
+              size: isCompact ? 30 : 34,
+            ),
+            SizedBox(width: isCompact ? 8 : 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1456,8 +1454,8 @@ class _ShiftReportTile extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: ColorsManger.primary.withValues(alpha: 0.10),
@@ -1468,21 +1466,21 @@ class _ShiftReportTile extends StatelessWidget {
                         ),
                         child: Text(
                           report.shiftNameAr,
-                          style: const TextStyle(
-                            fontSize: 11,
+                          style: TextStyle(
+                            fontSize: isCompact ? 10.5 : 11,
                             fontWeight: FontWeight.w800,
                             color: ColorsManger.primary,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isCompact ? 6 : 8),
                       Expanded(
                         child: Text(
                           report.employeeName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
+                          style: TextStyle(
+                            fontSize: isCompact ? 12.5 : 13,
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                           ),
@@ -1490,7 +1488,7 @@ class _ShiftReportTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: isCompact ? 5 : 6),
                   // Keep pills side-by-side even on small phones by shrinking text/padding.
                   Row(
                     children: [
@@ -1502,7 +1500,7 @@ class _ShiftReportTile extends StatelessWidget {
                           compact: isNarrow,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isCompact ? 6 : 8),
                       Expanded(
                         child: _AmountPill(
                           label: 'Net',
@@ -1516,7 +1514,7 @@ class _ShiftReportTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: isCompact ? 6 : 10),
             Icon(Icons.chevron_right, color: Colors.grey.shade500),
           ],
         ),
@@ -1712,22 +1710,6 @@ Widget _buildSummaryCard({
   return cardContent;
 }
 
-double _estimateTotalsDockHeight({required double width}) {
-  // Matches the columns logic used inside the totals grid.
-  final columns = width >= 980
-      ? 3
-      : (width >= 640 ? 2 : (width >= 360 ? 2 : 1));
-  const itemsCount = 7;
-  const spacing = 10.0;
-  // The dock card has: title row + spacing + grid rows + padding.
-  const headerHeight = 44.0;
-  const outerPadding = 14.0 * 2;
-  const cardHeight = 92.0;
-  final rows = (itemsCount / columns).ceil().clamp(1, 99);
-  final gridHeight = (rows * cardHeight) + ((rows - 1) * spacing);
-  return headerHeight + 10 + gridHeight + outerPadding;
-}
-
 class _TotalsDockCard extends StatelessWidget {
   final List<ShiftReportModel> reports;
   final NumberFormat egp;
@@ -1794,16 +1776,18 @@ class _TotalsDockCard extends StatelessWidget {
     });
 
     return _PanelCard(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       child: LayoutBuilder(
         builder: (context, c) {
           final width = c.maxWidth;
-          final columns = width >= 980
-              ? 3
-              : (width >= 640 ? 2 : (width >= 360 ? 2 : 1));
+          // Compute columns based on actual inner width (this widget is inside 16px
+          // page padding on mobile, so maxWidth is usually ~328 on 360dp devices).
           const spacing = 10.0;
+          const minCardWidth = 150.0;
+          var columns = ((width + spacing) / (minCardWidth + spacing)).floor();
+          columns = columns.clamp(1, 3);
           final cardWidth = (width - (spacing * (columns - 1))) / columns;
-          const cardHeight = 92.0;
+          final cardHeight = columns == 1 ? 86.0 : (width < 340 ? 78.0 : 82.0);
 
           Widget titleRow() {
             return Row(
@@ -1903,7 +1887,7 @@ class _TotalsDockCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               titleRow(),
-              const SizedBox(height: 10),
+              SizedBox(height: width < 380 ? 8 : 10),
               Wrap(
                 spacing: spacing,
                 runSpacing: spacing,

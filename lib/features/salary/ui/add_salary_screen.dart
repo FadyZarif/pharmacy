@@ -113,7 +113,9 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
     if (_selectedFile!.bytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('File data not available. Please try selecting the file again.'),
+          content: Text(
+            'File data not available. Please try selecting the file again.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -132,6 +134,13 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    // Screen is hosted inside EmployeeLayout which uses a glass bottom nav.
+    const glassNavHeight = 66.0;
+    const glassNavOuterPadding = 14.0;
+    final navOverlap = bottomPad + glassNavHeight + glassNavOuterPadding;
+
     return BlocProvider.value(
       value: _salaryCubit,
       child: Scaffold(
@@ -171,7 +180,7 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
             Padding(
               padding: EdgeInsets.fromLTRB(
                 16,
-                MediaQuery.of(context).padding.top + kToolbarHeight + 12,
+                topPad + kToolbarHeight + 12,
                 16,
                 0,
               ),
@@ -214,7 +223,8 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                 },
                 builder: (context, state) {
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+                    // Keep the bottom action button above the glass bottom nav.
+                    padding: EdgeInsets.fromLTRB(0, 0, 0, navOverlap + 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -257,7 +267,9 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                           _PanelCard(
                             tint: Colors.amber.shade50,
                             border: Border.all(
-                              color: Colors.amber.shade700.withValues(alpha: 0.55),
+                              color: Colors.amber.shade700.withValues(
+                                alpha: 0.55,
+                              ),
                               width: 1.5,
                             ),
                             child: Column(
@@ -285,8 +297,11 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                                 _buildInfoRow(
                                   'Uploaded At',
                                   _existingMonthInfo!.uploadedAt != null
-                                      ? DateFormat('dd MMM yyyy, hh:mm a')
-                                          .format(_existingMonthInfo!.uploadedAt!)
+                                      ? DateFormat(
+                                          'dd MMM yyyy, hh:mm a',
+                                        ).format(
+                                          _existingMonthInfo!.uploadedAt!,
+                                        )
                                       : 'N/A',
                                   Icons.access_time,
                                 ),
@@ -375,7 +390,9 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                                       _selectedFile!.name,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.black.withValues(alpha: 0.60),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.60,
+                                        ),
                                         fontWeight: FontWeight.w700,
                                       ),
                                       textAlign: TextAlign.center,
@@ -385,7 +402,9 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                                       '${(_selectedFile!.size / 1024).toStringAsFixed(2)} KB',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.black.withValues(alpha: 0.45),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.45,
+                                        ),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -418,13 +437,17 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
                                     borderSide: BorderSide(
-                                      color: Colors.grey.withValues(alpha: 0.35),
+                                      color: Colors.grey.withValues(
+                                        alpha: 0.35,
+                                      ),
                                     ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
                                     borderSide: BorderSide(
-                                      color: Colors.grey.withValues(alpha: 0.35),
+                                      color: Colors.grey.withValues(
+                                        alpha: 0.35,
+                                      ),
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
@@ -447,7 +470,9 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
                               padding: EdgeInsets.all(6),
                               child: Column(
                                 children: [
-                                  CircularProgressIndicator(color: ColorsManger.primary),
+                                  CircularProgressIndicator(
+                                    color: ColorsManger.primary,
+                                  ),
                                   SizedBox(height: 12),
                                   Text(
                                     'Uploading Data...',
@@ -504,17 +529,18 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
         children: [
           // Previous Month Button
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: ColorsManger.primary,),
+            icon: const Icon(Icons.arrow_back, color: ColorsManger.primary),
             onPressed: _isUploading
                 ? null
                 : () {
                     setState(() {
                       if (_selectedMonth.month == 1) {
-                        _selectedMonth =
-                            DateTime(_selectedMonth.year - 1, 12);
+                        _selectedMonth = DateTime(_selectedMonth.year - 1, 12);
                       } else {
                         _selectedMonth = DateTime(
-                            _selectedMonth.year, _selectedMonth.month - 1);
+                          _selectedMonth.year,
+                          _selectedMonth.month - 1,
+                        );
                       }
                       _existingMonthInfo = null;
                     });
@@ -530,12 +556,17 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
               decoration: BoxDecoration(
                 color: ColorsManger.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ColorsManger.primary.withValues(alpha: 0.18)),
+                border: Border.all(
+                  color: ColorsManger.primary.withValues(alpha: 0.18),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today,
-                      color: ColorsManger.primary, size: 18),
+                  const Icon(
+                    Icons.calendar_today,
+                    color: ColorsManger.primary,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     DateFormat.yMMMM().format(_selectedMonth),
@@ -553,24 +584,26 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
           // Next Month Button
           IconButton(
             icon: const Icon(Icons.arrow_forward, color: ColorsManger.primary),
-            onPressed: (_isUploading ||
+            onPressed:
+                (_isUploading ||
                     _selectedMonth.year >= DateTime.now().year &&
                         _selectedMonth.month >= DateTime.now().month)
                 ? null
                 : () {
                     setState(() {
                       if (_selectedMonth.month == 12) {
-                        _selectedMonth =
-                            DateTime(_selectedMonth.year + 1, 1);
+                        _selectedMonth = DateTime(_selectedMonth.year + 1, 1);
                       } else {
                         _selectedMonth = DateTime(
-                            _selectedMonth.year, _selectedMonth.month + 1);
+                          _selectedMonth.year,
+                          _selectedMonth.month + 1,
+                        );
                       }
                       _existingMonthInfo = null;
                     });
                     _checkExistingData();
                   },
-          )
+          ),
         ],
       ),
     );
@@ -580,11 +613,7 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 18,
-          color: Colors.amber.shade800,
-        ),
+        Icon(icon, size: 18, color: Colors.amber.shade800),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -637,17 +666,17 @@ class _SalaryUploadBackground extends StatelessWidget {
 }
 
 List<BoxShadow> _panelShadow() => [
-      BoxShadow(
-        color: ColorsManger.primary.withValues(alpha: 0.14),
-        blurRadius: 22,
-        offset: const Offset(0, 12),
-      ),
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 10),
-      ),
-    ];
+  BoxShadow(
+    color: ColorsManger.primary.withValues(alpha: 0.14),
+    blurRadius: 22,
+    offset: const Offset(0, 12),
+  ),
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.06),
+    blurRadius: 18,
+    offset: const Offset(0, 10),
+  ),
+];
 
 class _PanelCard extends StatelessWidget {
   final Widget child;
@@ -669,7 +698,8 @@ class _PanelCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: tint ?? Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: border ?? Border.all(color: Colors.grey.withValues(alpha: 0.16)),
+        border:
+            border ?? Border.all(color: Colors.grey.withValues(alpha: 0.16)),
         boxShadow: _panelShadow(),
       ),
       child: child,
