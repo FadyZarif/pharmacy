@@ -301,95 +301,95 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                 final isCompact =
                                     MediaQuery.sizeOf(context).width < 650;
 
-                                // On compact/mobile layouts, make the summary section scroll with the list
-                                // so it doesn't "cover" the shift tiles by permanently taking vertical space.
+                                // On compact/mobile, dock Totals as a fixed card above the glass bottom nav
+                                // and add bottom padding to the list so it doesn't get covered.
                                 if (isCompact) {
-                                  return ListView.separated(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      0,
-                                      0,
-                                      0,
-                                      14,
-                                    ),
-                                    itemCount: state.reports.length + 1,
-                                    separatorBuilder: (context, index) {
-                                      if (index == state.reports.length - 1) {
-                                        return const SizedBox(height: 12);
-                                      }
-                                      return const SizedBox(height: 10);
-                                    },
-                                    itemBuilder: (context, index) {
-                                      if (index == state.reports.length) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 8,
+                                  return LayoutBuilder(
+                                    builder: (context, c) {
+                                      final dockHeight =
+                                          _estimateTotalsDockHeight(
+                                            width: c.maxWidth,
+                                          );
+                                      return Stack(
+                                        children: [
+                                          ListView.separated(
+                                            padding: EdgeInsets.only(
+                                              bottom: dockHeight + 12,
+                                            ),
+                                            itemCount: state.reports.length,
+                                            separatorBuilder: (_, __) =>
+                                                const SizedBox(height: 8),
+                                            itemBuilder: (context, index) {
+                                              final report =
+                                                  state.reports[index];
+                                              return _ShiftReportTile(
+                                                report: report,
+                                                egp: _egp,
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          EditShiftReportScreen(
+                                                            report: report,
+                                                            date:
+                                                                _formattedDate,
+                                                          ),
+                                                    ),
+                                                  ).then((_) {
+                                                    _cubit.fetchDailyReports(
+                                                      _formattedDate,
+                                                    );
+                                                  });
+                                                },
+                                              );
+                                            },
                                           ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const SizedBox(height: 10),
-                                              Divider(
-                                                height: 1,
-                                                color: Colors.black12,
-                                              ),
-                                              const SizedBox(height: 12),
-                                              Text(
-                                                'Totals',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w900,
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.75),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 10),
-                                              _buildSummarySection(
-                                                state.reports,
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }
-
-                                      final report = state.reports[index];
-                                      return _ShiftReportTile(
-                                        report: report,
-                                        egp: _egp,
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  EditShiftReportScreen(
-                                                    report: report,
-                                                    date: _formattedDate,
+                                          Positioned(
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            child: _TotalsDockCard(
+                                              reports: state.reports,
+                                              egp: _egp,
+                                              isCollected: _isCollected,
+                                              onToggleCollect:
+                                                  (currentUser.isAdmin ||
+                                                      currentUser.uid ==
+                                                          '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+                                                  ? () =>
+                                                        _showCollectionConfirmationDialog(
+                                                          context,
+                                                        )
+                                                  : null,
+                                              onShowExpenses: () =>
+                                                  _showExpensesBottomSheet(
+                                                    context,
+                                                    state.reports
+                                                        .expand(
+                                                          (r) => r.expenses,
+                                                        )
+                                                        .toList(),
                                                   ),
                                             ),
-                                          ).then((_) {
-                                            _cubit.fetchDailyReports(
-                                              _formattedDate,
-                                            );
-                                          });
-                                        },
+                                          ),
+                                        ],
                                       );
                                     },
                                   );
                                 }
 
+                                // Wider layouts: keep totals at the bottom (still as a card) without overlay.
                                 return Column(
                                   children: [
                                     Expanded(
                                       child: ListView.separated(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          0,
-                                          0,
-                                          0,
-                                          14,
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12,
                                         ),
                                         itemCount: state.reports.length,
                                         separatorBuilder: (_, __) =>
-                                            const SizedBox(height: 10),
+                                            const SizedBox(height: 8),
                                         itemBuilder: (context, index) {
                                           final report = state.reports[index];
                                           return _ShiftReportTile(
@@ -416,23 +416,27 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-                                    Divider(height: 1, color: Colors.black12),
-                                    const SizedBox(height: 12),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Totals',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.black.withValues(
-                                            alpha: 0.75,
+                                    _TotalsDockCard(
+                                      reports: state.reports,
+                                      egp: _egp,
+                                      isCollected: _isCollected,
+                                      onToggleCollect:
+                                          (currentUser.isAdmin ||
+                                              currentUser.uid ==
+                                                  '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+                                          ? () =>
+                                                _showCollectionConfirmationDialog(
+                                                  context,
+                                                )
+                                          : null,
+                                      onShowExpenses: () =>
+                                          _showExpensesBottomSheet(
+                                            context,
+                                            state.reports
+                                                .expand((r) => r.expenses)
+                                                .toList(),
                                           ),
-                                        ),
-                                      ),
                                     ),
-                                    const SizedBox(height: 10),
-                                    _buildSummarySection(state.reports),
                                   ],
                                 );
                               }
@@ -538,285 +542,6 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildSummarySection(List<dynamic> reports) {
-    // حساب مجموع drawerAmount (Total Sales)
-    final totalSales = reports.fold<double>(
-      0.0,
-      (sum, report) => sum + (report.drawerAmount ?? 0.0),
-    );
-
-    // حساب مجموع كل المصاريف (Total Expenses)
-    final totalExpenses = reports.fold<double>(
-      0.0,
-      (sum, report) => sum + (report as ShiftReportModel).totalExpenses,
-    );
-
-    // جمع كل المصاريف من جميع التقارير
-    final allExpenses = reports
-        .expand((report) => (report as ShiftReportModel).expenses)
-        .toList();
-
-    // حساب صافي الربح (Net Profit)
-    final netProfit = totalSales - totalExpenses;
-
-    // حساب مجموع مصاريف تبديل الأدوية (Medicines Expenses)
-    final totalMedicinesExpenses = reports.fold<double>(0.0, (sum, report) {
-      final medicinesExpenses = (report as ShiftReportModel).medicineExpenses;
-      return sum + medicinesExpenses;
-    });
-
-    // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
-    final totalElectronicPaymentExpenses = reports.fold<double>(0.0, (
-      sum,
-      report,
-    ) {
-      final electronicExpenses = (report as ShiftReportModel).expenses
-          .where((expense) => expense.type == ExpenseType.electronicPayment)
-          .fold<double>(0.0, (total, expense) => total + expense.amount);
-      return sum + electronicExpenses;
-    });
-
-    // حساب مجموع الزيادة (Total Surplus)
-    final totalSurplus = reports.fold<double>(0.0, (sum, report) {
-      final shiftReport = report as ShiftReportModel;
-      if (shiftReport.computerDifferenceType == ComputerDifferenceType.excess) {
-        return sum + shiftReport.computerDifference;
-      }
-      return sum;
-    });
-
-    // حساب مجموع العجز (Total Deficit)
-    final totalDeficit = reports.fold<double>(0.0, (sum, report) {
-      final shiftReport = report as ShiftReportModel;
-      if (shiftReport.computerDifferenceType ==
-          ComputerDifferenceType.shortage) {
-        return sum + shiftReport.computerDifference;
-      }
-      return sum;
-    });
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.grey.withValues(alpha: 0.18)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, -8),
-          ),
-        ],
-      ),
-      child: LayoutBuilder(
-        builder: (context, c) {
-          final width = c.maxWidth;
-          // More responsive grid for mobile: use 2 columns on phones to avoid a tall footer.
-          // Fall back to 1 column only on very narrow widths.
-          final columns = width >= 980
-              ? 3
-              : (width >= 640 ? 2 : (width >= 360 ? 2 : 1));
-          final spacing = 10.0;
-          final cardWidth = (width - (spacing * (columns - 1))) / columns;
-
-          final items = <Widget>[
-            _buildSummaryCard(
-              title: 'Total Sales',
-              amount: totalSales,
-              icon: Icons.attach_money,
-              color: Colors.blue,
-            ),
-            _buildSummaryCard(
-              title: 'Total Expenses',
-              amount: totalExpenses,
-              icon: Icons.money_off,
-              color: Colors.orange,
-              onTap: () => _showExpensesBottomSheet(context, allExpenses),
-            ),
-            _buildSummaryCard(
-              title: 'Net Profit',
-              amount: netProfit,
-              icon: netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
-              color: netProfit >= 0 ? Colors.green : Colors.red,
-              isCollected: _isCollected,
-              onTap:
-                  (currentUser.isAdmin ||
-                      currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
-                  ? () => _showCollectionConfirmationDialog(context)
-                  : null,
-            ),
-            _buildSummaryCard(
-              title: 'Medicines Exp.',
-              amount: totalMedicinesExpenses,
-              icon: Icons.medication,
-              color: Colors.purple,
-            ),
-            _buildSummaryCard(
-              title: 'Electronic Pay.',
-              amount: totalElectronicPaymentExpenses,
-              icon: Icons.credit_card,
-              color: Colors.teal,
-            ),
-            _buildSummaryCard(
-              title: 'Total Excess',
-              amount: totalSurplus,
-              icon: Icons.add_circle,
-              color: Colors.lightGreen,
-            ),
-            _buildSummaryCard(
-              title: 'Total Shortage',
-              amount: totalDeficit,
-              icon: Icons.remove_circle,
-              color: Colors.redAccent,
-            ),
-          ];
-
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: [
-              for (final w in items) SizedBox(width: cardWidth, child: w),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard({
-    required String title,
-    required double amount,
-    required IconData icon,
-    required Color color,
-    bool? isCollected,
-    VoidCallback? onTap,
-  }) {
-    final amountText = _egp.format(amount);
-
-    Widget statusPill() {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isCollected == true ? Colors.green : Colors.orange,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isCollected == true ? Icons.check_circle : Icons.pending,
-              color: Colors.white,
-              size: 14,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              isCollected == true ? 'Collected' : 'Pending',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final cardContent = LayoutBuilder(
-      builder: (context, c) {
-        final isNarrow = c.maxWidth < 230;
-        final amountFontSize = isNarrow ? 16.0 : 18.0;
-
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: color.withValues(alpha: 0.28),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.10),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: color, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey[700],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (isCollected != null && !isNarrow) ...[
-                    const SizedBox(width: 6),
-                    statusPill(),
-                  ],
-                ],
-              ),
-              if (isCollected != null && isNarrow) ...[
-                const SizedBox(height: 8),
-                statusPill(),
-              ],
-              const SizedBox(height: 8),
-              // Prevent overflow on narrow cards: scale down if needed.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  amountText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: amountFontSize,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    // If onTap is provided, wrap with InkWell
-    if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: cardContent,
-      );
-    }
-
-    return cardContent;
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -1706,7 +1431,7 @@ class _ShiftReportTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1721,8 +1446,8 @@ class _ShiftReportTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ProfileCircle(photoUrl: report.employeePhoto, size: 38),
-            const SizedBox(width: 12),
+            ProfileCircle(photoUrl: report.employeePhoto, size: 34),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1731,8 +1456,8 @@ class _ShiftReportTile extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                          horizontal: 9,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
                           color: ColorsManger.primary.withValues(alpha: 0.10),
@@ -1744,20 +1469,20 @@ class _ShiftReportTile extends StatelessWidget {
                         child: Text(
                           report.shiftNameAr,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: ColorsManger.primary,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           report.employeeName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                           ),
@@ -1765,7 +1490,7 @@ class _ShiftReportTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   // Keep pills side-by-side even on small phones by shrinking text/padding.
                   Row(
                     children: [
@@ -1817,8 +1542,8 @@ class _AmountPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 9 : 10,
-        vertical: compact ? 6 : 7,
+        horizontal: compact ? 8 : 9,
+        vertical: compact ? 5 : 6,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
@@ -1847,7 +1572,7 @@ class _AmountPill extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: compact ? 11 : 12,
+                  fontSize: compact ? 10.5 : 11.5,
                   fontWeight: FontWeight.w900,
                   color: color,
                 ),
@@ -1855,6 +1580,341 @@ class _AmountPill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+Widget _buildSummaryCard({
+  required NumberFormat egp,
+  required String title,
+  required double amount,
+  required IconData icon,
+  required Color color,
+  bool? isCollected,
+  VoidCallback? onTap,
+}) {
+  final amountText = egp.format(amount);
+
+  Widget statusPill() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isCollected == true ? Colors.green : Colors.orange,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isCollected == true ? Icons.check_circle : Icons.pending,
+            color: Colors.white,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isCollected == true ? 'Collected' : 'Pending',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  final cardContent = LayoutBuilder(
+    builder: (context, c) {
+      final isNarrow = c.maxWidth < 230;
+      final amountFontSize = isNarrow ? 16.0 : 18.0;
+
+      return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.28), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[700],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isCollected != null && !isNarrow) ...[
+                  const SizedBox(width: 6),
+                  statusPill(),
+                ],
+              ],
+            ),
+            if (isCollected != null && isNarrow) ...[
+              const SizedBox(height: 8),
+              statusPill(),
+            ],
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                amountText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: amountFontSize,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  if (onTap != null) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: cardContent,
+    );
+  }
+  return cardContent;
+}
+
+double _estimateTotalsDockHeight({required double width}) {
+  // Matches the columns logic used inside the totals grid.
+  final columns = width >= 980
+      ? 3
+      : (width >= 640 ? 2 : (width >= 360 ? 2 : 1));
+  const itemsCount = 7;
+  const spacing = 10.0;
+  // The dock card has: title row + spacing + grid rows + padding.
+  const headerHeight = 44.0;
+  const outerPadding = 14.0 * 2;
+  const cardHeight = 92.0;
+  final rows = (itemsCount / columns).ceil().clamp(1, 99);
+  final gridHeight = (rows * cardHeight) + ((rows - 1) * spacing);
+  return headerHeight + 10 + gridHeight + outerPadding;
+}
+
+class _TotalsDockCard extends StatelessWidget {
+  final List<ShiftReportModel> reports;
+  final NumberFormat egp;
+  final bool isCollected;
+  final VoidCallback? onToggleCollect;
+  final VoidCallback onShowExpenses;
+
+  const _TotalsDockCard({
+    required this.reports,
+    required this.egp,
+    required this.isCollected,
+    required this.onToggleCollect,
+    required this.onShowExpenses,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // حساب مجموع drawerAmount (Total Sales)
+    final totalSales = reports.fold<double>(
+      0.0,
+      (sum, report) => sum + report.drawerAmount,
+    );
+
+    // حساب مجموع كل المصاريف (Total Expenses)
+    final totalExpenses = reports.fold<double>(
+      0.0,
+      (sum, report) => sum + report.totalExpenses,
+    );
+
+    // حساب صافي الربح (Net Profit)
+    final netProfit = totalSales - totalExpenses;
+
+    // حساب مجموع مصاريف تبديل الأدوية (Medicines Expenses)
+    final totalMedicinesExpenses = reports.fold<double>(0.0, (sum, report) {
+      final medicinesExpenses = report.medicineExpenses;
+      return sum + medicinesExpenses;
+    });
+
+    // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
+    final totalElectronicPaymentExpenses = reports.fold<double>(0.0, (
+      sum,
+      report,
+    ) {
+      final electronicExpenses = report.expenses
+          .where((expense) => expense.type == ExpenseType.electronicPayment)
+          .fold<double>(0.0, (total, expense) => total + expense.amount);
+      return sum + electronicExpenses;
+    });
+
+    // حساب مجموع الزيادة (Total Surplus)
+    final totalSurplus = reports.fold<double>(0.0, (sum, report) {
+      if (report.computerDifferenceType == ComputerDifferenceType.excess) {
+        return sum + report.computerDifference;
+      }
+      return sum;
+    });
+
+    // حساب مجموع العجز (Total Deficit)
+    final totalDeficit = reports.fold<double>(0.0, (sum, report) {
+      if (report.computerDifferenceType == ComputerDifferenceType.shortage) {
+        return sum + report.computerDifference;
+      }
+      return sum;
+    });
+
+    return _PanelCard(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final width = c.maxWidth;
+          final columns = width >= 980
+              ? 3
+              : (width >= 640 ? 2 : (width >= 360 ? 2 : 1));
+          const spacing = 10.0;
+          final cardWidth = (width - (spacing * (columns - 1))) / columns;
+          const cardHeight = 92.0;
+
+          Widget titleRow() {
+            return Row(
+              children: [
+                Text(
+                  'Totals',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black.withValues(alpha: 0.78),
+                  ),
+                ),
+                const Spacer(),
+                if (onToggleCollect != null)
+                  TextButton.icon(
+                    onPressed: onToggleCollect,
+                    style: TextButton.styleFrom(
+                      foregroundColor: isCollected
+                          ? Colors.green
+                          : ColorsManger.primary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                    ),
+                    icon: Icon(
+                      isCollected ? Icons.check_circle : Icons.pending,
+                      size: 18,
+                    ),
+                    label: Text(
+                      isCollected ? 'Collected' : 'Pending',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+              ],
+            );
+          }
+
+          final items = <Widget>[
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Total Sales',
+              amount: totalSales,
+              icon: Icons.attach_money,
+              color: Colors.blue,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Total Expenses',
+              amount: totalExpenses,
+              icon: Icons.money_off,
+              color: Colors.orange,
+              onTap: onShowExpenses,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Net Profit',
+              amount: netProfit,
+              icon: netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+              color: netProfit >= 0 ? Colors.green : Colors.red,
+              // Avoid extra vertical content in small fixed-height cards:
+              // collection state is already shown in the Totals header button.
+              isCollected: null,
+              onTap: onToggleCollect,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Medicines Exp.',
+              amount: totalMedicinesExpenses,
+              icon: Icons.medication,
+              color: Colors.purple,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Electronic Pay.',
+              amount: totalElectronicPaymentExpenses,
+              icon: Icons.credit_card,
+              color: Colors.teal,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Total Excess',
+              amount: totalSurplus,
+              icon: Icons.add_circle,
+              color: Colors.lightGreen,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Total Shortage',
+              amount: totalDeficit,
+              icon: Icons.remove_circle,
+              color: Colors.redAccent,
+            ),
+          ];
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              titleRow(),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  for (final w in items)
+                    SizedBox(width: cardWidth, height: cardHeight, child: w),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
