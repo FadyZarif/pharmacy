@@ -366,9 +366,7 @@ class _ViewRepairsScreenState extends State<ViewRepairsScreen> {
 }
 
 class _RepairsBackground extends StatelessWidget {
-  const _RepairsBackground();
-
-  @override
+  const _RepairsBackground();  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -384,9 +382,7 @@ class _RepairsBackground extends StatelessWidget {
       ),
     );
   }
-}
-
-List<BoxShadow> _panelShadow() => [
+}List<BoxShadow> _panelShadow() => [
       BoxShadow(
         color: ColorsManger.primary.withValues(alpha: 0.14),
         blurRadius: 22,
@@ -397,20 +393,14 @@ List<BoxShadow> _panelShadow() => [
         blurRadius: 18,
         offset: const Offset(0, 10),
       ),
-    ];
-
-class _PanelCard extends StatelessWidget {
+    ];class _PanelCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final EdgeInsetsGeometry margin;
-
-  const _PanelCard({
+  final EdgeInsetsGeometry margin;  const _PanelCard({
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin = EdgeInsets.zero,
-  });
-
-  @override
+  });  @override
   Widget build(BuildContext context) {
     return Container(
       margin: margin,

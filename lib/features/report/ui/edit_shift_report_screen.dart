@@ -94,11 +94,12 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
         },
         builder: (context, state) {
           final isLoading = state is EditReportLoading;
-          final topPad = MediaQuery.of(context).padding.top;
+          final bottomPad = MediaQuery.of(context).padding.bottom;
+          const kBottomNavHeight = 80.0; // NavigationBar 66 + padding
 
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
-            extendBodyBehindAppBar: true,
+            extendBodyBehindAppBar: false,
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: Container(
@@ -149,12 +150,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                 Form(
                   key: _formKey,
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      topPad + kToolbarHeight + 12,
-                      16,
-                      22,
-                    ),
+                    padding: EdgeInsets.fromLTRB(16, 12, 16, 22 + kBottomNavHeight + bottomPad),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -951,9 +947,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
 }
 
 class _EditShiftReportBackground extends StatelessWidget {
-  const _EditShiftReportBackground();
-
-  @override
+  const _EditShiftReportBackground();  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -969,9 +963,7 @@ class _EditShiftReportBackground extends StatelessWidget {
       ),
     );
   }
-}
-
-List<BoxShadow> _panelShadow() => [
+}List<BoxShadow> _panelShadow() => [
       BoxShadow(
         color: ColorsManger.primary.withValues(alpha: 0.14),
         blurRadius: 22,
@@ -982,13 +974,9 @@ List<BoxShadow> _panelShadow() => [
         blurRadius: 18,
         offset: const Offset(0, 10),
       ),
-    ];
-
-class _PanelCard extends StatelessWidget {
+    ];class _PanelCard extends StatelessWidget {
   final Widget child;
-  const _PanelCard({required this.child});
-
-  @override
+  const _PanelCard({required this.child});  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),

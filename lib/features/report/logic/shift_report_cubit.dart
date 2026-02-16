@@ -92,6 +92,19 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     }
   }
 
+  /// Load submitted shifts for a specific date (e.g. yesterday).
+  /// Used by sub-manager to close a shift that wasn't closed for that date.
+  /// Sets [currentDate], loads [submittedShifts] for that date, then resets form.
+  Future<void> loadForDate(DateTime date) async {
+    try {
+      currentDate = DateTime(date.year, date.month, date.day);
+      await loadTodaySubmittedShifts();
+      reset();
+    } catch (e) {
+      emit(ShiftReportError('Failed to load date: ${e.toString()}'));
+    }
+  }
+
   /// Load my shift for today
   Future<void> loadMyTodayShift() async {
     try {

@@ -16,6 +16,8 @@ import 'package:pharmacy/features/request/logic/request_state.dart';
 import 'package:pharmacy/features/request/ui/add_request_screen_unified.dart';
 import 'package:pharmacy/features/request/ui/manage_requests_screen.dart';
 import 'package:pharmacy/features/request/ui/widgets/requests_list_view.dart';
+import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
+import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 import 'package:pharmacy/features/salary/logic/salary_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -36,11 +38,24 @@ class EmployeeDashboardScreen extends StatefulWidget {
 }
 
 class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
+  late final ViewReportsCubit _viewReportsCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewReportsCubit = getIt<ViewReportsCubit>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewReportsCubit.fetchMonthlySummary(DateTime.now());
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: getIt<RequestCubit>(),
-      child: Scaffold(
+      child: BlocProvider.value(
+        value: _viewReportsCubit,
+        child: Scaffold(
         backgroundColor: ColorsManger.primaryBackground,
         extendBodyBehindAppBar: true,
         appBar: PreferredSize(
@@ -130,6 +145,53 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                             .changeBottomNav(4),
                       ),
                       const SizedBox(height: 18),
+
+                      // Target Achievement: staff sees percentage only; sub manager sees full
+                      BlocBuilder<ViewReportsCubit, ViewReportsState>(
+                        buildWhen: (prev, curr) =>
+                            curr is MonthlySummaryLoaded ||
+                            curr is MonthlySummaryLoading,
+                        builder: (context, state) {
+                          if (state is MonthlySummaryLoaded &&
+                              state.monthlyTarget != null &&
+                              state.monthlyTarget! > 0) {
+                            final totalSales = state.totalSales;
+                            final monthlyTarget = state.monthlyTarget!;
+                            final pct =
+                                (totalSales / monthlyTarget * 100).clamp(0.0, 999.0);
+                            final isAchieved = pct >= 100;
+                            final isStaff = currentUser.role == Role.staff;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 18),
+                              child: _DashboardTargetCard(
+                                percentage: pct,
+                                isAchieved: isAchieved,
+                                showTargetAmount: !isStaff,
+                                monthlyTarget: monthlyTarget,
+                              ),
+                            );
+                          }
+                          if (state is MonthlySummaryLoading) {
+                            return const Padding(
+                              padding: EdgeInsets.only(bottom: 18),
+                              child: SizedBox(
+                                height: 72,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: ColorsManger.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
 
                       _SectionCard(
                         title: 'Statistics',
@@ -250,6 +312,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -975,6 +1038,111 @@ class _InfoCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Target achievement card: Staff sees percentage only; Sub Manager sees percentage + target amount + progress bar.
+class _DashboardTargetCard extends StatelessWidget {
+  final double percentage;
+  final bool isAchieved;
+  final bool showTargetAmount;
+  final double monthlyTarget;
+
+  const _DashboardTargetCard({
+    required this.percentage,
+    required this.isAchieved,
+    required this.showTargetAmount,
+    required this.monthlyTarget,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isAchieved
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isAchieved
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.orange.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isAchieved
+                      ? Colors.green.withValues(alpha: 0.2)
+                      : Colors.orange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isAchieved ? Icons.check_circle : Icons.trending_up,
+                  color: isAchieved ? Colors.green : Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Target Achievement',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${percentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isAchieved ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                    if (showTargetAmount) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Target: EGP ${monthlyTarget.toStringAsFixed(1)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (percentage / 100).clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isAchieved ? Colors.green : Colors.orange,
+              ),
             ),
           ),
         ],

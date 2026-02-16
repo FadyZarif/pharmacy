@@ -883,9 +883,7 @@ class RequestDetailsScreen extends StatelessWidget {
 }
 
 class _RequestDetailsBackground extends StatelessWidget {
-  const _RequestDetailsBackground();
-
-  @override
+  const _RequestDetailsBackground();  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -901,9 +899,7 @@ class _RequestDetailsBackground extends StatelessWidget {
       ),
     );
   }
-}
-
-List<BoxShadow> _panelShadow() => [
+}List<BoxShadow> _panelShadow() => [
       BoxShadow(
         color: ColorsManger.primary.withValues(alpha: 0.14),
         blurRadius: 22,
@@ -914,13 +910,9 @@ List<BoxShadow> _panelShadow() => [
         blurRadius: 18,
         offset: const Offset(0, 10),
       ),
-    ];
-
-class _PanelCard extends StatelessWidget {
+    ];class _PanelCard extends StatelessWidget {
   final Widget child;
-  const _PanelCard({required this.child});
-
-  @override
+  const _PanelCard({required this.child});  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),

@@ -24,8 +24,8 @@
   <meta name="apple-mobile-web-app-title" content="pharmacy">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png">
+  <!-- Favicon: pharmacy logo (same as splash) -->
+  <link rel="icon" type="image/png" href="assets/assets/images/app_launcher_icon.png">
 
   <title>pharmacy</title>
   <link rel="manifest" href="manifest.json">
@@ -48,14 +48,10 @@
     body {
       margin: 0;
       min-height: 100%;
-      /* Web preloader (no logo): animated background only, until Flutter paints. */
-      background-color: #F6F8FF;
-      background: radial-gradient(1200px 700px at 15% 15%, rgba(46, 211, 230, 0.18), rgba(46, 211, 230, 0) 55%),
-                  radial-gradient(900px 600px at 85% 70%, rgba(75, 57, 239, 0.16), rgba(75, 57, 239, 0) 60%),
-                  radial-gradient(900px 700px at 25% 90%, rgba(255, 91, 197, 0.10), rgba(255, 91, 197, 0) 60%),
-                  linear-gradient(120deg, #F6F8FF, #FFFFFF, #EAFBFF, #F2ECFF);
-      background-size: 180% 180%;
-      animation: splashGradient 7s ease-in-out infinite;
+      /* Web preloader: white background, pharmacy logo visible until Flutter paints. */
+      background-color: #FFFFFF;
+      background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+      background-size: 100% 100%;
     }
 
     @keyframes splashGradient {
@@ -209,14 +205,10 @@
 
     @media (prefers-color-scheme: dark) {
       body {
-        background-color: #0B0F1A;
-        background: radial-gradient(1200px 700px at 15% 15%, rgba(46, 211, 230, 0.12), rgba(46, 211, 230, 0) 55%),
-                    radial-gradient(900px 600px at 85% 70%, rgba(75, 57, 239, 0.12), rgba(75, 57, 239, 0) 60%),
-                    radial-gradient(900px 700px at 25% 90%, rgba(255, 91, 197, 0.08), rgba(255, 91, 197, 0) 60%),
-                    linear-gradient(120deg, #0B0F1A, #101726, #0F1D2B, #12102A);
-        background-size: 180% 180%;
-        animation: splashGradient 7s ease-in-out infinite;
-          }
+        background-color: #FFFFFF;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        background-size: 100% 100%;
+      }
     }
   </style>
   <script id="splash-screen-script">
@@ -232,7 +224,7 @@
   <div id="preload" aria-hidden="true">
     <div id="preload-inner">
       <div class="preload-logo-wrap">
-        <img class="preload-logo" src="assets/images/app_launcher_icon.png" alt="">
+        <img class="preload-logo" src="assets/assets/images/app_launcher_icon.png" alt="Pharmacy">
       </div>
       <p class="preload-title">Emad Fawzy Pharmacy</p>
       <p class="preload-subtitle">Loading...</p>

@@ -335,9 +335,7 @@ class _EditProfileBackground extends StatelessWidget {
       ),
     );
   }
-}
-
-List<BoxShadow> _panelShadow() => [
+}List<BoxShadow> _panelShadow() => [
       BoxShadow(
         color: ColorsManger.primary.withValues(alpha: 0.14),
         blurRadius: 22,
@@ -351,11 +349,7 @@ List<BoxShadow> _panelShadow() => [
     ];
 
 class _PanelCard extends StatelessWidget {
-  final Widget child;
-
-  const _PanelCard({required this.child});
-
-  @override
+  final Widget child;  const _PanelCard({required this.child});  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -368,13 +362,9 @@ class _PanelCard extends StatelessWidget {
       child: child,
     );
   }
-}
-
-class _SectionTitle extends StatelessWidget {
+}class _SectionTitle extends StatelessWidget {
   final String title;
-  const _SectionTitle(this.title);
-
-  @override
+  const _SectionTitle(this.title);  @override
   Widget build(BuildContext context) {
     return Text(
       title,

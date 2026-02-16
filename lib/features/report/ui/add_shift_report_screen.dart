@@ -122,11 +122,12 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
         builder: (context, state) {
           final cubit = context.read<ShiftReportCubit>();
           final isLoading = state is ShiftReportLoading;
-          final topPad = MediaQuery.of(context).padding.top;
+          final bottomPad = MediaQuery.of(context).padding.bottom;
+          const kBottomNavHeight = 80.0; // NavigationBar 66 + padding
 
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
-            extendBodyBehindAppBar: true,
+            extendBodyBehindAppBar: false,
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: Container(
@@ -174,20 +175,20 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                   Form(
                     key: _formKey,
                     child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        topPad + kToolbarHeight + 12,
-                        16,
-                        22,
-                      ),
+                      padding: EdgeInsets.fromLTRB(16, 12, 16, 22 + kBottomNavHeight + bottomPad),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Sub-manager: اختيار اليوم أو أمس لتقفيل شيفت غير مقفل
+                          if (currentUser.role == Role.subManager) ...[
+                            _buildDateChips(cubit),
+                            const SizedBox(height: 20),
+                          ],
                           // معلومات ثابتة (غير قابلة للتعديل)
                           _PanelCard(
                             child: ShiftReportWidgets.buildInfoSection(
                               branchName: currentUser.currentBranch.name,
-                              date: DateTime.now(),
+                              date: cubit.currentDate,
                             ),
                           ),
 
@@ -762,8 +763,80 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
   }
 
 
+  Widget _buildDateChips(ShiftReportCubit cubit) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final isYesterday = cubit.currentDate.year == yesterday.year &&
+        cubit.currentDate.month == yesterday.month &&
+        cubit.currentDate.day == yesterday.day;
+
+    return _PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Close shift for',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              ChoiceChip(
+                label: const Text('Today'),
+                selected: !isYesterday,
+                onSelected: (selected) {
+                  if (!selected) return;
+                  _clearFormForDateSwitch();
+                  cubit.loadForDate(DateTime.now());
+                  setState(() {});
+                },
+                selectedColor: ColorsManger.primary.withValues(alpha: 0.2),
+              ),
+              const SizedBox(width: 10),
+              ChoiceChip(
+                label: const Text('Yesterday'),
+                selected: isYesterday,
+                onSelected: (selected) {
+                  if (!selected) return;
+                  _clearFormForDateSwitch();
+                  cubit.loadForDate(yesterday);
+                  setState(() {});
+                },
+                selectedColor: ColorsManger.primary.withValues(alpha: 0.2),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _clearFormForDateSwitch() {
+    _selectedShiftType = null;
+    _computerDifferenceType = null;
+    _drawerAmountController.clear();
+    _computerDifferenceController.clear();
+    _electronicWalletController.clear();
+    _notesController.clear();
+    setState(() {
+      _expenses.clear();
+    });
+  }
+
   Widget _buildShiftTypeSelector(ShiftReportCubit cubit) {
-    // Get available shifts (not submitted yet)
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final isYesterday = cubit.currentDate.year == yesterday.year &&
+        cubit.currentDate.month == yesterday.month &&
+        cubit.currentDate.day == yesterday.day;
+    final dateLabel = isYesterday ? 'yesterday' : 'today';
+    // Get available shifts (not submitted yet for selected date)
     final availableShifts = ShiftType.values
         .where((shift) => !cubit.submittedShifts.contains(shift))
         .toList();
@@ -817,7 +890,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'All shifts for today have been submitted',
+                    'All shifts for $dateLabel have been submitted',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.red.shade700,

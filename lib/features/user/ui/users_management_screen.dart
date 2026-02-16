@@ -267,8 +267,11 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           );
                         }
 
+                        // Reserve space for FAB + glass bottom nav (EmployeeLayout)
+                        final navOverlap = MediaQuery.of(context).padding.bottom + 66.0 + 14.0;
+                        final listBottom = navOverlap + 80.0; // FAB height + margin
                         return ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, listBottom),
                           itemCount: users.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 10),
                           itemBuilder: (context, index) {
@@ -294,6 +297,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           child: const Icon(Icons.person_add, color: Colors.white),
           // icon: const Icon(Icons.person_add, color: Colors.white),
           // label: const Text('Add User', style: TextStyle(color: Colors.white)),
+        ),
+        // Keep FAB above the glass bottom nav (EmployeeLayout: 66 + 14 + safe area).
+        floatingActionButtonLocation: _FabAboveNavLocation(
+          MediaQuery.of(context).padding.bottom + 66.0 + 14.0,
         ),
       ),
     );
@@ -583,6 +590,25 @@ class _PanelCard extends StatelessWidget {
       ),
       child: child,
     );
+  }
+}
+
+/// Positions the FAB above the glass bottom nav used in [EmployeeLayout].
+class _FabAboveNavLocation extends FloatingActionButtonLocation {
+  final double bottomOffset;
+
+  const _FabAboveNavLocation(this.bottomOffset);
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final double x = scaffoldGeometry.scaffoldSize.width -
+        scaffoldGeometry.floatingActionButtonSize.width -
+        16.0;
+    final double y = scaffoldGeometry.scaffoldSize.height -
+        scaffoldGeometry.floatingActionButtonSize.height -
+        16.0 -
+        bottomOffset;
+    return Offset(x, y);
   }
 }
 

@@ -48,6 +48,11 @@ class _ManageRequestsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = getIt<RequestCubit>();
     final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    // EmployeeLayout glass bottom nav: 66 + 14 + safe area
+    const glassNavHeight = 66.0;
+    const glassNavOuterPadding = 14.0;
+    final navOverlap = bottomPad + glassNavHeight + glassNavOuterPadding;
 
     return BlocListener<RequestCubit, RequestState>(
       listenWhen: (previous, current) =>
@@ -200,7 +205,7 @@ class _ManageRequestsBody extends StatelessWidget {
               16,
               topPad + kToolbarHeight + 12,
               16,
-              0,
+              navOverlap + 12,
             ),
             child: BlocBuilder<RequestCubit, RequestState>(
         buildWhen: (previous, current) =>
@@ -317,8 +322,12 @@ class _ManageRequestsBody extends StatelessWidget {
           );
         }
 
+        final bottomPad = MediaQuery.of(context).padding.bottom;
+        const glassNavH = 66.0;
+        const glassNavPad = 14.0;
+        final listBottom = bottomPad + glassNavH + glassNavPad + 12;
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.only(left: 16, right: 16, bottom: listBottom),
           itemCount: requests.length,
           itemBuilder: (context, index) {
             return _buildRequestCard(context, requests[index]);
@@ -832,9 +841,7 @@ class _ManageRequestsBody extends StatelessWidget {
 }
 
 class _ManageRequestsBackground extends StatelessWidget {
-  const _ManageRequestsBackground();
-
-  @override
+  const _ManageRequestsBackground();  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -850,9 +857,7 @@ class _ManageRequestsBackground extends StatelessWidget {
       ),
     );
   }
-}
-
-List<BoxShadow> _panelShadow() => [
+}List<BoxShadow> _panelShadow() => [
       BoxShadow(
         color: ColorsManger.primary.withValues(alpha: 0.14),
         blurRadius: 22,
@@ -863,20 +868,14 @@ List<BoxShadow> _panelShadow() => [
         blurRadius: 18,
         offset: const Offset(0, 10),
       ),
-    ];
-
-class _PanelCard extends StatelessWidget {
+    ];class _PanelCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final EdgeInsetsGeometry margin;
-
-  const _PanelCard({
+  final EdgeInsetsGeometry margin;  const _PanelCard({
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin = EdgeInsets.zero,
-  });
-
-  @override
+  });  @override
   Widget build(BuildContext context) {
     return Container(
       margin: margin,
