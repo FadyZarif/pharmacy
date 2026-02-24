@@ -681,12 +681,8 @@ class _EditUserBackground extends StatelessWidget {
         blurRadius: 18,
         offset: const Offset(0, 10),
       ),
-    ];
-
-class _PanelCard extends StatelessWidget {
-  final Widget child;  const _PanelCard({required this.child});
-
-  @override
+    ];class _PanelCard extends StatelessWidget {
+  final Widget child;  const _PanelCard({required this.child});  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),

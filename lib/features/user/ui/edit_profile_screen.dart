@@ -317,9 +317,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 }
 
 class _EditProfileBackground extends StatelessWidget {
-  const _EditProfileBackground();
-
-  @override
+  const _EditProfileBackground();  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -346,9 +344,7 @@ class _EditProfileBackground extends StatelessWidget {
         blurRadius: 18,
         offset: const Offset(0, 10),
       ),
-    ];
-
-class _PanelCard extends StatelessWidget {
+    ];class _PanelCard extends StatelessWidget {
   final Widget child;  const _PanelCard({required this.child});  @override
   Widget build(BuildContext context) {
     return Container(

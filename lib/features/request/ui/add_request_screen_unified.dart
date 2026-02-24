@@ -1255,7 +1255,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
             throw 'Please select branch and employee';
           }
 
-          // Validate using cubit method
+          // Validate: selected employee must NOT have approved leave on this date
           final hasLeave = await cubit.checkEmployeeHasLeaveOnDate(
             cubit.selectedEmployee!.uid,
             _coverageDate!,
