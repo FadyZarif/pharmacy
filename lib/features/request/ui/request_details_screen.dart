@@ -486,12 +486,22 @@ class RequestDetailsScreen extends StatelessWidget {
 
   List<Widget> _buildAttendDetails() {
     final details = AttendDetails.fromJson(request.details);
+    final isIn = details.attendType == AttendType.inType;
+    final typeLabel = isIn ? 'IN (حضور — Forgot to punch in)' : 'OUT (انصراف — Forgot to punch out)';
+    final typeIcon = isIn ? Icons.login : Icons.logout;
 
     return [
       _buildDetailRow(
-        'Forgot to punch on',
+        'Date',
         DateFormat('EEEE, MMM dd, yyyy').format(details.date),
-        Icons.fingerprint,
+        Icons.calendar_today,
+        Colors.green,
+      ),
+      const SizedBox(height: 12),
+      _buildDetailRow(
+        'Type',
+        typeLabel,
+        typeIcon,
         Colors.green,
       ),
     ];

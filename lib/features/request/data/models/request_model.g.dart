@@ -131,12 +131,21 @@ Map<String, dynamic> _$CoverageShiftDetailsToJson(
 AttendDetails _$AttendDetailsFromJson(Map<String, dynamic> json) =>
     AttendDetails(
       date: const ServerTimestampConverter().fromJson(json['date'] as Object),
+      attendType:
+          $enumDecodeNullable(_$AttendTypeEnumMap, json['attendType']) ??
+          AttendType.inType,
     );
 
 Map<String, dynamic> _$AttendDetailsToJson(AttendDetails instance) =>
     <String, dynamic>{
       'date': const ServerTimestampConverter().toJson(instance.date),
+      'attendType': _$AttendTypeEnumMap[instance.attendType]!,
     };
+
+const _$AttendTypeEnumMap = {
+  AttendType.inType: 'in',
+  AttendType.outType: 'out',
+};
 
 PermissionDetails _$PermissionDetailsFromJson(Map<String, dynamic> json) =>
     PermissionDetails(

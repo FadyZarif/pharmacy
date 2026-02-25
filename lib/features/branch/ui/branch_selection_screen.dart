@@ -12,6 +12,7 @@ import 'package:pharmacy/features/user/ui/edit_user_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../../employee/ui/employee_layout.dart';
 import '../../login/ui/login_screen.dart';
+import '../../vault/ui/vault_screen.dart';
 import '../../report/logic/consolidated_reports_cubit.dart';
 import '../../report/logic/consolidated_reports_state.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -241,6 +242,15 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               ),
               const SizedBox(height: 14),
 
+              // Bank (Management Only) — open without selecting a branch
+              if (currentUser.isManagement) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildBankCard(context),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               // All Branches Monthly Report (Management Only)
               if (currentUser.isAdmin ||
                   currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
@@ -442,6 +452,81 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
             currentUser.currentBranch = branch;
             navigateTo(context, const EmployeeLayout());
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBankCard(BuildContext context) {
+    return Card(
+      elevation: 6,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const VaultScreen()),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [
+                Colors.teal.shade600,
+                Colors.teal.shade700,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Bank',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Central bank for all branches',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );

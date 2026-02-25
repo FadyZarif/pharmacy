@@ -13,6 +13,7 @@ import '../../request/ui/manage_requests_screen.dart';
 import '../../salary/ui/add_salary_screen.dart';
 import '../../salary/ui/salary_screen.dart';
 import '../../user/ui/users_management_screen.dart';
+import '../../vault/ui/vault_screen.dart';
 import 'employee_layout_state.dart';
 
 
@@ -27,6 +28,8 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
             icon: Icon(Icons.build), label: 'Repairs'),
         BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long), label: 'Reports'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance), label: 'Bank'),
         BottomNavigationBarItem(
             icon: Icon(Icons.event_note), label: 'Requests'),
         BottomNavigationBarItem(
@@ -73,6 +76,7 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
       return <Widget>[
         const ViewRepairsScreen(),
         const ViewReportsScreen(),
+        const VaultScreen(),
         const ManageRequestsScreen(),
         currentUser.role==Role.admin? const AddSalaryScreen(): const SalaryScreen(),
         const UsersManagementScreen(),
@@ -100,7 +104,7 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
     ];
   }
 
-  int currentIndex = 2;
+  int currentIndex = 1; // Reports for Manager/Admin; Dashboard for Staff
 
   void changeBottomNav(int i) {
     if( currentIndex == i ) return;

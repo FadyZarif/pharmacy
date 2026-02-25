@@ -741,10 +741,11 @@ class _ManageRequestsBody extends StatelessWidget {
 
       case RequestType.attend:
         final details = AttendDetails.fromJson(request.details);
+        final attendLabel = details.attendType == AttendType.inType ? 'IN (حضور)' : 'OUT (انصراف)';
         return _buildDetailRow(
-          'Forgot to punch',
+          attendLabel,
           DateFormat('MMM dd, yyyy').format(details.date),
-          Icons.fingerprint,
+          details.attendType == AttendType.inType ? Icons.login : Icons.logout,
         );
 
       case RequestType.permission:

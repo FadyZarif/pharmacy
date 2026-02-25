@@ -57,6 +57,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
 
   // Attend
   DateTime? _attendDate;
+  AttendType _attendType = AttendType.inType;
 
   // Coverage Shift
   DateTime? _coverageDate;
@@ -113,6 +114,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
       case RequestType.attend:
         final details = AttendDetails.fromJson(request.details);
         _attendDate = details.date;
+        _attendType = details.attendType;
         break;
 
       case RequestType.permission:
@@ -524,46 +526,94 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
         ? DateFormat('yyyy-MM-dd').format(_attendDate!)
         : '';
 
-    return AppTextFormField(
-      controller: TextEditingController(text: displayText),
-      readOnly: true,
-      labelText: 'Attendance Date',
-      suffixIcon: const Icon(Icons.calendar_today),
-      hintText: 'yyyy-mm-dd',
-      fillColor: Colors.white,
-      validator: (value) {
-        if (_attendDate == null) {
-          return 'Please select attendance date';
-        }
-        return null;
-      },
-      onTap: widget.isReadOnly
-          ? null
-          : () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _attendDate ?? DateTime.now(),
-                firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                lastDate: DateTime.now(),
-                initialEntryMode: DatePickerEntryMode.calendarOnly,
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: ColorsManger.primary,
-                      ),
-                    ),
-                    child: child!,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppTextFormField(
+          controller: TextEditingController(text: displayText),
+          readOnly: true,
+          labelText: 'Attendance Date',
+          suffixIcon: const Icon(Icons.calendar_today),
+          hintText: 'yyyy-mm-dd',
+          fillColor: Colors.white,
+          validator: (value) {
+            if (_attendDate == null) {
+              return 'Please select attendance date';
+            }
+            return null;
+          },
+          onTap: widget.isReadOnly
+              ? null
+              : () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _attendDate ?? DateTime.now(),
+                    firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                    lastDate: DateTime.now(),
+                    initialEntryMode: DatePickerEntryMode.calendarOnly,
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: ColorsManger.primary,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
-                },
-              );
 
-              if (picked != null) {
-                setState(() {
-                  _attendDate = picked;
-                });
-              }
-            },
+                  if (picked != null) {
+                    setState(() {
+                      _attendDate = picked;
+                    });
+                  }
+                },
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Type',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (widget.isReadOnly)
+          Text(
+            _attendType == AttendType.inType ? 'IN (حضور) — Forgot to punch in' : 'OUT (انصراف) — Forgot to punch out',
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.black.withValues(alpha: 0.85),
+            ),
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: RadioListTile<AttendType>(
+                  title: const Text('IN (حضور)'),
+                  subtitle: const Text('Forgot to punch in'),
+                  value: AttendType.inType,
+                  groupValue: _attendType,
+                  activeColor: ColorsManger.primary,
+                  onChanged: (v) => setState(() => _attendType = AttendType.inType),
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<AttendType>(
+                  title: const Text('OUT (انصراف)'),
+                  subtitle: const Text('Forgot to punch out'),
+                  value: AttendType.outType,
+                  groupValue: _attendType,
+                  activeColor: ColorsManger.primary,
+                  onChanged: (v) => setState(() => _attendType = AttendType.outType),
+                ),
+              ),
+            ],
+          ),
+      ],
     );
   }
 
@@ -1277,7 +1327,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
           if (_attendDate == null) {
             throw 'Please select attendance date';
           }
-          details = AttendDetails(date: _attendDate!).toJson();
+          details = AttendDetails(date: _attendDate!, attendType: _attendType).toJson();
           break;
 
         case RequestType.permission:

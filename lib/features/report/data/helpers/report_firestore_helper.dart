@@ -218,12 +218,36 @@ class ReportFirestoreHelper {
   }
 
   /// تحديث حالة التحصيل لفرع في يوم معين
+  /// عند التحصيل (isCollected=true) نحفظ المبلغ في البنك المركزي (collected_entries)
   static Future<void> updateCollectionStatus(
-      DateTime date, String branchId, bool isCollected) async {
+    DateTime date,
+    String branchId,
+    bool isCollected, {
+    double? collectedAmount,
+    String? branchName,
+  }) async {
+    final dateKey = _dateFormat.format(date);
+
     await branchRef(date, branchId).set({
       'isCollected': isCollected,
       'collectedAt': isCollected ? FieldValue.serverTimestamp() : null,
+      'collectedAmount': isCollected && collectedAmount != null ? collectedAmount : null,
     }, SetOptions(merge: true));
+
+    final entryId = '${dateKey}_$branchId';
+    final entryRef = _firestore.collection('collected_entries').doc(entryId);
+
+    if (isCollected && collectedAmount != null && collectedAmount > 0 && branchName != null) {
+      await entryRef.set({
+        'date': dateKey,
+        'branchId': branchId,
+        'branchName': branchName,
+        'amount': collectedAmount,
+        'collectedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } else {
+      await entryRef.delete();
+    }
   }
 
   /// متابعة حالة التحصيل real-time
@@ -233,6 +257,63 @@ class ReportFirestoreHelper {
       final data = snapshot.data() as Map<String, dynamic>;
       return data['isCollected'] ?? false;
     });
+  }
+
+  // ============ Vault / Bank (البنك المركزي) ============
+
+  /// إجمالي المحصل من كل الفروع (من collected_entries)
+  static Future<double> getTotalCollected() async {
+    final snapshot = await _firestore.collection('collected_entries').get();
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      total += (data['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
+  }
+
+  /// قائمة التحصيلات (للعرض الاختياري)
+  static Future<List<Map<String, dynamic>>> getCollectedEntries() async {
+    final snapshot = await _firestore
+        .collection('collected_entries')
+        .orderBy('collectedAt', descending: true)
+        .get();
+    return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+  }
+
+  /// إضافة مصروف من البنك (سحب)
+  static Future<void> addVaultExpense({
+    required double amount,
+    required String description,
+    required String createdBy,
+    String? createdByName,
+  }) async {
+    await _firestore.collection('vault_expenses').add({
+      'amount': amount,
+      'description': description,
+      'createdBy': createdBy,
+      'createdByName': createdByName ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// جلب مصاريف البنك (السحوبات)
+  static Future<List<Map<String, dynamic>>> getVaultExpenses() async {
+    final snapshot = await _firestore
+        .collection('vault_expenses')
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+  }
+
+  /// إجمالي المسحوب من البنك
+  static Future<double> getTotalWithdrawn() async {
+    final snapshot = await _firestore.collection('vault_expenses').get();
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
   }
 }
 

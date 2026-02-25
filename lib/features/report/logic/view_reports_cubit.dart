@@ -130,7 +130,7 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
     }
   }
 
-  /// تحديث حالة التحصيل لفرع في يوم معين
+  /// تحديث حالة التحصيل لفرع في يوم معين (المبلغ يضاف للبنك المركزي عند Collect)
   Future<void> toggleCollectionStatus(String dateKey, bool currentStatus) async {
     emit(CollectionStatusLoading());
 
@@ -138,20 +138,38 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
       final date = DateFormat('yyyy-MM-dd').parse(dateKey);
       final newStatus = !currentStatus;
 
+      double? collectedAmount;
+      if (newStatus) {
+        final shiftsSnapshot = await _db
+            .collection('daily_reports')
+            .doc(dateKey)
+            .collection('branches')
+            .doc(currentUser.currentBranch.id)
+            .collection('shifts')
+            .get();
+        double sales = 0.0, expenses = 0.0;
+        for (var doc in shiftsSnapshot.docs) {
+          final r = ShiftReportModel.fromJson(doc.data());
+          sales += r.drawerAmount;
+          expenses += r.totalExpenses;
+        }
+        collectedAmount = sales - expenses;
+      }
+
       await ReportFirestoreHelper.updateCollectionStatus(
         date,
         currentUser.currentBranch.id,
         newStatus,
+        collectedAmount: collectedAmount,
+        branchName: currentUser.currentBranch.name,
       );
 
-      // Send notification if profit was collected (newStatus = true)
       if (newStatus) {
         await _sendNetProfitCollectedNotification(dateKey);
       }
 
       emit(CollectionStatusUpdated(isCollected: newStatus));
 
-      // Refresh reports to update UI
       await fetchDailyReports(dateKey);
     } catch (e) {
       emit(CollectionStatusError(message: e.toString()));

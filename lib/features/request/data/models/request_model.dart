@@ -262,13 +262,25 @@ class CoverageShiftDetails {
   Map<String, dynamic> toJson() => _$CoverageShiftDetailsToJson(this);
 }
 
+/// IN = forgot to punch in (حضور) — OUT = forgot to punch out (انصراف)
+enum AttendType {
+  @JsonValue('in')
+  inType,
+
+  @JsonValue('out')
+  outType,
+}
+
 @JsonSerializable()
 class AttendDetails {
   @ServerTimestampConverter()
   final DateTime date;
+  @Default(AttendType.inType)
+  final AttendType attendType;
 
   AttendDetails({
     required this.date,
+    this.attendType = AttendType.inType,
   });
 
   factory AttendDetails.fromJson(Map<String, dynamic> json) =>
