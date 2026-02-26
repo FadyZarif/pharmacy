@@ -281,16 +281,76 @@ class ReportFirestoreHelper {
     return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
   }
 
+  /// Add manual deposit into the central bank
+  /// depositItem: 'emad' | 'marhal' | 'other'. When 'other', description is the note.
+  static Future<void> addVaultDeposit({
+    required double amount,
+    required String depositItem,
+    String? description,
+    required String createdBy,
+    String? createdByName,
+  }) async {
+    await _firestore.collection('vault_deposits').add({
+      'amount': amount,
+      'depositItem': depositItem,
+      'description': description ?? '',
+      'createdBy': createdBy,
+      'createdByName': createdByName ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Get total manual deposits into the bank
+  static Future<double> getTotalDeposited() async {
+    final snapshot = await _firestore.collection('vault_deposits').get();
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
+  }
+
+  /// Get list of manual deposits (for display and edit/delete)
+  static Future<List<Map<String, dynamic>>> getVaultDeposits() async {
+    final snapshot = await _firestore
+        .collection('vault_deposits')
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+  }
+
+  /// Update a deposit by id
+  static Future<void> updateVaultDeposit({
+    required String id,
+    required double amount,
+    required String depositItem,
+    String? description,
+  }) async {
+    await _firestore.collection('vault_deposits').doc(id).update({
+      'amount': amount,
+      'depositItem': depositItem,
+      'description': description ?? '',
+    });
+  }
+
+  /// Delete a deposit by id
+  static Future<void> deleteVaultDeposit(String id) async {
+    await _firestore.collection('vault_deposits').doc(id).delete();
+  }
+
   /// إضافة مصروف من البنك (سحب)
+  /// withdrawalItem: 'deposit'|'warehouse'|'company'|'maintenance'|'other'. When 'other', description is the note.
   static Future<void> addVaultExpense({
     required double amount,
-    required String description,
+    required String withdrawalItem,
+    String? description,
     required String createdBy,
     String? createdByName,
   }) async {
     await _firestore.collection('vault_expenses').add({
       'amount': amount,
-      'description': description,
+      'withdrawalItem': withdrawalItem,
+      'description': description ?? '',
       'createdBy': createdBy,
       'createdByName': createdByName ?? '',
       'createdAt': FieldValue.serverTimestamp(),
@@ -314,6 +374,25 @@ class ReportFirestoreHelper {
       total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
     }
     return total;
+  }
+
+  /// Update a withdrawal (vault expense) by id
+  static Future<void> updateVaultExpense({
+    required String id,
+    required double amount,
+    required String withdrawalItem,
+    String? description,
+  }) async {
+    await _firestore.collection('vault_expenses').doc(id).update({
+      'amount': amount,
+      'withdrawalItem': withdrawalItem,
+      'description': description ?? '',
+    });
+  }
+
+  /// Delete a withdrawal (vault expense) by id
+  static Future<void> deleteVaultExpense(String id) async {
+    await _firestore.collection('vault_expenses').doc(id).delete();
   }
 }
 

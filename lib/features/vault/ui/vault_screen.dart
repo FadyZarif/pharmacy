@@ -7,23 +7,6 @@ import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/vault/logic/vault_cubit.dart';
 import 'package:pharmacy/features/vault/logic/vault_state.dart';
 
-/// Positions FAB above the bottom navigation bar (avoid overlap).
-class _FabAboveNavLocation extends FloatingActionButtonLocation {
-  const _FabAboveNavLocation();
-
-  static const double _bottomOffset = 90;
-
-  @override
-  Offset getOffset(ScaffoldPrelayoutGeometry geometry) {
-    const double end = 16;
-    final double bottom = 16 + _bottomOffset;
-    return Offset(
-      geometry.scaffoldSize.width - geometry.floatingActionButtonSize.width - end,
-      geometry.scaffoldSize.height - geometry.floatingActionButtonSize.height - bottom,
-    );
-  }
-}
-
 class VaultScreen extends StatelessWidget {
   const VaultScreen({super.key});
 
@@ -33,6 +16,42 @@ class VaultScreen extends StatelessWidget {
       create: (_) => getIt<VaultCubit>()..fetchVaultBalance(),
       child: const _VaultView(),
     );
+  }
+}
+
+/// Deposit items
+enum DepositItem { emad, marhal, other }
+
+extension DepositItemExt on DepositItem {
+  String get label {
+    switch (this) {
+      case DepositItem.emad:
+        return 'Dr Emad';
+      case DepositItem.marhal:
+        return 'Carried forward';
+      case DepositItem.other:
+        return 'Other';
+    }
+  }
+}
+
+/// Withdrawal items
+enum WithdrawalItem { deposit, warehouse, company, maintenance, other }
+
+extension WithdrawalItemExt on WithdrawalItem {
+  String get label {
+    switch (this) {
+      case WithdrawalItem.deposit:
+        return 'Deposit';
+      case WithdrawalItem.warehouse:
+        return 'Store claim settlement';
+      case WithdrawalItem.company:
+        return 'Company claim settlement';
+      case WithdrawalItem.maintenance:
+        return 'Maintenance';
+      case WithdrawalItem.other:
+        return 'Other';
+    }
   }
 }
 
@@ -55,7 +74,9 @@ class _VaultView extends StatelessWidget {
       ),
       body: BlocBuilder<VaultCubit, VaultState>(
         builder: (context, state) {
-          if (state is VaultLoading || state is VaultInitial) {
+          if (state is VaultLoading ||
+              state is VaultInitial ||
+              state is VaultWithdrawLoading) {
             return const Center(
               child: CircularProgressIndicator(color: ColorsManger.primary),
             );
@@ -109,19 +130,6 @@ class _VaultView extends StatelessWidget {
           return const SizedBox.shrink();
         },
       ),
-      floatingActionButton: BlocBuilder<VaultCubit, VaultState>(
-        buildWhen: (p, c) => c is! VaultWithdrawLoading,
-        builder: (context, state) {
-          if (state is! VaultLoaded) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            onPressed: () => _showAddWithdrawalDialog(context),
-            backgroundColor: ColorsManger.primary,
-            icon: const Icon(Icons.remove_circle_outline),
-            label: const Text('Withdraw'),
-          );
-        },
-      ),
-      floatingActionButtonLocation: const _FabAboveNavLocation(),
     );
   }
 
@@ -140,9 +148,32 @@ class _VaultView extends StatelessWidget {
             Row(
               children: [
                 Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showAddDepositDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Deposit'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _showAddWithdrawalDialog(context),
+                    icon: const Icon(Icons.remove_circle_outline),
+                    label: const Text('Withdraw'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: ColorsManger.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
                   child: _buildSmallCard(
-                    'Total Collected',
-                    state.totalCollected,
+                    'Total In',
+                    state.totalCollected + state.totalDeposited,
                     Icons.account_balance_wallet,
                     Colors.green,
                   ),
@@ -158,6 +189,31 @@ class _VaultView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Icon(Icons.add_circle, color: Colors.green, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Deposit History',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Collected from branches + manual deposits',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._buildDepositHistoryList(context, state),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -187,7 +243,7 @@ class _VaultView extends StatelessWidget {
                 ),
               )
             else
-              ...state.withdrawals.map((e) => _buildWithdrawalTile(e)),
+              ...state.withdrawals.map((e) => _buildWithdrawalTile(context, e)),
           ],
         ),
       ),
@@ -292,9 +348,175 @@ class _VaultView extends StatelessWidget {
     );
   }
 
-  Widget _buildWithdrawalTile(Map<String, dynamic> e) {
+  /// Combined list: collected from branches + manual deposits, sorted by date desc
+  List<Widget> _buildDepositHistoryList(BuildContext context, VaultLoaded state) {
+    final List<Map<String, dynamic>> combined = [];
+    for (final e in state.collectedEntries) {
+      final date = e['collectedAt'];
+      combined.add({
+        ...e,
+        'type': 'branch',
+        '_sortAt': date != null && date is Timestamp ? date.toDate() : DateTime(0),
+      });
+    }
+    for (final e in state.deposits) {
+      final date = e['createdAt'];
+      combined.add({
+        ...e,
+        'type': 'manual',
+        '_sortAt': date != null && date is Timestamp ? date.toDate() : DateTime(0),
+      });
+    }
+    combined.sort((a, b) => (b['_sortAt'] as DateTime).compareTo(a['_sortAt'] as DateTime));
+
+    if (combined.isEmpty) {
+      return [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                'No deposits recorded',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    return combined.map<Widget>((e) {
+      if (e['type'] == 'branch') {
+        return _buildCollectedEntryTile(e);
+      }
+      return _buildDepositTile(context, e);
+    }).toList();
+  }
+
+  Widget _buildCollectedEntryTile(Map<String, dynamic> e) {
     final amount = (e['amount'] as num?)?.toDouble() ?? 0.0;
-    final description = e['description'] as String? ?? '—';
+    final branchName = e['branchName'] as String? ?? '—';
+    final date = e['collectedAt'];
+    String dateStr = '—';
+    if (date != null && date is Timestamp) {
+      dateStr = DateFormat('yyyy-MM-dd HH:mm').format(date.toDate());
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: ColorsManger.primary.withValues(alpha: 0.2),
+          child: Icon(Icons.store, color: ColorsManger.primary),
+        ),
+        title: Text(
+          'From: $branchName',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(dateStr),
+        trailing: Text(
+          _egp.format(amount),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _depositTileTitle(Map<String, dynamic> e) {
+    final depositItem = e['depositItem'] as String?;
+    final description = (e['description'] as String?)?.trim() ?? '';
+    if (depositItem == null || depositItem.isEmpty) {
+      return description.isNotEmpty ? description : '—';
+    }
+    switch (depositItem) {
+      case 'emad':
+        return 'د/ عماد';
+      case 'marhal':
+        return 'المرحل';
+      case 'other':
+        return description.isEmpty ? 'أخرى' : 'أخرى: $description';
+      default:
+        return description.isNotEmpty ? description : depositItem;
+    }
+  }
+
+  Widget _buildDepositTile(BuildContext context, Map<String, dynamic> e) {
+    final id = e['id'] as String? ?? '';
+    final amount = (e['amount'] as num?)?.toDouble() ?? 0.0;
+    final depositItem = e['depositItem'] as String? ?? '';
+    final description = e['description'] as String? ?? '';
+    final createdAt = e['createdAt'];
+    String dateStr = '—';
+    if (createdAt != null && createdAt is Timestamp) {
+      dateStr = DateFormat('yyyy-MM-dd HH:mm').format(createdAt.toDate());
+    }
+    final createdByName = e['createdByName'] as String? ?? '';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.green.withValues(alpha: 0.2),
+          child: const Icon(Icons.add_circle, color: Colors.green),
+        ),
+        title: Text(
+          _depositTileTitle(e),
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text('$dateStr ${createdByName.isNotEmpty ? '· $createdByName' : ''}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _egp.format(amount),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              onPressed: () => _showEditDepositDialog(context, id, amount, depositItem, description),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
+              onPressed: () => _showDeleteConfirm(context, isDeposit: true, id: id, description: description),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _withdrawalTileTitle(Map<String, dynamic> e) {
+    final withdrawalItem = e['withdrawalItem'] as String?;
+    final description = (e['description'] as String?)?.trim() ?? '';
+    if (withdrawalItem == null || withdrawalItem.isEmpty) {
+      return description.isNotEmpty ? description : '—';
+    }
+    switch (withdrawalItem) {
+      case 'deposit':
+        return 'ايداع';
+      case 'warehouse':
+        return 'تسديد مطالبه مخزن';
+      case 'company':
+        return 'تسديد مطالبه شركه';
+      case 'maintenance':
+        return 'صيانه';
+      case 'other':
+        return description.isEmpty ? 'أخرى' : 'أخرى: $description';
+      default:
+        return description.isNotEmpty ? description : withdrawalItem;
+    }
+  }
+
+  Widget _buildWithdrawalTile(BuildContext context, Map<String, dynamic> e) {
+    final id = e['id'] as String? ?? '';
+    final amount = (e['amount'] as num?)?.toDouble() ?? 0.0;
+    final withdrawalItem = e['withdrawalItem'] as String? ?? '';
+    final description = e['description'] as String? ?? '';
     final createdAt = e['createdAt'];
     String dateStr = '—';
     if (createdAt != null && createdAt is Timestamp) {
@@ -310,52 +532,46 @@ class _VaultView extends StatelessWidget {
           child: const Icon(Icons.payments, color: Colors.orange),
         ),
         title: Text(
-          description,
+          _withdrawalTileTitle(e),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text('$dateStr ${createdByName.isNotEmpty ? '· $createdByName' : ''}'),
-        trailing: Text(
-          _egp.format(amount),
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.orange,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _egp.format(amount),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              onPressed: () => _showEditWithdrawalDialog(context, id, amount, withdrawalItem, description),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
+              onPressed: () => _showDeleteConfirm(context, isDeposit: false, id: id, description: _withdrawalTileTitle(e)),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showAddWithdrawalDialog(BuildContext context) {
-    final amountController = TextEditingController();
-    final descriptionController = TextEditingController();
-
+  void _showDeleteConfirm(
+    BuildContext context, {
+    required bool isDeposit,
+    required String id,
+    required String description,
+  }) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Withdraw from Bank'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Amount (EGP)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
+        title: Text(isDeposit ? 'Delete Deposit' : 'Delete Withdrawal'),
+        content: Text(
+          'Delete "${description.length > 40 ? '${description.substring(0, 40)}...' : description}"?',
         ),
         actions: [
           TextButton(
@@ -364,30 +580,423 @@ class _VaultView extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () async {
-              final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
-              final description = descriptionController.text.trim();
-              if (amount == null || amount <= 0) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Enter a valid amount')),
-                );
-                return;
-              }
-              if (description.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Enter description')),
-                );
-                return;
-              }
               Navigator.pop(ctx);
-              await context.read<VaultCubit>().addWithdrawal(
-                    amount: amount,
-                    description: description,
-                  );
+              if (isDeposit) {
+                await context.read<VaultCubit>().deleteDeposit(id);
+              } else {
+                await context.read<VaultCubit>().deleteWithdrawal(id);
+              }
             },
-            style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
-            child: const Text('Save'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditDepositDialog(
+    BuildContext context,
+    String id,
+    double currentAmount,
+    String currentDepositItem,
+    String currentDescription,
+  ) {
+    final amountController = TextEditingController(text: currentAmount.toString());
+    final noteController = TextEditingController(text: currentDescription);
+    DepositItem selectedItem = DepositItem.values.firstWhere(
+      (e) => e.name == currentDepositItem,
+      orElse: () =>
+          currentDescription.trim().isNotEmpty ? DepositItem.other : DepositItem.emad,
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Edit Deposit'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (EGP)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'البند',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...DepositItem.values.map((item) {
+                    return RadioListTile<DepositItem>(
+                      title: Text(item.label),
+                      value: item,
+                      groupValue: selectedItem,
+                      activeColor: ColorsManger.primary,
+                      onChanged: (v) => setState(() => selectedItem = v ?? selectedItem),
+                    );
+                  }),
+                  if (selectedItem == DepositItem.other) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'ملاحظة (أخرى)',
+                        hintText: 'اكتب الملاحظة',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
+                  final note = noteController.text.trim();
+                  if (amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Enter a valid amount')),
+                    );
+                    return;
+                  }
+                  if (selectedItem == DepositItem.other && note.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('أدخل الملاحظة عند اختيار أخرى')),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  await context.read<VaultCubit>().updateDeposit(
+                        id: id,
+                        amount: amount,
+                        depositItem: selectedItem.name,
+                        description: selectedItem == DepositItem.other ? note : null,
+                      );
+                },
+                style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEditWithdrawalDialog(
+    BuildContext context,
+    String id,
+    double currentAmount,
+    String currentWithdrawalItem,
+    String currentDescription,
+  ) {
+    final amountController = TextEditingController(text: currentAmount.toString());
+    final noteController = TextEditingController(text: currentDescription);
+    WithdrawalItem selectedItem = WithdrawalItem.values.firstWhere(
+      (e) => e.name == currentWithdrawalItem,
+      orElse: () =>
+          currentDescription.trim().isNotEmpty ? WithdrawalItem.other : WithdrawalItem.deposit,
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Edit Withdrawal'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (EGP)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'البند',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...WithdrawalItem.values.map((item) {
+                    return RadioListTile<WithdrawalItem>(
+                      title: Text(item.label),
+                      value: item,
+                      groupValue: selectedItem,
+                      activeColor: ColorsManger.primary,
+                      onChanged: (v) => setState(() => selectedItem = v ?? selectedItem),
+                    );
+                  }),
+                  if (selectedItem == WithdrawalItem.other) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'ملاحظة (أخرى)',
+                        hintText: 'اكتب الملاحظة',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
+                  final note = noteController.text.trim();
+                  if (amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Enter a valid amount')),
+                    );
+                    return;
+                  }
+                  if (selectedItem == WithdrawalItem.other && note.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('أدخل الملاحظة عند اختيار أخرى')),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  await context.read<VaultCubit>().updateWithdrawal(
+                        id: id,
+                        amount: amount,
+                        withdrawalItem: selectedItem.name,
+                        description: selectedItem == WithdrawalItem.other ? note : null,
+                      );
+                },
+                style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddDepositDialog(BuildContext context) {
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    DepositItem selectedItem = DepositItem.emad;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Deposit to Bank'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (EGP)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'البند',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...DepositItem.values.map((item) {
+                    return RadioListTile<DepositItem>(
+                      title: Text(item.label),
+                      value: item,
+                      groupValue: selectedItem,
+                      activeColor: ColorsManger.primary,
+                      onChanged: (v) => setState(() => selectedItem = v ?? selectedItem),
+                    );
+                  }),
+                  if (selectedItem == DepositItem.other) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'ملاحظة (أخرى)',
+                        hintText: 'اكتب الملاحظة',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
+                  final note = noteController.text.trim();
+                  if (amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Enter a valid amount')),
+                    );
+                    return;
+                  }
+                  if (selectedItem == DepositItem.other && note.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('أدخل الملاحظة عند اختيار أخرى')),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  await context.read<VaultCubit>().addDeposit(
+                        amount: amount,
+                        depositItem: selectedItem.name,
+                        description: selectedItem == DepositItem.other ? note : null,
+                      );
+                },
+                style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddWithdrawalDialog(BuildContext context) {
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    WithdrawalItem selectedItem = WithdrawalItem.deposit;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Withdraw from Bank'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (EGP)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'البند',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...WithdrawalItem.values.map((item) {
+                    return RadioListTile<WithdrawalItem>(
+                      title: Text(item.label),
+                      value: item,
+                      groupValue: selectedItem,
+                      activeColor: ColorsManger.primary,
+                      onChanged: (v) => setState(() => selectedItem = v ?? selectedItem),
+                    );
+                  }),
+                  if (selectedItem == WithdrawalItem.other) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'ملاحظة (أخرى)',
+                        hintText: 'اكتب الملاحظة',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
+                  final note = noteController.text.trim();
+                  if (amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Enter a valid amount')),
+                    );
+                    return;
+                  }
+                  if (selectedItem == WithdrawalItem.other && note.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('أدخل الملاحظة عند اختيار أخرى')),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  await context.read<VaultCubit>().addWithdrawal(
+                        amount: amount,
+                        withdrawalItem: selectedItem.name,
+                        description: selectedItem == WithdrawalItem.other ? note : null,
+                      );
+                },
+                style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
