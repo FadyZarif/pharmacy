@@ -72,7 +72,16 @@ class _VaultView extends StatelessWidget {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
-      body: BlocBuilder<VaultCubit, VaultState>(
+      body: BlocListener<VaultCubit, VaultState>(
+        listenWhen: (prev, curr) => curr is VaultError,
+        listener: (context, state) {
+          if (state is VaultError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            );
+          }
+        },
+        child: BlocBuilder<VaultCubit, VaultState>(
         builder: (context, state) {
           if (state is VaultLoading ||
               state is VaultInitial ||
@@ -129,6 +138,7 @@ class _VaultView extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
       ),
     );
   }
@@ -602,6 +612,7 @@ class _VaultView extends StatelessWidget {
     String currentDepositItem,
     String currentDescription,
   ) {
+    final cubit = context.read<VaultCubit>();
     final amountController = TextEditingController(text: currentAmount.toString());
     final noteController = TextEditingController(text: currentDescription);
     DepositItem selectedItem = DepositItem.values.firstWhere(
@@ -613,7 +624,7 @@ class _VaultView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Edit Deposit'),
             content: SingleChildScrollView(
@@ -685,12 +696,12 @@ class _VaultView extends StatelessWidget {
                     return;
                   }
                   Navigator.pop(ctx);
-                  await context.read<VaultCubit>().updateDeposit(
-                        id: id,
-                        amount: amount,
-                        depositItem: selectedItem.name,
-                        description: selectedItem == DepositItem.other ? note : null,
-                      );
+                  await cubit.updateDeposit(
+                    id: id,
+                    amount: amount,
+                    depositItem: selectedItem.name,
+                    description: selectedItem == DepositItem.other ? note : null,
+                  );
                 },
                 style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
                 child: const Text('Save'),
@@ -709,6 +720,7 @@ class _VaultView extends StatelessWidget {
     String currentWithdrawalItem,
     String currentDescription,
   ) {
+    final cubit = context.read<VaultCubit>();
     final amountController = TextEditingController(text: currentAmount.toString());
     final noteController = TextEditingController(text: currentDescription);
     WithdrawalItem selectedItem = WithdrawalItem.values.firstWhere(
@@ -720,7 +732,7 @@ class _VaultView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Edit Withdrawal'),
             content: SingleChildScrollView(
@@ -792,12 +804,12 @@ class _VaultView extends StatelessWidget {
                     return;
                   }
                   Navigator.pop(ctx);
-                  await context.read<VaultCubit>().updateWithdrawal(
-                        id: id,
-                        amount: amount,
-                        withdrawalItem: selectedItem.name,
-                        description: selectedItem == WithdrawalItem.other ? note : null,
-                      );
+                  await cubit.updateWithdrawal(
+                    id: id,
+                    amount: amount,
+                    withdrawalItem: selectedItem.name,
+                    description: selectedItem == WithdrawalItem.other ? note : null,
+                  );
                 },
                 style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
                 child: const Text('Save'),
@@ -810,6 +822,8 @@ class _VaultView extends StatelessWidget {
   }
 
   void _showAddDepositDialog(BuildContext context) {
+    final cubit = context.read<VaultCubit>();
+    final messenger = ScaffoldMessenger.of(context);
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     DepositItem selectedItem = DepositItem.emad;
@@ -817,7 +831,7 @@ class _VaultView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Deposit to Bank'),
             content: SingleChildScrollView(
@@ -889,11 +903,17 @@ class _VaultView extends StatelessWidget {
                     return;
                   }
                   Navigator.pop(ctx);
-                  await context.read<VaultCubit>().addDeposit(
-                        amount: amount,
-                        depositItem: selectedItem.name,
-                        description: selectedItem == DepositItem.other ? note : null,
-                      );
+                  await cubit.addDeposit(
+                    amount: amount,
+                    depositItem: selectedItem.name,
+                    description: selectedItem == DepositItem.other ? note : null,
+                  );
+                  final newState = cubit.state;
+                  if (newState is! VaultError && newState is VaultLoaded) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Deposit added'), backgroundColor: Colors.green),
+                    );
+                  }
                 },
                 style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
                 child: const Text('Save'),
@@ -906,6 +926,8 @@ class _VaultView extends StatelessWidget {
   }
 
   void _showAddWithdrawalDialog(BuildContext context) {
+    final cubit = context.read<VaultCubit>();
+    final messenger = ScaffoldMessenger.of(context);
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     WithdrawalItem selectedItem = WithdrawalItem.deposit;
@@ -913,7 +935,7 @@ class _VaultView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Withdraw from Bank'),
             content: SingleChildScrollView(
@@ -985,11 +1007,17 @@ class _VaultView extends StatelessWidget {
                     return;
                   }
                   Navigator.pop(ctx);
-                  await context.read<VaultCubit>().addWithdrawal(
-                        amount: amount,
-                        withdrawalItem: selectedItem.name,
-                        description: selectedItem == WithdrawalItem.other ? note : null,
-                      );
+                  await cubit.addWithdrawal(
+                    amount: amount,
+                    withdrawalItem: selectedItem.name,
+                    description: selectedItem == WithdrawalItem.other ? note : null,
+                  );
+                  final newState = cubit.state;
+                  if (newState is! VaultError && newState is VaultLoaded) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Withdrawal added'), backgroundColor: Colors.green),
+                    );
+                  }
                 },
                 style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
                 child: const Text('Save'),
