@@ -1305,15 +1305,6 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
             throw 'Please select branch and employee';
           }
 
-          // Validate: selected employee must NOT have approved leave on this date
-          final hasLeave = await cubit.checkEmployeeHasLeaveOnDate(
-            cubit.selectedEmployee!.uid,
-            _coverageDate!,
-          );
-          if (hasLeave) {
-            throw 'Selected employee has an approved leave on this date';
-          }
-
           details = CoverageShiftDetails(
             peerEmployeeId: cubit.selectedEmployee!.uid,
             peerEmployeeName: cubit.selectedEmployee!.name,

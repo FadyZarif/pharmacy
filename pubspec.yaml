@@ -66,6 +66,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  image: ^4.3.0
   freezed: ^3.2.3
   build_runner: ^2.4.15
   json_serializable: ^6.9.3
