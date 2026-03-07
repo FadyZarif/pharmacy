@@ -1,4 +1,4 @@
-package com.emadfawzy.pharmacy
+package com.emadfawzy.pharmacies
 
 import io.flutter.embedding.android.FlutterActivity
 
