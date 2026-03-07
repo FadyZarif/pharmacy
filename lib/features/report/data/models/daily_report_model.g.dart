@@ -41,6 +41,8 @@ ShiftReportModel _$ShiftReportModelFromJson(Map<String, dynamic> json) =>
       submittedAt: const ServerTimestampOnNullConverter().fromJson(
         json['submittedAt'],
       ),
+      lastModifiedBy: json['lastModifiedBy'] as String?,
+      lastModifiedByName: json['lastModifiedByName'] as String?,
     );
 
 Map<String, dynamic> _$ShiftReportModelToJson(ShiftReportModel instance) =>
@@ -66,6 +68,8 @@ Map<String, dynamic> _$ShiftReportModelToJson(ShiftReportModel instance) =>
       'submittedAt': const ServerTimestampOnNullConverter().toJson(
         instance.submittedAt,
       ),
+      'lastModifiedBy': instance.lastModifiedBy,
+      'lastModifiedByName': instance.lastModifiedByName,
     };
 
 const _$ShiftTypeEnumMap = {

@@ -1511,6 +1511,20 @@ class _ShiftReportTile extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (report.lastModifiedByName != null &&
+                      report.lastModifiedByName!.isNotEmpty &&
+                      report.updatedAt != null) ...[
+                    SizedBox(height: isCompact ? 4 : 6),
+                    Text(
+                      'Last modified by ${report.lastModifiedByName} at ${DateFormat('yyyy-MM-dd HH:mm').format(report.updatedAt!)}',
+                      style: TextStyle(
+                        fontSize: isCompact ? 10 : 11,
+                        color: Colors.grey.shade600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),

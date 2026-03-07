@@ -13,6 +13,7 @@ import 'package:pharmacy/features/report/ui/widgets/shift_report_widgets.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 class EditShiftReportScreen extends StatefulWidget {
   final ShiftReportModel report;
@@ -162,6 +163,21 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                             shiftType: _getShiftLabel(widget.report.shiftType),
                           ),
                         ),
+                        if (widget.report.lastModifiedByName != null &&
+                            widget.report.lastModifiedByName!.isNotEmpty &&
+                            widget.report.updatedAt != null) ...[
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              'Last modified by ${widget.report.lastModifiedByName} at ${DateFormat('yyyy-MM-dd HH:mm').format(widget.report.updatedAt!)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         _PanelCard(
                           child: ShiftReportWidgets.buildDrawerAmountField(

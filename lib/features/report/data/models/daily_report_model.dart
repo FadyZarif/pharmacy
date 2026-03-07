@@ -142,6 +142,10 @@ class ShiftReportModel {
   @ServerTimestampOnNullConverter()
   final DateTime? submittedAt; // متى تم تسليم/حفظ الشيفت
 
+  /// من عدّل التقرير آخر مرة (عند التعديل فقط)
+  final String? lastModifiedBy;
+  final String? lastModifiedByName;
+
   ShiftReportModel({
     required this.id,
     required this.branchId,
@@ -159,6 +163,8 @@ class ShiftReportModel {
     this.attachmentUrls = const [],
     this.updatedAt,
     this.submittedAt,
+    this.lastModifiedBy,
+    this.lastModifiedByName,
   });
 
   factory ShiftReportModel.fromJson(Map<String, dynamic> json) {
@@ -242,6 +248,8 @@ class ShiftReportModel {
     List<String>? attachmentUrls,
     DateTime? updatedAt,
     DateTime? submittedAt,
+    String? lastModifiedBy,
+    String? lastModifiedByName,
   }) {
     return ShiftReportModel(
       id: id ?? this.id,
@@ -260,6 +268,8 @@ class ShiftReportModel {
       attachmentUrls: attachmentUrls ?? this.attachmentUrls,
       updatedAt: updatedAt ?? this.updatedAt,
       submittedAt: submittedAt ?? this.submittedAt,
+      lastModifiedBy: lastModifiedBy ?? this.lastModifiedBy,
+      lastModifiedByName: lastModifiedByName ?? this.lastModifiedByName,
     );
   }
 }

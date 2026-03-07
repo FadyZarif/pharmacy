@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/edit_report_state.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -21,6 +22,8 @@ class EditReportCubit extends Cubit<EditReportState> {
     try {
       final reportData = report.toJson();
       reportData['updatedAt'] = FieldValue.serverTimestamp();
+      reportData['lastModifiedBy'] = currentUser.uid;
+      reportData['lastModifiedByName'] = currentUser.name;
 
       // Update في المسار الصحيح
       await _db

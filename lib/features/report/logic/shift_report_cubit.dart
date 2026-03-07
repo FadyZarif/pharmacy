@@ -327,6 +327,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         attachmentUrls: uploadedUrls,
         submittedAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        lastModifiedBy: currentUser.uid,
+        lastModifiedByName: currentUser.name,
       );
 
       // Save to Firestore
@@ -374,6 +376,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         electronicWalletAmount: electronicWalletAmount,
         attachmentUrls: List.from(attachmentUrls),
         updatedAt: DateTime.now(),
+        lastModifiedBy: currentUser.uid,
+        lastModifiedByName: currentUser.name,
       );
 
       // Update in Firestore
