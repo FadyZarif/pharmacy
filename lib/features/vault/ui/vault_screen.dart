@@ -280,7 +280,7 @@ class _VaultView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.account_balance, color: ColorsManger.primary, size: 28),
+              Icon(Icons.account_balance_wallet, color: ColorsManger.primary, size: 28),
               const SizedBox(width: 10),
               Text(
                 'Bank Balance',

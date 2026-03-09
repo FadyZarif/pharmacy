@@ -243,7 +243,8 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               const SizedBox(height: 14),
 
               // Bank (Management Only) — open without selecting a branch
-              if (currentUser.isManagement) ...[
+              if (currentUser.isManagement ||
+                  currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildBankCard(context),
@@ -490,11 +491,11 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.account_balance,
-                  color: Colors.white,
-                  size: 36,
-                ),
+                child:                   const Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.white,
+                    size: 36,
+                  ),
               ),
               const SizedBox(width: 16),
               Expanded(

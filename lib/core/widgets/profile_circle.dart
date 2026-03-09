@@ -1,5 +1,6 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 class ProfileCircle extends StatelessWidget {
@@ -22,13 +23,19 @@ class ProfileCircle extends StatelessWidget {
         height: radius * 2,
         child: ClipOval(
           child: hasUrl
-              ? CachedNetworkImage(
-                  imageUrl: url,
-                  fit: BoxFit.cover,
-                  fadeInDuration: const Duration(milliseconds: 160),
-                  placeholder: (context, _) => _placeholder(radius),
-                  errorWidget: (context, _, __) => _placeholder(radius),
-                )
+              ? (kIsWeb
+                  ? Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _placeholder(radius),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 160),
+                      placeholder: (context, _) => _placeholder(radius),
+                      errorWidget: (context, _, __) => _placeholder(radius),
+                    ))
               : _placeholder(radius),
         ),
       ),
