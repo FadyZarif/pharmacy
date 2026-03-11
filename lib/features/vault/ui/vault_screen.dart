@@ -1,11 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/vault/logic/vault_cubit.dart';
 import 'package:pharmacy/features/vault/logic/vault_state.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class VaultScreen extends StatelessWidget {
   const VaultScreen({super.key});
@@ -457,6 +461,20 @@ class _VaultView extends StatelessWidget {
     );
   }
 
+  String _vaultContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   String _depositTileTitle(Map<String, dynamic> e) {
     final depositItem = e['depositItem'] as String?;
     final description = (e['description'] as String?)?.trim() ?? '';
@@ -486,6 +504,8 @@ class _VaultView extends StatelessWidget {
       dateStr = DateFormat('yyyy-MM-dd HH:mm').format(createdAt.toDate());
     }
     final createdByName = e['createdByName'] as String? ?? '';
+    final comment = (e['comment'] as String?)?.trim() ?? '';
+    final attachmentUrl = e['attachmentUrl'] as String? ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -519,6 +539,42 @@ class _VaultView extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (comment.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      comment,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+                      softWrap: true,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (attachmentUrl.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.parse(attachmentUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.attach_file, size: 16, color: ColorsManger.primary),
+                          SizedBox(width: 4),
+                          Text(
+                            'View attachment',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: ColorsManger.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -589,6 +645,8 @@ class _VaultView extends StatelessWidget {
       dateStr = DateFormat('yyyy-MM-dd HH:mm').format(createdAt.toDate());
     }
     final createdByName = e['createdByName'] as String? ?? '';
+    final comment = (e['comment'] as String?)?.trim() ?? '';
+    final attachmentUrl = e['attachmentUrl'] as String? ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -622,6 +680,42 @@ class _VaultView extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (comment.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      comment,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+                      softWrap: true,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (attachmentUrl.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.parse(attachmentUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.attach_file, size: 16, color: ColorsManger.primary),
+                          SizedBox(width: 4),
+                          Text(
+                            'View attachment',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: ColorsManger.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -916,6 +1010,10 @@ class _VaultView extends StatelessWidget {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     DepositItem selectedItem = DepositItem.emad;
+    final commentController = TextEditingController();
+    String? attachmentUrl;
+    String? attachmentName;
+    bool isUploading = false;
 
     showDialog(
       context: context,
@@ -967,6 +1065,79 @@ class _VaultView extends StatelessWidget {
                       maxLines: 2,
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: commentController,
+                    decoration: const InputDecoration(
+                      labelText: 'Comment',
+                      hintText: 'Optional comment',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.attach_file),
+                          label: Text(
+                            attachmentName == null ? 'Add attachment' : 'Change attachment',
+                          ),
+                          onPressed: isUploading
+                              ? null
+                              : () async {
+                                  setState(() => isUploading = true);
+                                  final result = await FilePicker.platform.pickFiles(
+                                    withData: true,
+                                    allowMultiple: false,
+                                    type: FileType.custom,
+                                    allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                                  );
+                                  if (result != null && result.files.isNotEmpty) {
+                                    final file = result.files.first;
+                                    final bytes = file.bytes;
+                                    if (bytes == null) {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        const SnackBar(content: Text('Failed to read file bytes')),
+                                      );
+                                    } else {
+                                      try {
+                                        final ext = (file.extension ?? 'bin').toLowerCase();
+                                        final ts = DateTime.now().millisecondsSinceEpoch;
+                                        final ref = FirebaseStorage.instance.ref().child(
+                                          'vault/deposits/${currentUser.uid}_$ts.$ext',
+                                        );
+                                        final metadata = SettableMetadata(
+                                          contentType: _vaultContentType(ext),
+                                        );
+                                        final uploadTask = await ref.putData(bytes, metadata);
+                                        final url = await uploadTask.ref.getDownloadURL();
+                                        setState(() {
+                                          attachmentUrl = url;
+                                          attachmentName = file.name;
+                                        });
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
+                                          SnackBar(content: Text('Upload failed: $e')),
+                                        );
+                                      }
+                                    }
+                                  }
+                                  setState(() => isUploading = false);
+                                },
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (attachmentName != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      attachmentName!,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -979,6 +1150,7 @@ class _VaultView extends StatelessWidget {
                 onPressed: () async {
                   final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
                   final note = noteController.text.trim();
+                  final comment = commentController.text.trim();
                   if (amount == null || amount <= 0) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       const SnackBar(content: Text('Enter a valid amount')),
@@ -996,6 +1168,8 @@ class _VaultView extends StatelessWidget {
                     amount: amount,
                     depositItem: selectedItem.name,
                     description: selectedItem == DepositItem.other ? note : null,
+                    comment: comment.isEmpty ? null : comment,
+                    attachmentUrl: attachmentUrl,
                   );
                   final newState = cubit.state;
                   if (newState is! VaultError && newState is VaultLoaded) {
@@ -1020,6 +1194,10 @@ class _VaultView extends StatelessWidget {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     WithdrawalItem selectedItem = WithdrawalItem.deposit;
+    final commentController = TextEditingController();
+    String? attachmentUrl;
+    String? attachmentName;
+    bool isUploading = false;
 
     showDialog(
       context: context,
@@ -1071,6 +1249,79 @@ class _VaultView extends StatelessWidget {
                       maxLines: 2,
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: commentController,
+                    decoration: const InputDecoration(
+                      labelText: 'Comment',
+                      hintText: 'Optional comment',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.attach_file),
+                          label: Text(
+                            attachmentName == null ? 'Add attachment' : 'Change attachment',
+                          ),
+                          onPressed: isUploading
+                              ? null
+                              : () async {
+                                  setState(() => isUploading = true);
+                                  final result = await FilePicker.platform.pickFiles(
+                                    withData: true,
+                                    allowMultiple: false,
+                                    type: FileType.custom,
+                                    allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                                  );
+                                  if (result != null && result.files.isNotEmpty) {
+                                    final file = result.files.first;
+                                    final bytes = file.bytes;
+                                    if (bytes == null) {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        const SnackBar(content: Text('Failed to read file bytes')),
+                                      );
+                                    } else {
+                                      try {
+                                        final ext = (file.extension ?? 'bin').toLowerCase();
+                                        final ts = DateTime.now().millisecondsSinceEpoch;
+                                        final ref = FirebaseStorage.instance.ref().child(
+                                          'vault/withdrawals/${currentUser.uid}_$ts.$ext',
+                                        );
+                                        final metadata = SettableMetadata(
+                                          contentType: _vaultContentType(ext),
+                                        );
+                                        final uploadTask = await ref.putData(bytes, metadata);
+                                        final url = await uploadTask.ref.getDownloadURL();
+                                        setState(() {
+                                          attachmentUrl = url;
+                                          attachmentName = file.name;
+                                        });
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
+                                          SnackBar(content: Text('Upload failed: $e')),
+                                        );
+                                      }
+                                    }
+                                  }
+                                  setState(() => isUploading = false);
+                                },
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (attachmentName != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      attachmentName!,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1083,6 +1334,7 @@ class _VaultView extends StatelessWidget {
                 onPressed: () async {
                   final amount = double.tryParse(amountController.text.replaceFirst(',', '.'));
                   final note = noteController.text.trim();
+                  final comment = commentController.text.trim();
                   if (amount == null || amount <= 0) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       const SnackBar(content: Text('Enter a valid amount')),
@@ -1100,6 +1352,8 @@ class _VaultView extends StatelessWidget {
                     amount: amount,
                     withdrawalItem: selectedItem.name,
                     description: selectedItem == WithdrawalItem.other ? note : null,
+                    comment: comment.isEmpty ? null : comment,
+                    attachmentUrl: attachmentUrl,
                   );
                   final newState = cubit.state;
                   if (newState is! VaultError && newState is VaultLoaded) {

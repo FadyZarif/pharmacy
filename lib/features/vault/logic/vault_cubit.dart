@@ -39,6 +39,8 @@ class VaultCubit extends Cubit<VaultState> {
     required double amount,
     required String depositItem,
     String? description,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     if (amount <= 0) {
       emit(VaultError(message: 'Amount must be greater than zero'));
@@ -54,6 +56,8 @@ class VaultCubit extends Cubit<VaultState> {
         description: description,
         createdBy: currentUser.uid,
         createdByName: currentUser.name,
+        comment: comment,
+        attachmentUrl: attachmentUrl,
       );
 
       await fetchVaultBalance();
@@ -68,6 +72,8 @@ class VaultCubit extends Cubit<VaultState> {
     required double amount,
     required String depositItem,
     String? description,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     if (amount <= 0) {
       emit(VaultError(message: 'Amount must be greater than zero'));
@@ -80,6 +86,8 @@ class VaultCubit extends Cubit<VaultState> {
         amount: amount,
         depositItem: depositItem,
         description: description,
+        comment: comment,
+        attachmentUrl: attachmentUrl,
       );
       await fetchVaultBalance();
     } catch (e) {
@@ -104,6 +112,8 @@ class VaultCubit extends Cubit<VaultState> {
     required double amount,
     required String withdrawalItem,
     String? description,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     if (amount <= 0) {
       emit(VaultError(message: 'Amount must be greater than zero'));
@@ -119,6 +129,8 @@ class VaultCubit extends Cubit<VaultState> {
         description: description,
         createdBy: currentUser.uid,
         createdByName: currentUser.name,
+        comment: comment,
+        attachmentUrl: attachmentUrl,
       );
 
       await fetchVaultBalance();
@@ -133,6 +145,8 @@ class VaultCubit extends Cubit<VaultState> {
     required double amount,
     required String withdrawalItem,
     String? description,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     if (amount <= 0) {
       emit(VaultError(message: 'Amount must be greater than zero'));
@@ -145,6 +159,8 @@ class VaultCubit extends Cubit<VaultState> {
         amount: amount,
         withdrawalItem: withdrawalItem,
         description: description,
+        comment: comment,
+        attachmentUrl: attachmentUrl,
       );
       await fetchVaultBalance();
     } catch (e) {

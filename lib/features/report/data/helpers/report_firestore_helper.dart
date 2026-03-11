@@ -289,6 +289,8 @@ class ReportFirestoreHelper {
     String? description,
     required String createdBy,
     String? createdByName,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     await _firestore.collection('vault_deposits').add({
       'amount': amount,
@@ -297,6 +299,8 @@ class ReportFirestoreHelper {
       'createdBy': createdBy,
       'createdByName': createdByName ?? '',
       'createdAt': FieldValue.serverTimestamp(),
+      'comment': comment ?? '',
+      'attachmentUrl': attachmentUrl ?? '',
     });
   }
 
@@ -325,11 +329,15 @@ class ReportFirestoreHelper {
     required double amount,
     required String depositItem,
     String? description,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     await _firestore.collection('vault_deposits').doc(id).update({
       'amount': amount,
       'depositItem': depositItem,
       'description': description ?? '',
+      'comment': comment ?? '',
+      'attachmentUrl': attachmentUrl ?? '',
     });
   }
 
@@ -346,6 +354,8 @@ class ReportFirestoreHelper {
     String? description,
     required String createdBy,
     String? createdByName,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     await _firestore.collection('vault_expenses').add({
       'amount': amount,
@@ -354,6 +364,8 @@ class ReportFirestoreHelper {
       'createdBy': createdBy,
       'createdByName': createdByName ?? '',
       'createdAt': FieldValue.serverTimestamp(),
+      'comment': comment ?? '',
+      'attachmentUrl': attachmentUrl ?? '',
     });
   }
 
@@ -382,11 +394,15 @@ class ReportFirestoreHelper {
     required double amount,
     required String withdrawalItem,
     String? description,
+    String? comment,
+    String? attachmentUrl,
   }) async {
     await _firestore.collection('vault_expenses').doc(id).update({
       'amount': amount,
       'withdrawalItem': withdrawalItem,
       'description': description ?? '',
+      'comment': comment ?? '',
+      'attachmentUrl': attachmentUrl ?? '',
     });
   }
 
