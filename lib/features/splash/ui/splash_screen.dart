@@ -87,9 +87,17 @@ class _SplashScreenState extends State<SplashScreen>
   void _goNext() {
     if (!mounted) return;
 
-    final Widget next = isLogged
-        ? (!currentUser.isStaff ? const BranchSelectionScreen() : const EmployeeLayout())
-        : const LoginScreen();
+    final Widget next;
+    if (!isLogged) {
+      next = const LoginScreen();
+    } else {
+      // Exception: UID 7DUwUuQ0rIUUb94NCK2vdnrZCLo1 always sees branch selection first (web + mobile)
+      final bool goToBranchSelection = !currentUser.isStaff ||
+          currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1';
+      next = goToBranchSelection
+          ? const BranchSelectionScreen()
+          : const EmployeeLayout();
+    }
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

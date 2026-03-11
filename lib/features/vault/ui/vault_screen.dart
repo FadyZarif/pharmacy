@@ -413,22 +413,45 @@ class _VaultView extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: ColorsManger.primary.withValues(alpha: 0.2),
-          child: Icon(Icons.store, color: ColorsManger.primary),
-        ),
-        title: Text(
-          'From: $branchName',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(dateStr),
-        trailing: Text(
-          _egp.format(amount),
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: ColorsManger.primary.withValues(alpha: 0.2),
+              child: Icon(Icons.store, color: ColorsManger.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'From: $branchName',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    softWrap: true,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    dateStr,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _egp.format(amount),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -466,33 +489,66 @@ class _VaultView extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.green.withValues(alpha: 0.2),
-          child: const Icon(Icons.add_circle, color: Colors.green),
-        ),
-        title: Text(
-          _depositTileTitle(e),
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text('$dateStr ${createdByName.isNotEmpty ? '· $createdByName' : ''}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              _egp.format(amount),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+            CircleAvatar(
+              backgroundColor: Colors.green.withValues(alpha: 0.2),
+              child: const Icon(Icons.add_circle, color: Colors.green),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _depositTileTitle(e),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    softWrap: true,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$dateStr ${createdByName.isNotEmpty ? '· $createdByName' : ''}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    softWrap: true,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              onPressed: () => _showEditDepositDialog(context, id, amount, depositItem, description),
-            ),
-            IconButton(
-              icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
-              onPressed: () => _showDeleteConfirm(context, isDeposit: true, id: id, description: description),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _egp.format(amount),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      onPressed: () => _showEditDepositDialog(context, id, amount, depositItem, description),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
+                      onPressed: () => _showDeleteConfirm(context, isDeposit: true, id: id, description: description),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
@@ -536,33 +592,66 @@ class _VaultView extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.orange.withValues(alpha: 0.2),
-          child: const Icon(Icons.payments, color: Colors.orange),
-        ),
-        title: Text(
-          _withdrawalTileTitle(e),
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text('$dateStr ${createdByName.isNotEmpty ? '· $createdByName' : ''}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              _egp.format(amount),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.orange,
+            CircleAvatar(
+              backgroundColor: Colors.orange.withValues(alpha: 0.2),
+              child: const Icon(Icons.payments, color: Colors.orange),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _withdrawalTileTitle(e),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    softWrap: true,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$dateStr ${createdByName.isNotEmpty ? '· $createdByName' : ''}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    softWrap: true,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              onPressed: () => _showEditWithdrawalDialog(context, id, amount, withdrawalItem, description),
-            ),
-            IconButton(
-              icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
-              onPressed: () => _showDeleteConfirm(context, isDeposit: false, id: id, description: _withdrawalTileTitle(e)),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _egp.format(amount),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      onPressed: () => _showEditWithdrawalDialog(context, id, amount, withdrawalItem, description),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
+                      onPressed: () => _showDeleteConfirm(context, isDeposit: false, id: id, description: _withdrawalTileTitle(e)),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
