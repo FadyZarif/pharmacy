@@ -92,15 +92,12 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
               dialogType: DialogType.warning,
             );
           } else if (state is ShiftAlreadyExists) {
-            // Shift already submitted - show read-only view or go back
+            // شيفت اتقفل فعلاً – نعرض رسالة بس من غير ما نطلع من الشاشة عشان يقدر يختار شيفت تاني (صبحية/مسائية)
             defToast2(
               context: context,
-              msg: 'This shift has already been submitted and cannot be edited',
+              msg: 'This shift was already submitted. Select another shift type to close.',
               dialogType: DialogType.info,
-            ).then((_) {
-              if (!context.mounted) return;
-              Navigator.pop(context);
-            });
+            );
           } else if (state is ShiftReportLoaded) {
             // Load existing data into controllers
             _drawerAmountController.text = state.report.drawerAmount.toString();

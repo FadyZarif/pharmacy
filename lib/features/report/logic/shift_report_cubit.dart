@@ -105,7 +105,8 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
     }
   }
 
-  /// Load my shift for today
+  /// Load my shift for today.
+  /// لو فيه أكثر من شيفت (صبحية/مسائية) بنحمّل أول شيفت لسه متقفلش؛ لو كلهم متقفلين بنبقى في الشاشة عشان يختار نوع تاني.
   Future<void> loadMyTodayShift() async {
     try {
       emit(ShiftReportLoadingMyShift());
@@ -113,19 +114,29 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
       // Load all submitted shifts first
       await loadTodaySubmittedShifts();
 
-      final myShift = await ReportFirestoreHelper.getMyTodayShift(
+      final allMyShifts = await ReportFirestoreHelper.getMyShiftsForToday(
         currentUser.uid,
       );
 
+      // Prefer a shift that is NOT yet submitted (so user can close another shift)
+      ShiftReportModel? myShift;
+      for (var s in allMyShifts) {
+        if (!submittedShifts.contains(s.shiftType)) {
+          myShift = s;
+          break;
+        }
+      }
+      // If all submitted, keep first one for ShiftAlreadyExists (no pop – user can pick another type)
+      if (myShift == null && allMyShifts.isNotEmpty) {
+        myShift = allMyShifts.first;
+      }
+
       if (myShift != null) {
-        // Check if shift is already submitted
         if (submittedShifts.contains(myShift.shiftType)) {
-          // Shift already submitted - make it read-only
           emit(ShiftAlreadyExists(myShift));
           return;
         }
 
-        // Load data
         selectedShiftType = myShift.shiftType;
         drawerAmount = myShift.drawerAmount;
         computerDifferenceType = myShift.computerDifferenceType;

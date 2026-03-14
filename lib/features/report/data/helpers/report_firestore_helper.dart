@@ -69,13 +69,21 @@ class ReportFirestoreHelper {
   }
 
   /// جلب جميع شيفتات فرع معين ليوم معين
+  /// أي مستند تالف أو غير متوافق يُتخطى حتى لا يسقط التطبيق
   static Future<List<ShiftReportModel>> getBranchShifts(
       DateTime date, String branchId) async {
     final snapshot = await shiftsCollection(date, branchId).get();
-    return snapshot.docs
-        .map((doc) =>
-            ShiftReportModel.fromJson(doc.data() as Map<String, dynamic>))
-        .toList();
+    final list = <ShiftReportModel>[];
+    for (var doc in snapshot.docs) {
+      try {
+        final data = doc.data();
+        if (data == null) continue;
+        list.add(ShiftReportModel.fromJson(data as Map<String, dynamic>));
+      } catch (_) {
+        continue;
+      }
+    }
+    return list;
   }
 
   /// جلب جميع الفروع ليوم معين
@@ -97,21 +105,37 @@ class ReportFirestoreHelper {
     return reports;
   }
 
-  /// جلب شيفت الموظف الحالي لليوم
+  /// جلب شيفت الموظف الحالي لليوم (أول شيفت يلاقيه)
+  /// لو فرع واحد فشل (مثلاً صلاحيات أو بيانات) باقي الفروع تتقرأ عادي
   static Future<ShiftReportModel?> getMyTodayShift(String employeeId) async {
-    final today = DateTime.now();
-    final branches = await getBranchesForDate(today);
+    final all = await getMyShiftsForToday(employeeId);
+    return all.isEmpty ? null : all.first;
+  }
 
-    for (String branchId in branches) {
-      final shifts = await getBranchShifts(today, branchId);
-      for (var shift in shifts) {
-        if (shift.employeeId == employeeId) {
-          return shift;
-        }
-      }
+  /// جلب كل شيفتات الموظف لليوم (صبحية + مسائية + ...) عشان نفضّل شيفت لسه متقفلش
+  static Future<List<ShiftReportModel>> getMyShiftsForToday(String employeeId) async {
+    final today = DateTime.now();
+    List<String> branches;
+    try {
+      branches = await getBranchesForDate(today);
+    } catch (e) {
+      return [];
     }
 
-    return null;
+    final list = <ShiftReportModel>[];
+    for (String branchId in branches) {
+      try {
+        final shifts = await getBranchShifts(today, branchId);
+        for (var shift in shifts) {
+          if (shift.employeeId == employeeId) {
+            list.add(shift);
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+    return list;
   }
 
   // ============ Write Operations ============
