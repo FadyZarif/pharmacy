@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
+import 'package:pharmacy/features/report/data/helpers/report_firestore_helper.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/edit_report_state.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -34,6 +36,14 @@ class EditReportCubit extends Cubit<EditReportState> {
           .collection('shifts')
           .doc(report.shiftType.name)
           .update(reportData);
+
+      // لو اليوم كان متحصل، نحدّث مبلغ البنك تلقائيًا (Auto-recalculate)
+      final dateTime = DateFormat('yyyy-MM-dd').parse(date);
+      await ReportFirestoreHelper.recalculateCollectedAmountIfNeeded(
+        dateTime,
+        report.branchId,
+        report.branchName,
+      );
 
       // Send notification to subManagers, managers and admins
       await _sendShiftReportUpdatedNotification(report, date);

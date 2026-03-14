@@ -5,28 +5,78 @@ import 'package:pharmacy/features/report/data/helpers/report_firestore_helper.da
 import 'vault_state.dart';
 
 class VaultCubit extends Cubit<VaultState> {
-  VaultCubit() : super(VaultInitial());
+  VaultCubit() : super(VaultInitial()) {
+    final now = DateTime.now();
+    _selectedMonth = DateTime(now.year, now.month, 1);
+    _filterTo = now;
+    _filterFrom = now.subtract(const Duration(days: 30));
+  }
 
-  /// جلب رصيد البنك: إجمالي المحصل - إجمالي المسحوب
+  /// مدى التاريخ لعرض القوائم (افتراضي آخر 30 يوم؛ null = الكل)
+  DateTime? _filterFrom;
+  DateTime? _filterTo;
+
+  /// الشهر المعروض لإجماليات البطاقتين (أول يوم من الشهر)
+  late DateTime _selectedMonth;
+
+  /// تعيين فلتر التاريخ ثم إعادة جلب القوائم
+  void setDateFilter(DateTime? from, DateTime? to) {
+    _filterFrom = from;
+    _filterTo = to;
+    fetchVaultBalance();
+  }
+
+  /// اختيار شهر معين: تُحدَّث البطاقتان وقائمة المعاملات لهذا الشهر
+  void setSelectedMonth(DateTime month) {
+    _selectedMonth = DateTime(month.year, month.month, 1);
+    final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59, 999);
+    _filterFrom = _selectedMonth;
+    _filterTo = monthEnd;
+    fetchVaultBalance();
+  }
+
+  /// جلب رصيد البنك: إجمالي المحصل - إجمالي المسحوب. القوائم تُجلب حسب الفلتر.
   Future<void> fetchVaultBalance() async {
     emit(VaultLoading());
 
     try {
+      final monthStart = _selectedMonth;
+      final monthEnd = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59, 999);
+
       final totalCollected = await ReportFirestoreHelper.getTotalCollected();
       final totalDeposited = await ReportFirestoreHelper.getTotalDeposited();
       final totalWithdrawn = await ReportFirestoreHelper.getTotalWithdrawn();
-      final collectedEntries = await ReportFirestoreHelper.getCollectedEntries();
-      final deposits = await ReportFirestoreHelper.getVaultDeposits();
-      final withdrawals = await ReportFirestoreHelper.getVaultExpenses();
+
+      final monthlyCollected = await ReportFirestoreHelper.getTotalCollectedInRange(monthStart, monthEnd);
+      final monthlyDeposited = await ReportFirestoreHelper.getTotalDepositedInRange(monthStart, monthEnd);
+      final monthlyWithdrawn = await ReportFirestoreHelper.getTotalWithdrawnInRange(monthStart, monthEnd);
+
+      final collectedEntries = await ReportFirestoreHelper.getCollectedEntries(
+        from: _filterFrom,
+        to: _filterTo,
+      );
+      final deposits = await ReportFirestoreHelper.getVaultDeposits(
+        from: _filterFrom,
+        to: _filterTo,
+      );
+      final withdrawals = await ReportFirestoreHelper.getVaultExpenses(
+        from: _filterFrom,
+        to: _filterTo,
+      );
 
       emit(VaultLoaded(
         totalCollected: totalCollected,
         totalDeposited: totalDeposited,
         totalWithdrawn: totalWithdrawn,
         balance: (totalCollected + totalDeposited) - totalWithdrawn,
+        monthlyTotalIn: monthlyCollected + monthlyDeposited,
+        monthlyTotalWithdrawn: monthlyWithdrawn,
         collectedEntries: collectedEntries,
         deposits: deposits,
         withdrawals: withdrawals,
+        filterFrom: _filterFrom,
+        filterTo: _filterTo,
+        selectedMonth: _selectedMonth,
       ));
     } catch (e) {
       emit(VaultError(message: e.toString()));

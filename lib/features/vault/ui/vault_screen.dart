@@ -159,6 +159,10 @@ class _VaultView extends StatelessWidget {
           children: [
             _buildBalanceCard(state.balance),
             const SizedBox(height: 16),
+            _buildMonthSelectorRow(context, state),
+            const SizedBox(height: 16),
+            _buildDateFilterRow(context, state),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -186,8 +190,8 @@ class _VaultView extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildSmallCard(
-                    'Total In',
-                    state.totalCollected + state.totalDeposited,
+                    _monthCardLabel(state.selectedMonth, 'Total In'),
+                    state.monthlyTotalIn,
                     Icons.account_balance_wallet,
                     Colors.green,
                   ),
@@ -195,8 +199,8 @@ class _VaultView extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildSmallCard(
-                    'Total Withdrawn',
-                    state.totalWithdrawn,
+                    _monthCardLabel(state.selectedMonth, 'Total Withdrawn'),
+                    state.monthlyTotalWithdrawn,
                     Icons.payments,
                     Colors.orange,
                   ),
@@ -206,10 +210,10 @@ class _VaultView extends StatelessWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                Icon(Icons.add_circle, color: Colors.green, size: 22),
+                Icon(Icons.history, color: ColorsManger.primary, size: 22),
                 const SizedBox(width: 8),
                 Text(
-                  'Deposit History',
+                  'Transaction History',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -220,47 +224,240 @@ class _VaultView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Collected from branches + manual deposits',
+              'All deposits and withdrawals by time',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 12),
-            ..._buildDepositHistoryList(context, state),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Icon(Icons.list, color: ColorsManger.primary, size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  'Withdrawal History',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (state.withdrawals.isEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Center(
-                    child: Text(
-                      'No withdrawals recorded',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
-                ),
-              )
-            else
-              ...state.withdrawals.map((e) => _buildWithdrawalTile(context, e)),
+            ..._buildCombinedHistoryList(context, state),
           ],
         ),
       ),
+    );
+  }
+
+  String _monthCardLabel(DateTime selectedMonth, String prefix) {
+    final now = DateTime.now();
+    if (selectedMonth.year == now.year && selectedMonth.month == now.month) {
+      return '$prefix (this month)';
+    }
+    return '$prefix (${DateFormat('MMM yyyy').format(selectedMonth)})';
+  }
+
+  Widget _buildMonthSelectorRow(BuildContext context, VaultLoaded state) {
+    final cubit = context.read<VaultCubit>();
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month, 1);
+    final isCurrentMonth = state.selectedMonth.year == currentMonth.year &&
+        state.selectedMonth.month == currentMonth.month;
+    final prevMonth = DateTime(state.selectedMonth.year, state.selectedMonth.month - 1, 1);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'View month',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => cubit.setSelectedMonth(prevMonth),
+              icon: const Icon(Icons.chevron_left),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(color: ColorsManger.primary.withValues(alpha: 0.3)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: ColorsManger.primary.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  DateFormat('MMMM yyyy').format(state.selectedMonth),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: () {
+                final nextMonth = DateTime(state.selectedMonth.year, state.selectedMonth.month + 1, 1);
+                final canGoNext = nextMonth.year < now.year ||
+                    (nextMonth.year == now.year && nextMonth.month <= now.month);
+                if (canGoNext) cubit.setSelectedMonth(nextMonth);
+              },
+              icon: const Icon(Icons.chevron_right),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(color: ColorsManger.primary.withValues(alpha: 0.3)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (!isCurrentMonth)
+              TextButton(
+                onPressed: () => cubit.setSelectedMonth(currentMonth),
+                child: const Text('This month'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateFilterRow(BuildContext context, VaultLoaded state) {
+    final cubit = context.read<VaultCubit>();
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final yesterdayStart = todayStart.subtract(const Duration(days: 1));
+    final hasFilter = state.filterFrom != null && state.filterTo != null;
+    bool isToday = false;
+    bool isYesterday = false;
+    bool isCustomRange = false;
+    if (hasFilter && state.filterFrom != null && state.filterTo != null) {
+      isToday = state.filterFrom!.year == now.year &&
+          state.filterFrom!.month == now.month &&
+          state.filterFrom!.day == now.day &&
+          state.filterTo!.year == now.year &&
+          state.filterTo!.month == now.month &&
+          state.filterTo!.day == now.day;
+      isYesterday = state.filterFrom!.year == yesterdayStart.year &&
+          state.filterFrom!.month == yesterdayStart.month &&
+          state.filterFrom!.day == yesterdayStart.day;
+      isCustomRange = hasFilter && !isToday && !isYesterday;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Show transactions',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            _filterChip(context, 'Today', () {
+              cubit.setDateFilter(todayStart, now);
+            }, isToday),
+            _filterChip(context, 'Yesterday', () {
+              cubit.setDateFilter(yesterdayStart, yesterdayStart.add(const Duration(hours: 23, minutes: 59, seconds: 59)));
+            }, isYesterday),
+            _filterChip(context, 'From – To', () {
+              _showCustomDateRangeDialog(context, cubit);
+            }, isCustomRange),
+            _filterChip(context, 'All', () {
+              cubit.setDateFilter(null, null);
+            }, !hasFilter),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showCustomDateRangeDialog(BuildContext context, VaultCubit cubit) async {
+    DateTime from = DateTime.now().subtract(const Duration(days: 30));
+    DateTime to = DateTime.now();
+    final picked = await showDialog<({DateTime from, DateTime to})>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              title: const Text('From – To'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListTile(
+                    title: Text('From: ${DateFormat('d MMM yyyy').format(from)}'),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final d = await showDatePicker(
+                        context: ctx,
+                        initialDate: from,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (d != null) setState(() => from = DateTime(d.year, d.month, d.day));
+                    },
+                  ),
+                  ListTile(
+                    title: Text('To: ${DateFormat('d MMM yyyy').format(to)}'),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final d = await showDatePicker(
+                        context: ctx,
+                        initialDate: to,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (d != null) setState(() => to = DateTime(d.year, d.month, d.day, 23, 59, 59));
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    if (from.isAfter(to)) {
+                      final t = to;
+                      to = from;
+                      from = t;
+                    }
+                    Navigator.pop(ctx, (from: from, to: to));
+                  },
+                  style: FilledButton.styleFrom(backgroundColor: ColorsManger.primary),
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (picked != null && context.mounted) {
+      final fromDay = DateTime(picked.from.year, picked.from.month, picked.from.day);
+      final toDay = DateTime(picked.to.year, picked.to.month, picked.to.day);
+      final toEnd = DateTime(picked.to.year, picked.to.month, picked.to.day, 23, 59, 59);
+      if (fromDay.isAfter(toDay)) {
+        cubit.setDateFilter(toDay, DateTime(picked.from.year, picked.from.month, picked.from.day, 23, 59, 59));
+      } else {
+        cubit.setDateFilter(fromDay, toEnd);
+      }
+    }
+  }
+
+  Widget _filterChip(BuildContext context, String label, VoidCallback onTap, bool selected) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: ColorsManger.primary.withValues(alpha: 0.3),
+      checkmarkColor: ColorsManger.primary,
     );
   }
 
@@ -362,8 +559,106 @@ class _VaultView extends StatelessWidget {
     );
   }
 
-  /// Combined list: collected from branches + manual deposits, sorted by date desc
-  List<Widget> _buildDepositHistoryList(BuildContext context, VaultLoaded state) {
+  /// For a given date key (yyyy-MM-dd), returns total deposit and total withdrawal that day.
+  ({double deposit, double withdraw}) _dayTotals(String dateKey, VaultLoaded state) {
+    double dep = 0;
+    for (final e in state.collectedEntries) {
+      final date = e['collectedAt'];
+      final dt = date != null && date is Timestamp ? date.toDate() : null;
+      if (dt != null && DateFormat('yyyy-MM-dd').format(dt) == dateKey) {
+        dep += (e['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+    }
+    for (final e in state.deposits) {
+      final date = e['createdAt'];
+      final dt = date != null && date is Timestamp ? date.toDate() : null;
+      if (dt != null && DateFormat('yyyy-MM-dd').format(dt) == dateKey) {
+        dep += (e['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+    }
+    double wit = 0;
+    for (final e in state.withdrawals) {
+      final date = e['createdAt'];
+      final dt = date != null && date is Timestamp ? date.toDate() : null;
+      if (dt != null && DateFormat('yyyy-MM-dd').format(dt) == dateKey) {
+        wit += (e['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+    }
+    return (deposit: dep, withdraw: wit);
+  }
+
+  Widget _buildDaySummaryRow(String dateKey, VaultLoaded state) {
+    final t = _dayTotals(dateKey, state);
+    final remaining = t.deposit - t.withdraw;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildDaySummaryBox(
+              'Deposit',
+              t.deposit,
+              Colors.green,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildDaySummaryBox(
+              'Withdrew',
+              t.withdraw,
+              Colors.orange,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildDaySummaryBox(
+              'Remaining',
+              remaining,
+              remaining >= 0 ? ColorsManger.primary : Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDaySummaryBox(String label, double amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _egp.format(amount),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// One list: all transactions (collected + deposits + withdrawals) sorted by time, grouped by day
+  List<Widget> _buildCombinedHistoryList(BuildContext context, VaultLoaded state) {
     final List<Map<String, dynamic>> combined = [];
     for (final e in state.collectedEntries) {
       final date = e['collectedAt'];
@@ -381,6 +676,14 @@ class _VaultView extends StatelessWidget {
         '_sortAt': date != null && date is Timestamp ? date.toDate() : DateTime(0),
       });
     }
+    for (final e in state.withdrawals) {
+      final date = e['createdAt'];
+      combined.add({
+        ...e,
+        'type': 'withdrawal',
+        '_sortAt': date != null && date is Timestamp ? date.toDate() : DateTime(0),
+      });
+    }
     combined.sort((a, b) => (b['_sortAt'] as DateTime).compareTo(a['_sortAt'] as DateTime));
 
     if (combined.isEmpty) {
@@ -390,7 +693,7 @@ class _VaultView extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: Center(
               child: Text(
-                'No deposits recorded',
+                'No transactions recorded',
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ),
@@ -398,12 +701,49 @@ class _VaultView extends StatelessWidget {
         ),
       ];
     }
-    return combined.map<Widget>((e) {
-      if (e['type'] == 'branch') {
-        return _buildCollectedEntryTile(e);
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final e in combined) {
+      final dt = e['_sortAt'] as DateTime;
+      final key = DateFormat('yyyy-MM-dd').format(dt);
+      grouped.putIfAbsent(key, () => []).add(e);
+    }
+    final keys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    final list = <Widget>[];
+    for (final key in keys) {
+      final date = DateTime.tryParse(key);
+      final dayItems = grouped[key]!;
+      // Within each day: deposits first (branch, manual), then withdrawals; within each group newest first
+      dayItems.sort((a, b) {
+        final aDeposit = a['type'] != 'withdrawal';
+        final bDeposit = b['type'] != 'withdrawal';
+        if (aDeposit != bDeposit) return aDeposit ? -1 : 1;
+        return (b['_sortAt'] as DateTime).compareTo(a['_sortAt'] as DateTime);
+      });
+      list.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 6),
+          child: Text(
+            date != null ? DateFormat('EEEE, d MMM yyyy').format(date) : key,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+        ),
+      );
+      list.add(_buildDaySummaryRow(key, state));
+      for (final e in dayItems) {
+        if (e['type'] == 'branch') {
+          list.add(_buildCollectedEntryTile(e));
+        } else if (e['type'] == 'manual') {
+          list.add(_buildDepositTile(context, e));
+        } else {
+          list.add(_buildWithdrawalTile(context, e));
+        }
       }
-      return _buildDepositTile(context, e);
-    }).toList();
+    }
+    return list;
   }
 
   Widget _buildCollectedEntryTile(Map<String, dynamic> e) {

@@ -85,6 +85,15 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
 
         emit(ShiftAlreadyExists(existingShift));
       } else {
+        selectedShiftType = shiftType;
+        drawerAmount = 0.0;
+        computerDifferenceType = null;
+        computerDifference = 0.0;
+        electronicWalletAmount = 0.0;
+        notes = null;
+        expenses.clear();
+        attachmentUrls.clear();
+        attachmentFiles.clear();
         emit(NoExistingShift());
       }
     } catch (e) {
@@ -132,8 +141,19 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
       }
 
       if (myShift != null) {
+        // Load form with this shift's data; don't emit ShiftAlreadyExists on initial load
+        // so we don't show "already submitted" toast before user selects a shift.
         if (submittedShifts.contains(myShift.shiftType)) {
-          emit(ShiftAlreadyExists(myShift));
+          selectedShiftType = myShift.shiftType;
+          drawerAmount = myShift.drawerAmount;
+          computerDifferenceType = myShift.computerDifferenceType;
+          computerDifference = myShift.computerDifference;
+          electronicWalletAmount = myShift.electronicWalletAmount;
+          notes = myShift.notes;
+          expenses.clear();
+          expenses.addAll(myShift.expenses);
+          attachmentUrls = List.from(myShift.attachmentUrls);
+          emit(ShiftReportLoaded(myShift));
           return;
         }
 
@@ -349,6 +369,13 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         report,
       );
 
+      // لو اليوم كان متحصل، نحدّث مبلغ البنك تلقائيًا (Auto-recalculate)
+      await ReportFirestoreHelper.recalculateCollectedAmountIfNeeded(
+        currentDate,
+        currentUser.currentBranch.id,
+        currentUser.currentBranch.name,
+      );
+
       // Send notification to subManagers, managers and admins
       await _sendNewShiftReportNotification(report, _formatDate(currentDate));
 
@@ -396,6 +423,13 @@ class ShiftReportCubit extends Cubit<ShiftReportState> {
         currentDate,
         currentUser.currentBranch.id,
         report,
+      );
+
+      // لو اليوم كان متحصل، نحدّث مبلغ البنك تلقائيًا (Auto-recalculate)
+      await ReportFirestoreHelper.recalculateCollectedAmountIfNeeded(
+        currentDate,
+        currentUser.currentBranch.id,
+        currentUser.currentBranch.name,
       );
 
       emit(ShiftReportSubmitted(report));

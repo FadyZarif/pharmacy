@@ -283,6 +283,24 @@ class ReportFirestoreHelper {
     });
   }
 
+  /// إعادة حساب مبلغ التحصيل في البنك لو اليوم/الفرع كان متحصل (Auto-recalculate بعد تعديل شيفت)
+  static Future<void> recalculateCollectedAmountIfNeeded(
+    DateTime date,
+    String branchId,
+    String branchName,
+  ) async {
+    final isCollected = await getCollectionStatus(date, branchId);
+    if (!isCollected) return;
+    final summary = await calculateBranchSummary(date, branchId);
+    await updateCollectionStatus(
+      date,
+      branchId,
+      true,
+      collectedAmount: summary.netAmount,
+      branchName: branchName,
+    );
+  }
+
   // ============ Vault / Bank (البنك المركزي) ============
 
   /// إجمالي المحصل من كل الفروع (من collected_entries)
@@ -296,12 +314,42 @@ class ReportFirestoreHelper {
     return total;
   }
 
-  /// قائمة التحصيلات (للعرض الاختياري)
-  static Future<List<Map<String, dynamic>>> getCollectedEntries() async {
+  /// إجمالي المحصل في مدى تاريخ (للشهر مثلاً)
+  static Future<double> getTotalCollectedInRange(DateTime from, DateTime to) async {
+    final fromTs = Timestamp.fromDate(DateTime(from.year, from.month, from.day));
+    final toTs = Timestamp.fromDate(DateTime(to.year, to.month, to.day, 23, 59, 59, 999));
     final snapshot = await _firestore
         .collection('collected_entries')
-        .orderBy('collectedAt', descending: true)
+        .where('collectedAt', isGreaterThanOrEqualTo: fromTs)
+        .where('collectedAt', isLessThanOrEqualTo: toTs)
         .get();
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
+  }
+
+  /// قائمة التحصيلات (للعرض الاختياري).
+  /// [from] و [to]: مدى تاريخ اختياري؛ لو الاثنان null ترجع الكل.
+  static Future<List<Map<String, dynamic>>> getCollectedEntries({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    var query = _firestore
+        .collection('collected_entries')
+        .orderBy('collectedAt', descending: true);
+    if (from != null) {
+      query = query.where(
+        'collectedAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(from.year, from.month, from.day)),
+      );
+    }
+    if (to != null) {
+      final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59, 999);
+      query = query.where('collectedAt', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay));
+    }
+    final snapshot = await query.get();
     return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
   }
 
@@ -338,12 +386,42 @@ class ReportFirestoreHelper {
     return total;
   }
 
-  /// Get list of manual deposits (for display and edit/delete)
-  static Future<List<Map<String, dynamic>>> getVaultDeposits() async {
+  /// إجمالي الإيداع اليدوي في مدى تاريخ (للشهر مثلاً)
+  static Future<double> getTotalDepositedInRange(DateTime from, DateTime to) async {
+    final fromTs = Timestamp.fromDate(DateTime(from.year, from.month, from.day));
+    final toTs = Timestamp.fromDate(DateTime(to.year, to.month, to.day, 23, 59, 59, 999));
     final snapshot = await _firestore
         .collection('vault_deposits')
-        .orderBy('createdAt', descending: true)
+        .where('createdAt', isGreaterThanOrEqualTo: fromTs)
+        .where('createdAt', isLessThanOrEqualTo: toTs)
         .get();
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
+  }
+
+  /// Get list of manual deposits (for display and edit/delete).
+  /// [from] and [to]: optional date range (inclusive); if both null, returns all.
+  static Future<List<Map<String, dynamic>>> getVaultDeposits({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    var query = _firestore
+        .collection('vault_deposits')
+        .orderBy('createdAt', descending: true);
+    if (from != null) {
+      query = query.where(
+        'createdAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(from.year, from.month, from.day)),
+      );
+    }
+    if (to != null) {
+      final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59, 999);
+      query = query.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay));
+    }
+    final snapshot = await query.get();
     return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
   }
 
@@ -393,18 +471,48 @@ class ReportFirestoreHelper {
     });
   }
 
-  /// جلب مصاريف البنك (السحوبات)
-  static Future<List<Map<String, dynamic>>> getVaultExpenses() async {
-    final snapshot = await _firestore
+  /// جلب مصاريف البنك (السحوبات).
+  /// [from] و [to]: مدى تاريخ اختياري؛ لو الاثنان null ترجع الكل.
+  static Future<List<Map<String, dynamic>>> getVaultExpenses({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    var query = _firestore
         .collection('vault_expenses')
-        .orderBy('createdAt', descending: true)
-        .get();
+        .orderBy('createdAt', descending: true);
+    if (from != null) {
+      query = query.where(
+        'createdAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(from.year, from.month, from.day)),
+      );
+    }
+    if (to != null) {
+      final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59, 999);
+      query = query.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay));
+    }
+    final snapshot = await query.get();
     return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
   }
 
   /// إجمالي المسحوب من البنك
   static Future<double> getTotalWithdrawn() async {
     final snapshot = await _firestore.collection('vault_expenses').get();
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
+  }
+
+  /// إجمالي المسحوب في مدى تاريخ (للشهر مثلاً)
+  static Future<double> getTotalWithdrawnInRange(DateTime from, DateTime to) async {
+    final fromTs = Timestamp.fromDate(DateTime(from.year, from.month, from.day));
+    final toTs = Timestamp.fromDate(DateTime(to.year, to.month, to.day, 23, 59, 59, 999));
+    final snapshot = await _firestore
+        .collection('vault_expenses')
+        .where('createdAt', isGreaterThanOrEqualTo: fromTs)
+        .where('createdAt', isLessThanOrEqualTo: toTs)
+        .get();
     double total = 0.0;
     for (var doc in snapshot.docs) {
       total += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;

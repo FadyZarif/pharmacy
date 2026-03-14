@@ -92,23 +92,59 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
               dialogType: DialogType.warning,
             );
           } else if (state is ShiftAlreadyExists) {
-            // شيفت اتقفل فعلاً – نعرض رسالة بس من غير ما نطلع من الشاشة عشان يقدر يختار شيفت تاني (صبحية/مسائية)
             defToast2(
               context: context,
               msg: 'This shift was already submitted. Select another shift type to close.',
               dialogType: DialogType.info,
             );
-          } else if (state is ShiftReportLoaded) {
-            // Load existing data into controllers
-            _drawerAmountController.text = state.report.drawerAmount.toString();
-            _computerDifferenceController.text = state.report.computerDifference.toString();
-            _electronicWalletController.text = state.report.electronicWalletAmount.toString();
-            _notesController.text = state.report.notes ?? '';
+            final r = state.existingReport;
+            _drawerAmountController.text = r.drawerAmount.toString();
+            _computerDifferenceController.text = r.computerDifference.toString();
+            _electronicWalletController.text = r.electronicWalletAmount.toString();
+            _notesController.text = r.notes ?? '';
             setState(() {
-              _selectedShiftType = state.report.shiftType;
-              _computerDifferenceType = state.report.computerDifferenceType;
+              _selectedShiftType = r.shiftType;
+              _computerDifferenceType = r.computerDifferenceType;
               _expenses.clear();
-              _expenses.addAll(state.report.expenses);
+              _expenses.addAll(r.expenses);
+            });
+          } else if (state is ShiftReportLoaded) {
+            final cubit = context.read<ShiftReportCubit>();
+            if (cubit.submittedShifts.contains(state.report.shiftType)) {
+              // This shift is already submitted – don't show its data; clear form so user picks another
+              _drawerAmountController.clear();
+              _computerDifferenceController.clear();
+              _electronicWalletController.clear();
+              _notesController.clear();
+              setState(() {
+                _selectedShiftType = null;
+                _computerDifferenceType = null;
+                _expenses.clear();
+              });
+              cubit.reset();
+            } else {
+              // Load existing data into controllers
+              _drawerAmountController.text = state.report.drawerAmount.toString();
+              _computerDifferenceController.text = state.report.computerDifference.toString();
+              _electronicWalletController.text = state.report.electronicWalletAmount.toString();
+              _notesController.text = state.report.notes ?? '';
+              setState(() {
+                _selectedShiftType = state.report.shiftType;
+                _computerDifferenceType = state.report.computerDifferenceType;
+                _expenses.clear();
+                _expenses.addAll(state.report.expenses);
+              });
+            }
+          } else if (state is NoExistingShift) {
+            // User selected a shift that doesn't exist yet – clear form for new entry
+            _drawerAmountController.clear();
+            _computerDifferenceController.clear();
+            _electronicWalletController.clear();
+            _notesController.clear();
+            setState(() {
+              _selectedShiftType = context.read<ShiftReportCubit>().selectedShiftType;
+              _computerDifferenceType = null;
+              _expenses.clear();
             });
           } else if (state is ExpenseAdded || state is ExpenseRemoved) {
             setState(() {
@@ -910,7 +946,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
             ),
             child: DropdownButtonFormField<ShiftType>(
               isExpanded: true,
-              value: _selectedShiftType,
+              value: availableShifts.contains(_selectedShiftType) ? _selectedShiftType : null,
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: InputBorder.none,
@@ -955,9 +991,11 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                 );
               }).toList(),
               onChanged: (value) {
+                if (value == null) return;
                 setState(() {
                   _selectedShiftType = value;
                 });
+                context.read<ShiftReportCubit>().checkExistingShift(value);
               },
               validator: (value) {
                 if (value == null && availableShifts.isNotEmpty) {
