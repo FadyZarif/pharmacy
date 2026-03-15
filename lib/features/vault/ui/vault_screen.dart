@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -919,35 +920,88 @@ class _VaultView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _egp.format(amount),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 100),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _egp.format(amount),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => _showEditDepositDialog(context, id, amount, depositItem, description),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
-                      onPressed: () => _showDeleteConfirm(context, isDeposit: true, id: id, description: description),
-                    ),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildActionIcon(
+                        icon: Icons.edit_outlined,
+                        color: ColorsManger.primary,
+                        onTap: () => _showEditDepositDialog(context, id, amount, depositItem, description),
+                      ),
+                      const SizedBox(width: 4),
+                      _buildActionIcon(
+                        icon: Icons.delete_outline,
+                        color: const Color(0xFFC62828),
+                        onTap: () => _showDeleteConfirm(context, isDeposit: true, id: id, description: description),
+                        webLabel: kIsWeb ? 'حذف' : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionIcon({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    String? webLabel,
+  }) {
+    if (kIsWeb && webLabel != null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            child: Text(
+              webLabel,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+            ),
+          ),
+        ),
+      );
+    }
+    if (kIsWeb) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 24, color: color),
+          ),
+        ),
+      );
+    }
+    return IconButton(
+      icon: Icon(icon, size: 22, color: color),
+      onPressed: onTap,
+      style: IconButton.styleFrom(
+        minimumSize: const Size(36, 36),
+        padding: EdgeInsets.zero,
+        foregroundColor: color,
       ),
     );
   }
@@ -996,8 +1050,23 @@ class _VaultView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              backgroundColor: Colors.orange.withValues(alpha: 0.2),
-              child: const Icon(Icons.payments, color: Colors.orange),
+              backgroundColor: const Color(0xFFE65100).withValues(alpha: 0.25),
+              radius: 22,
+              child: kIsWeb
+                  ? Text(
+                      '−',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w300,
+                        color: const Color(0xFFE65100),
+                        height: 1.1,
+                      ),
+                    )
+                  : Icon(
+                      Icons.remove_circle_outline,
+                      size: 26,
+                      color: Colors.orange[800],
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1060,32 +1129,39 @@ class _VaultView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _egp.format(amount),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 100),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _egp.format(amount),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => _showEditWithdrawalDialog(context, id, amount, withdrawalItem, description),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade700),
-                      onPressed: () => _showDeleteConfirm(context, isDeposit: false, id: id, description: _withdrawalTileTitle(e)),
-                    ),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildActionIcon(
+                        icon: Icons.edit_outlined,
+                        color: ColorsManger.primary,
+                        onTap: () => _showEditWithdrawalDialog(context, id, amount, withdrawalItem, description),
+                      ),
+                      const SizedBox(width: 4),
+                      _buildActionIcon(
+                        icon: Icons.delete_outline,
+                        color: const Color(0xFFC62828),
+                        onTap: () => _showDeleteConfirm(context, isDeposit: false, id: id, description: _withdrawalTileTitle(e)),
+                        webLabel: kIsWeb ? 'حذف' : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
