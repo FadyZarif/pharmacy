@@ -2,12 +2,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pharmacy/features/force_update/force_update_screen.dart';
 import 'package:pharmacy/features/splash/ui/splash_screen.dart';
 
 import 'core/di/dependency_injection.dart';
 import 'core/helpers/bloc_observer.dart';
 import 'core/helpers/constants.dart';
 import 'core/themes/colors.dart';
+import 'core/services/force_update_service.dart';
 import 'core/services/notification_service.dart';
 import 'firebase_options.dart';
 
@@ -17,14 +19,26 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Notification Service
+  // إنشاء مستند app_config/version إذا غير موجود (بقيمة 0 حتى لا يُجبر أحد على التحديث)
+  await ForceUpdateService.createVersionDocumentIfMissing();
+  // إجبار التحديث: إذا كانت النسخة أقل من الحد الأدنى في Firestore نعرض شاشة التحديث فقط
+  final updateRequired = await ForceUpdateService.isUpdateRequired();
+  if (updateRequired) {
+    runApp(MaterialApp(
+      title: 'Emad Fawzy Pharmacy',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(useMaterial3: true),
+      home: const ForceUpdateScreen(),
+    ));
+    return;
+  }
+
   await NotificationService().initialize();
 
   Bloc.observer = MyBlocObserver();
   await setupGetIt();
   await checkIsLogged();
 
-  // Update FCM token if user is logged in
   if (isLogged) {
     await NotificationService().updateUserToken(currentUser.uid);
   }
