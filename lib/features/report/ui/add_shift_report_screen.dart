@@ -1201,7 +1201,9 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                           labelText: 'Staff Member *',
                           border: OutlineInputBorder(),
                         ),
-                        items: AdministrativeStaff.values.map((staff) {
+                        items: AdministrativeStaff.values
+                            .where((staff) => staff != AdministrativeStaff.emadFawzy)
+                            .map((staff) {
                           String label;
                           switch (staff) {
                             case AdministrativeStaff.fadyEssam:
