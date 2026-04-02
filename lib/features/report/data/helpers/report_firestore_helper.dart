@@ -261,7 +261,7 @@ class ReportFirestoreHelper {
     final entryId = '${dateKey}_$branchId';
     final entryRef = _firestore.collection('collected_entries').doc(entryId);
 
-    if (isCollected && collectedAmount != null && collectedAmount > 0 && branchName != null) {
+    if (isCollected && collectedAmount != null && branchName != null) {
       await entryRef.set({
         'date': dateKey,
         'branchId': branchId,

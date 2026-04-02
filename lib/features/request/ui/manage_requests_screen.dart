@@ -858,7 +858,9 @@ class _ManageRequestsBackground extends StatelessWidget {
       ),
     );
   }
-}List<BoxShadow> _panelShadow() => [
+}
+
+List<BoxShadow> _panelShadow() => [
       BoxShadow(
         color: ColorsManger.primary.withValues(alpha: 0.14),
         blurRadius: 22,
