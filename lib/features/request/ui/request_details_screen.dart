@@ -374,6 +374,9 @@ class RequestDetailsScreen extends StatelessWidget {
 
   List<Widget> _buildExtraHoursDetails() {
     final details = ExtraHoursDetails.fromJson(request.details);
+    final extraLabel = details.minutes > 0
+        ? '${details.hours}h ${details.minutes}m'
+        : '${details.hours}h';
 
     return [
       _buildDetailRow(
@@ -385,7 +388,7 @@ class RequestDetailsScreen extends StatelessWidget {
       const SizedBox(height: 12),
       _buildDetailRow(
         'Extra Hours',
-        '${details.hours} hour${details.hours > 1 ? 's' : ''}',
+        extraLabel,
         Icons.schedule,
         Colors.purple,
       ),

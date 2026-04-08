@@ -40,6 +40,8 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
   // Permission controllers
   final _permissionHoursController = TextEditingController();
   final _permissionMinutesController = TextEditingController();
+  final _extraHoursController = TextEditingController();
+  final _extraMinutesController = TextEditingController();
 
   // Annual & Sick Leave
   DateTime? _startDate;
@@ -51,6 +53,7 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
   // Extra Hours & Permission
   DateTime? _selectedDate;
   int? _hours; // Used for Extra Hours only
+  int? _extraMinutes; // Optional minutes for Extra Hours
 
   // Permission specific
   PermissionType? _permissionType;
@@ -104,6 +107,9 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
         final details = ExtraHoursDetails.fromJson(request.details);
         _selectedDate = details.date;
         _hours = details.hours;
+        _extraMinutes = details.minutes;
+        _extraHoursController.text = details.hours.toString();
+        _extraMinutesController.text = details.minutes.toString();
         break;
 
       case RequestType.coverageShift:
@@ -132,6 +138,8 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
     _notesController.dispose();
     _permissionHoursController.dispose();
     _permissionMinutesController.dispose();
+    _extraHoursController.dispose();
+    _extraMinutesController.dispose();
 
     // Reset coverage shift selections
     if (widget.requestType == RequestType.coverageShift) {
@@ -618,30 +626,75 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
   }
 
   Widget _buildHoursInput() {
-    return AppTextFormField(
-      controller: TextEditingController(text: _hours?.toString() ?? ''),
-      labelText: widget.requestType == RequestType.extraHours
-          ? 'Extra Hours'
-          : 'Early Leave Hours',
-      keyboardType: TextInputType.number,
-      fillColor: Colors.white,
-      prefixIcon: const Icon(Icons.access_time),
-      readOnly: widget.isReadOnly,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter hours';
-        }
-        final parsed = int.tryParse(value);
-        if (parsed == null || parsed <= 0 || parsed > 12) {
-          return 'Please enter valid hours (1-12)';
-        }
-        return null;
-      },
-      onChanged: (value) {
-        setState(() {
-          _hours = int.tryParse(value);
-        });
-      },
+    return Row(
+      children: [
+        Expanded(
+          child: AppTextFormField(
+            controller: _extraHoursController,
+            labelText: widget.requestType == RequestType.extraHours
+                ? 'Extra Hours'
+                : 'Early Leave Hours',
+            keyboardType: TextInputType.number,
+            fillColor: Colors.white,
+            prefixIcon: const Icon(Icons.access_time),
+            readOnly: widget.isReadOnly,
+            validator: (value) {
+              if (widget.requestType != RequestType.extraHours) {
+                return null;
+              }
+              final parsedHours = int.tryParse(value ?? '');
+              final minutes = _extraMinutes ?? 0;
+              if ((value == null || value.isEmpty) && minutes == 0) {
+                return 'Please enter hours or minutes';
+              }
+              if (parsedHours == null || parsedHours < 0 || parsedHours > 12) {
+                return 'Please enter valid hours (0-12)';
+              }
+              if (parsedHours == 0 && minutes == 0) {
+                return 'Please enter hours or minutes';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              setState(() {
+                _hours = int.tryParse(value);
+              });
+            },
+          ),
+        ),
+        if (widget.requestType == RequestType.extraHours) ...[
+          const SizedBox(width: 12),
+          Expanded(
+            child: AppTextFormField(
+              controller: _extraMinutesController,
+              labelText: 'Minutes',
+              keyboardType: TextInputType.number,
+              fillColor: Colors.white,
+              prefixIcon: const Icon(Icons.timelapse),
+              readOnly: widget.isReadOnly,
+              validator: (value) {
+                final parsedMinutes = int.tryParse(value ?? '');
+                final hours = _hours ?? 0;
+                if ((value == null || value.isEmpty) && hours == 0) {
+                  return 'Please enter hours or minutes';
+                }
+                if (parsedMinutes == null || parsedMinutes < 0 || parsedMinutes > 59) {
+                  return 'Valid range: 0-59';
+                }
+                if (hours == 0 && parsedMinutes == 0) {
+                  return 'Please enter hours or minutes';
+                }
+                return null;
+              },
+              onChanged: (value) {
+                setState(() {
+                  _extraMinutes = int.tryParse(value);
+                });
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1288,12 +1341,18 @@ class _AddRequestScreenUnifiedState extends State<AddRequestScreenUnified> {
           break;
 
         case RequestType.extraHours:
-          if (_selectedDate == null || _hours == null) {
+          if (_selectedDate == null) {
             throw 'Please fill all fields';
+          }
+          final safeHours = _hours ?? 0;
+          final safeMinutes = _extraMinutes ?? 0;
+          if (safeHours == 0 && safeMinutes == 0) {
+            throw 'Please enter hours or minutes';
           }
           details = ExtraHoursDetails(
             date: _selectedDate!,
-            hours: _hours!,
+            hours: safeHours,
+            minutes: safeMinutes,
           ).toJson();
           break;
 

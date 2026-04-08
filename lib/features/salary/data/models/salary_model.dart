@@ -117,7 +117,7 @@ class SalaryModel {
     );
   }
 
-  // حساب إجمالي الحوافز والمكافآت
+  // حساب إجمالي الحوافز والمكافآت (بدون المرتب الأساسي؛ يشمل صاحب العمل كبند مستحق)
   String get totalBonuses {
     try {
       final total = (double.tryParse(incentive) ?? 0) +
@@ -126,6 +126,7 @@ class SalaryModel {
           (double.tryParse(workBonus) ?? 0) +
           (double.tryParse(administrativeBonus) ?? 0) +
           (double.tryParse(transportAllowance) ?? 0) +
+          (double.tryParse(employerShare) ?? 0) +
           (double.tryParse(eideya) ?? 0);
       return total.toStringAsFixed(2);
     } catch (e) {
@@ -133,7 +134,7 @@ class SalaryModel {
     }
   }
 
-  // حساب إجمالي الخصومات
+  // حساب إجمالي الخصومات فقط (صاحب العمل ليس خصماً في معادلة netSalary)
   String get totalDeductions {
     try {
       final total = (double.tryParse(hourlyDeduction) ?? 0) +
@@ -142,8 +143,7 @@ class SalaryModel {
           (double.tryParse(visaDeduction) ?? 0) +
           (double.tryParse(advanceDeduction) ?? 0) +
           (double.tryParse(quarterlyShiftDeficitDeduction) ?? 0) +
-          (double.tryParse(insuranceDeduction) ?? 0) +
-          (double.tryParse(employerShare) ?? 0);
+          (double.tryParse(insuranceDeduction) ?? 0);
       return total.toStringAsFixed(2);
     } catch (e) {
       return '0';

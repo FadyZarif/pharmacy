@@ -254,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(height: 10),
                               _InfoRow(
                                 label: 'Overtime Hours',
-                                value: '${userModel.overTimeHours} hours',
+                                value: userModel.overTimeDisplay,
                                 icon: Icons.add_alarm,
                               ),
                               const SizedBox(height: 10),

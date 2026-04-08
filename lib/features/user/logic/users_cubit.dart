@@ -169,6 +169,7 @@ class UsersCubit extends Cubit<UsersState> {
         branches: [currentUser.currentBranch], // استخدام نسخة محلية بدلاً من global
         vocationBalanceMinutes: vocationBalanceMinutes,
         overTimeHours: 0,
+        overTimeMinutes: 0,
         shiftHours: shiftHours,
         role: role,
         photoUrl: photoUrl,

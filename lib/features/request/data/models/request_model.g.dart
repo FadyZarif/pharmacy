@@ -100,12 +100,14 @@ ExtraHoursDetails _$ExtraHoursDetailsFromJson(Map<String, dynamic> json) =>
     ExtraHoursDetails(
       date: const ServerTimestampConverter().fromJson(json['date'] as Object),
       hours: (json['hours'] as num).toInt(),
+      minutes: (json['minutes'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$ExtraHoursDetailsToJson(ExtraHoursDetails instance) =>
     <String, dynamic>{
       'date': const ServerTimestampConverter().toJson(instance.date),
       'hours': instance.hours,
+      'minutes': instance.minutes,
     };
 
 CoverageShiftDetails _$CoverageShiftDetailsFromJson(

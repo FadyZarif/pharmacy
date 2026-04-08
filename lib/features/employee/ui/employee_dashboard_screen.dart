@@ -234,7 +234,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                     icon: Icons.schedule,
                                     iconColor: Colors.blue,
                                     title: 'Overtime',
-                                    value: '${currentUser.overTimeHours}h',
+                                    value: currentUser.overTimeDisplay,
                                   ),
                                 ),
                                 SizedBox(

@@ -13,6 +13,7 @@ class UserModel {
   Branch currentBranch = Branch(id: '', name: '');
   final int vocationBalanceMinutes;
   final int overTimeHours;
+  final int overTimeMinutes;
   final int shiftHours;
   final Role role;
   final String? photoUrl;
@@ -29,6 +30,7 @@ class UserModel {
     required this.branches,
     required this.vocationBalanceMinutes,
     required this.overTimeHours,
+    required this.overTimeMinutes,
     required this.shiftHours,
     required this.role,
     this.photoUrl,
@@ -48,6 +50,13 @@ class UserModel {
   }
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
+
+  String get overTimeDisplay {
+    final hours = overTimeMinutes ~/ 60;
+    final minutes = overTimeMinutes % 60;
+    if (minutes == 0) return '${hours}h';
+    return '${hours}h ${minutes}m';
+  }
 
   String get vocationBalance{
     final totalMinutes = vocationBalanceMinutes;

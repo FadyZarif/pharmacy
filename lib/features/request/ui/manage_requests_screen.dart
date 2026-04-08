@@ -715,9 +715,12 @@ class _ManageRequestsBody extends StatelessWidget {
 
       case RequestType.extraHours:
         final details = ExtraHoursDetails.fromJson(request.details);
+        final extraLabel = details.minutes > 0
+            ? '${details.hours}h ${details.minutes}m'
+            : '${details.hours}h';
         return _buildDetailRow(
           'Extra Hours',
-          '${details.hours}h on ${DateFormat('MMM dd, yyyy').format(details.date)}',
+          '$extraLabel on ${DateFormat('MMM dd, yyyy').format(details.date)}',
           Icons.schedule,
         );
 

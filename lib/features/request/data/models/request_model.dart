@@ -225,16 +225,21 @@ class ExtraHoursDetails {
   @ServerTimestampConverter()
   final DateTime date;
   final int hours;
+  @Default(0)
+  final int minutes;
 
   ExtraHoursDetails({
     required this.date,
     required this.hours,
+    this.minutes = 0,
   });
 
   factory ExtraHoursDetails.fromJson(Map<String, dynamic> json) =>
       _$ExtraHoursDetailsFromJson(json);
 
   Map<String, dynamic> toJson() => _$ExtraHoursDetailsToJson(this);
+
+  int get totalMinutes => (hours * 60) + minutes;
 }
 
 @JsonSerializable(explicitToJson: true)

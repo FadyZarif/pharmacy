@@ -526,7 +526,7 @@ class RequestCubit extends Cubit<RequestState> {
 
       // Calculate hours to add/subtract based on request type
       int vocationMinutesChange = 0;
-      int overTimeHoursChange = 0;
+      int overTimeMinutesChange = 0;
 
       switch (request.type) {
         case RequestType.annualLeave:
@@ -578,7 +578,7 @@ class RequestCubit extends Cubit<RequestState> {
 
         case RequestType.extraHours:
           final details = ExtraHoursDetails.fromJson(request.details);
-          overTimeHoursChange = details.hours; // Positive to add overtime
+          overTimeMinutesChange = details.totalMinutes; // Positive to add overtime
           break;
 
         default:
@@ -594,15 +594,17 @@ class RequestCubit extends Cubit<RequestState> {
       });
 
       // Update user hours if needed
-      if (vocationMinutesChange != 0 || overTimeHoursChange != 0) {
+      if (vocationMinutesChange != 0 || overTimeMinutesChange != 0) {
         final updates = <String, dynamic>{};
 
         if (vocationMinutesChange != 0) {
           updates['vocationBalanceMinutes'] = employee.vocationBalanceMinutes + vocationMinutesChange;
         }
 
-        if (overTimeHoursChange != 0) {
-          updates['overTimeHours'] = employee.overTimeHours + overTimeHoursChange;
+        if (overTimeMinutesChange != 0) {
+          final nextOverTimeMinutes = employee.overTimeMinutes + overTimeMinutesChange;
+          updates['overTimeMinutes'] = nextOverTimeMinutes;
+          updates['overTimeHours'] = nextOverTimeMinutes ~/ 60;
         }
 
         await _db.collection('users').doc(request.employeeId).update(updates);
@@ -677,7 +679,7 @@ class RequestCubit extends Cubit<RequestState> {
 
         // Calculate hours to reverse based on request type
         int vocationMinutesChange = 0;
-        int overTimeHoursChange = 0;
+        int overTimeMinutesChange = 0;
 
         switch (request.type) {
           case RequestType.annualLeave:
@@ -699,7 +701,7 @@ class RequestCubit extends Cubit<RequestState> {
 
           case RequestType.extraHours:
             final details = ExtraHoursDetails.fromJson(request.details);
-            overTimeHoursChange = -details.hours; // Negative to subtract overtime
+            overTimeMinutesChange = -details.totalMinutes; // Negative to subtract overtime
             break;
 
           default:
@@ -708,15 +710,17 @@ class RequestCubit extends Cubit<RequestState> {
         }
 
         // Update user hours if needed
-        if (vocationMinutesChange != 0 || overTimeHoursChange != 0) {
+        if (vocationMinutesChange != 0 || overTimeMinutesChange != 0) {
           final updates = <String, dynamic>{};
 
           if (vocationMinutesChange != 0) {
             updates['vocationBalanceMinutes'] = employee.vocationBalanceMinutes + vocationMinutesChange;
           }
 
-          if (overTimeHoursChange != 0) {
-            updates['overTimeHours'] = employee.overTimeHours + overTimeHoursChange;
+          if (overTimeMinutesChange != 0) {
+            final nextOverTimeMinutes = employee.overTimeMinutes + overTimeMinutesChange;
+            updates['overTimeMinutes'] = nextOverTimeMinutes;
+            updates['overTimeHours'] = nextOverTimeMinutes ~/ 60;
           }
 
           await _db.collection('users').doc(request.employeeId).update(updates);
