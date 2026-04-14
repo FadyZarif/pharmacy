@@ -38,7 +38,7 @@ enum ComputerDifferenceType {
 @JsonEnum(alwaysCreate: true)
 enum ExpenseType {
   @JsonValue('medicines')
-  medicines, // أدوية (بديل نقدي)
+  medicines, // أدوية (تبديل نقدي)
 
   @JsonValue('delivery')
   delivery, // ديلفري
@@ -317,7 +317,7 @@ class ExpenseItem {
   String get description {
     switch (type) {
       case ExpenseType.medicines:
-        return 'أدوية (بديل نقدي)';
+        return 'أدوية (تبديل نقدي)';
       case ExpenseType.delivery:
         return 'ديلفري - ${deliveryArea ?? "غير محدد"}';
       case ExpenseType.ahmedAboghonima:

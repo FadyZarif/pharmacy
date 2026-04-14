@@ -208,6 +208,87 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
     }
   }
 
+  /// جلب ملخص مخصص لجميع الفروع بين تاريخين (شاملين)
+  Future<void> fetchRangeConsolidatedReports(
+    List<Branch> branches,
+    DateTime fromDate,
+    DateTime toDate,
+  ) async {
+    emit(ConsolidatedReportsInitial());
+
+    try {
+      final start = DateTime(fromDate.year, fromDate.month, fromDate.day);
+      final end = DateTime(toDate.year, toDate.month, toDate.day);
+      if (end.isBefore(start)) {
+        emit(ConsolidatedReportsError(message: 'Invalid date range'));
+        return;
+      }
+
+      emit(ConsolidatedReportsLoading(
+        currentBranchName: 'Starting...',
+        completedBranches: 0,
+        totalBranches: branches.length,
+      ));
+
+      int completedCount = 0;
+      final results = <Map<String, dynamic>?>[];
+
+      for (var branch in branches) {
+        emit(ConsolidatedReportsLoading(
+          currentBranchName: branch.name,
+          completedBranches: completedCount,
+          totalBranches: branches.length,
+        ));
+
+        final result = await _fetchBranchRangeData(branch, start, end);
+        results.add(result);
+        completedCount++;
+      }
+
+      double totalSales = 0.0;
+      double totalExpenses = 0.0;
+      double totalMedicinesExpenses = 0.0;
+      double totalElectronicPaymentExpenses = 0.0;
+      double vaultAmount = 0.0;
+      double totalSurplus = 0.0;
+      double totalDeficit = 0.0;
+      List<ExpenseItem> allExpenses = [];
+      Map<String, BranchSummary> branchSummaries = {};
+
+      for (var result in results) {
+        if (result != null) {
+          totalSales += result['sales'] as double;
+          totalExpenses += result['expenses'] as double;
+          totalMedicinesExpenses += result['medicinesExpenses'] as double;
+          totalElectronicPaymentExpenses += result['electronicPaymentExpenses'] as double;
+          vaultAmount += result['vaultAmount'] as double;
+          totalSurplus += result['surplus'] as double;
+          totalDeficit += result['deficit'] as double;
+          allExpenses.addAll(result['allExpenses'] as List<ExpenseItem>);
+
+          final summary = result['summary'] as BranchSummary;
+          branchSummaries[summary.branchId] = summary;
+        }
+      }
+
+      emit(ConsolidatedReportsLoaded(
+        totalSales: totalSales,
+        totalExpenses: totalExpenses,
+        netProfit: totalSales - totalExpenses,
+        totalMedicinesExpenses: totalMedicinesExpenses,
+        totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
+        vaultAmount: vaultAmount,
+        totalSurplus: totalSurplus,
+        totalDeficit: totalDeficit,
+        allExpenses: allExpenses,
+        branchSummaries: branchSummaries,
+        monthlyTarget: null,
+      ));
+    } catch (e) {
+      emit(ConsolidatedReportsError(message: e.toString()));
+    }
+  }
+
   /// Helper: جلب بيانات فرع واحد (يومي)
   Future<Map<String, dynamic>?> _fetchBranchDailyData(
     Branch branch,
@@ -408,6 +489,58 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         'surplus': surplus,
         'deficit': deficit,
         'allExpenses': expenses,
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchBranchRangeData(
+    Branch branch,
+    DateTime fromDate,
+    DateTime toDate,
+  ) async {
+    try {
+      double branchSales = 0.0;
+      double branchExpenses = 0.0;
+      double medicinesExpenses = 0.0;
+      double electronicPaymentExpenses = 0.0;
+      double surplus = 0.0;
+      double deficit = 0.0;
+      double vaultAmount = 0.0;
+      final expenses = <ExpenseItem>[];
+
+      for (DateTime day = fromDate;
+          !day.isAfter(toDate);
+          day = day.add(const Duration(days: 1))) {
+        final dayResult = await _fetchBranchDayData(branch, day);
+        if (dayResult == null) continue;
+        branchSales += dayResult['sales'] as double;
+        branchExpenses += dayResult['expenses'] as double;
+        medicinesExpenses += dayResult['medicinesExpenses'] as double;
+        electronicPaymentExpenses += dayResult['electronicPaymentExpenses'] as double;
+        vaultAmount += dayResult['vaultAmount'] as double;
+        surplus += dayResult['surplus'] as double;
+        deficit += dayResult['deficit'] as double;
+        expenses.addAll(dayResult['allExpenses'] as List<ExpenseItem>);
+      }
+
+      return {
+        'sales': branchSales,
+        'expenses': branchExpenses,
+        'medicinesExpenses': medicinesExpenses,
+        'electronicPaymentExpenses': electronicPaymentExpenses,
+        'vaultAmount': vaultAmount,
+        'surplus': surplus,
+        'deficit': deficit,
+        'allExpenses': expenses,
+        'summary': BranchSummary(
+          branchId: branch.id,
+          branchName: branch.name,
+          totalSales: branchSales,
+          totalExpenses: branchExpenses,
+          netProfit: branchSales - branchExpenses,
+        ),
       };
     } catch (e) {
       return null;

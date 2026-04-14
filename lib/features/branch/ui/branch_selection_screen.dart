@@ -673,7 +673,18 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 _selectDateAndShowReport(context, isMonthly: true);
               },
             ),
-            // const SizedBox(height: 16),
+            const SizedBox(height: 16),
+            _buildReportTypeCard(
+              context: context,
+              title: 'Custom Range',
+              subtitle: 'View report between two dates for all branches',
+              icon: Icons.date_range,
+              color: Colors.deepPurple,
+              onTap: () {
+                Navigator.pop(context);
+                _selectDateRangeAndShowReport(context);
+              },
+            ),
           ],
         ),
       ),
@@ -761,16 +772,45 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     }
   }
 
+  Future<void> _selectDateRangeAndShowReport(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2025),
+      lastDate: now,
+      initialDateRange: DateTimeRange(
+        start: now.subtract(const Duration(days: 6)),
+        end: now,
+      ),
+      helpText: 'Select Date Range',
+    );
+
+    if (picked != null) {
+      _showConsolidatedReportDialog(
+        navigator.context,
+        picked.start,
+        isMonthly: false,
+        rangeFrom: picked.start,
+        rangeTo: picked.end,
+      );
+    }
+  }
+
   /// عرض تقرير موحد لكل الفروع
   void _showConsolidatedReportDialog(
     BuildContext context,
     DateTime selectedDate, {
     required bool isMonthly,
+    DateTime? rangeFrom,
+    DateTime? rangeTo,
   }) {
     final cubit = ConsolidatedReportsCubit();
 
     // Start fetching data
-    if (isMonthly) {
+    if (rangeFrom != null && rangeTo != null) {
+      cubit.fetchRangeConsolidatedReports(currentUser.branches, rangeFrom, rangeTo);
+    } else if (isMonthly) {
       cubit.fetchMonthlyConsolidatedReports(currentUser.branches, selectedDate);
     } else {
       cubit.fetchDailyConsolidatedReports(currentUser.branches, selectedDate);
@@ -801,6 +841,8 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 state,
                 selectedDate,
                 isMonthly,
+                rangeFrom: rangeFrom,
+                rangeTo: rangeTo,
               );
             }
             // Initial loading
@@ -860,11 +902,16 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
   Widget _buildConsolidatedReportDialog(
     ConsolidatedReportsLoaded state,
     DateTime selectedDate,
-    bool isMonthly,
+    bool isMonthly, {
+    DateTime? rangeFrom,
+    DateTime? rangeTo,
+  }
   ) {
-    final dateTitle = isMonthly
-        ? DateFormat('MMMM yyyy').format(selectedDate)
-        : DateFormat('MMM dd, yyyy').format(selectedDate);
+    final dateTitle = (rangeFrom != null && rangeTo != null)
+        ? '${DateFormat('MMM dd, yyyy').format(rangeFrom)} → ${DateFormat('MMM dd, yyyy').format(rangeTo)}'
+        : isMonthly
+            ? DateFormat('MMMM yyyy').format(selectedDate)
+            : DateFormat('MMM dd, yyyy').format(selectedDate);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -925,7 +972,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       const SizedBox(height: 16),
 
                       // Target Achievement Card (if monthly target is set and it's monthly report)
-                      if (isMonthly && state.monthlyTarget != null) ...[
+                      if (rangeFrom == null && isMonthly && state.monthlyTarget != null) ...[
                         _buildTargetAchievementCard(
                           totalSales: state.totalSales,
                           monthlyTarget: state.monthlyTarget!,
