@@ -7,6 +7,7 @@ import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 import 'package:pharmacy/features/report/ui/edit_shift_report_screen.dart';
+import 'package:pharmacy/features/purchases/ui/purchases_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -158,6 +159,14 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                       ),
                     ),
                     actions: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.shopping_cart_checkout,
+                          color: ColorsManger.primary,
+                        ),
+                        tooltip: 'Branch Purchases',
+                        onPressed: () => navigateTo(context, const PurchasesScreen()),
+                      ),
                       IconButton(
                         icon: const Icon(
                           Icons.calendar_view_month,

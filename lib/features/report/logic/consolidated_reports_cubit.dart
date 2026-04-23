@@ -86,6 +86,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         allExpenses: allExpenses,
         branchSummaries: branchSummaries,
         monthlyTarget: null, // Daily reports don't have targets
+        branchMonthlyTargets: const {},
+        totalPurchases: 0.0,
+        branchMonthlyPurchases: const {},
       ));
     } catch (e) {
       emit(ConsolidatedReportsError(message: e.toString()));
@@ -157,6 +160,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
 
       // جلب الهدف الشهري الموحد (مجموع أهداف كل الفروع)
       double? monthlyTarget;
+      final branchMonthlyTargets = <String, double>{};
+      final branchMonthlyPurchases = <String, double>{};
+      double totalPurchases = 0.0;
       try {
         final monthKey = DateFormat('yyyy-MM').format(selectedDate);
         double totalTargets = 0.0;
@@ -176,6 +182,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
               if (branchTarget != null) {
                 totalTargets += branchTarget;
                 branchesWithTargets++;
+                branchMonthlyTargets[branch.id] = branchTarget;
               }
             }
           } catch (e) {
@@ -185,6 +192,25 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
 
         if (branchesWithTargets > 0) {
           monthlyTarget = totalTargets;
+        }
+
+        // إجمالي مشتريات كل الفروع لنفس الشهر
+        final branchIds = branches.map((b) => b.id).toSet();
+        if (branchIds.isNotEmpty) {
+          final purchasesSnapshot = await _db
+              .collection('branch_purchases')
+              .where('monthKey', isEqualTo: monthKey)
+              .get();
+          for (final doc in purchasesSnapshot.docs) {
+            final data = doc.data();
+            final bid = data['branchId'] as String?;
+            if (bid != null && branchIds.contains(bid)) {
+              final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+              totalPurchases += amount;
+              branchMonthlyPurchases[bid] =
+                  (branchMonthlyPurchases[bid] ?? 0.0) + amount;
+            }
+          }
         }
       } catch (e) {
         print('Error fetching monthly targets: $e');
@@ -202,6 +228,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         allExpenses: allExpenses,
         branchSummaries: branchSummaries,
         monthlyTarget: monthlyTarget,
+        branchMonthlyTargets: branchMonthlyTargets,
+        totalPurchases: totalPurchases,
+        branchMonthlyPurchases: branchMonthlyPurchases,
       ));
     } catch (e) {
       emit(ConsolidatedReportsError(message: e.toString()));
@@ -283,6 +312,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         allExpenses: allExpenses,
         branchSummaries: branchSummaries,
         monthlyTarget: null,
+        branchMonthlyTargets: const {},
+        totalPurchases: 0.0,
+        branchMonthlyPurchases: const {},
       ));
     } catch (e) {
       emit(ConsolidatedReportsError(message: e.toString()));

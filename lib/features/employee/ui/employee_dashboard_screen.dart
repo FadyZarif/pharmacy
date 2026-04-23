@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import 'package:pharmacy/features/request/logic/request_state.dart';
 import 'package:pharmacy/features/request/ui/add_request_screen_unified.dart';
 import 'package:pharmacy/features/request/ui/manage_requests_screen.dart';
 import 'package:pharmacy/features/request/ui/widgets/requests_list_view.dart';
+import 'package:pharmacy/features/purchases/ui/purchases_screen.dart';
 import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 import 'package:pharmacy/features/salary/logic/salary_cubit.dart';
@@ -39,6 +41,26 @@ class EmployeeDashboardScreen extends StatefulWidget {
 
 class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   late final ViewReportsCubit _viewReportsCubit;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  String _monthKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}';
+
+  Stream<double> _monthlyPurchasesTotalStream() {
+    final branchId = currentUser.currentBranch.id;
+    final monthKey = _monthKey(DateTime.now());
+    return _db
+        .collection('branch_purchases')
+        .where('branchId', isEqualTo: branchId)
+        .where('monthKey', isEqualTo: monthKey)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.fold<double>(
+            0.0,
+            (acc, doc) => acc + ((doc.data()['amount'] as num?)?.toDouble() ?? 0.0),
+          ),
+        );
+  }
 
   @override
   void initState() {
@@ -98,6 +120,18 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                       color: ColorsManger.primary.withValues(alpha: 0.95),
                     ),
                     tooltip: 'Manage Requests',
+                  ),
+                if (currentUser.role == Role.subManager)
+                  IconButton(
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      navigateTo(context, const PurchasesScreen());
+                    },
+                    icon: Icon(
+                      Icons.shopping_cart_checkout,
+                      color: ColorsManger.primary.withValues(alpha: 0.95),
+                    ),
+                    tooltip: 'Branch Purchases',
                   ),
                 IconButton(
                   onPressed: () => _showLogoutDialog(context),
@@ -161,14 +195,25 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                 (totalSales / monthlyTarget * 100).clamp(0.0, 999.0);
                             final isAchieved = pct >= 100;
                             final isStaff = currentUser.role == Role.staff;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 18),
-                              child: _DashboardTargetCard(
-                                percentage: pct,
-                                isAchieved: isAchieved,
-                                showTargetAmount: !isStaff,
-                                monthlyTarget: monthlyTarget,
-                              ),
+                            return StreamBuilder<double>(
+                              stream: _monthlyPurchasesTotalStream(),
+                              builder: (context, purchasesSnapshot) {
+                                final totalPurchases = purchasesSnapshot.data ?? 0.0;
+                                final purchasesPct = monthlyTarget > 0
+                                    ? (totalPurchases / monthlyTarget * 100).clamp(0.0, 999.0)
+                                    : 0.0;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 18),
+                                  child: _DashboardTargetCard(
+                                    percentage: pct,
+                                    isAchieved: isAchieved,
+                                    showTargetAmount: !isStaff,
+                                    monthlyTarget: monthlyTarget,
+                                    purchasesPercentage: purchasesPct,
+                                    totalPurchases: totalPurchases,
+                                  ),
+                                );
+                              },
                             );
                           }
                           if (state is MonthlySummaryLoading) {
@@ -1052,28 +1097,29 @@ class _DashboardTargetCard extends StatelessWidget {
   final bool isAchieved;
   final bool showTargetAmount;
   final double monthlyTarget;
+  final double? purchasesPercentage;
+  final double? totalPurchases;
 
   const _DashboardTargetCard({
     required this.percentage,
     required this.isAchieved,
     required this.showTargetAmount,
     required this.monthlyTarget,
+    this.purchasesPercentage,
+    this.totalPurchases,
   });
 
   @override
   Widget build(BuildContext context) {
+    final targetColor = isAchieved ? Colors.green : Colors.orange;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isAchieved
-            ? Colors.green.withValues(alpha: 0.1)
-            : Colors.orange.withValues(alpha: 0.1),
+        color: targetColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isAchieved
-              ? Colors.green.withValues(alpha: 0.3)
-              : Colors.orange.withValues(alpha: 0.3),
+          color: targetColor.withValues(alpha: 0.28),
         ),
       ),
       child: Column(
@@ -1085,14 +1131,12 @@ class _DashboardTargetCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isAchieved
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.orange.withValues(alpha: 0.2),
+                  color: targetColor.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   isAchieved ? Icons.check_circle : Icons.trending_up,
-                  color: isAchieved ? Colors.green : Colors.orange,
+                  color: targetColor,
                   size: 28,
                 ),
               ),
@@ -1115,7 +1159,7 @@ class _DashboardTargetCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: isAchieved ? Colors.green : Colors.orange,
+                        color: targetColor,
                       ),
                     ),
                     if (showTargetAmount) ...[
@@ -1127,6 +1171,17 @@ class _DashboardTargetCard extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
+                      if (purchasesPercentage != null && totalPurchases != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Purchases: EGP ${totalPurchases!.toStringAsFixed(1)} · ${purchasesPercentage!.toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -1134,6 +1189,28 @@ class _DashboardTargetCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                'Sales vs Target',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black.withValues(alpha: 0.62),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${percentage.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: targetColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -1141,10 +1218,44 @@ class _DashboardTargetCard extends StatelessWidget {
               minHeight: 8,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
-                isAchieved ? Colors.green : Colors.orange,
+                targetColor,
               ),
             ),
           ),
+          if (showTargetAmount && purchasesPercentage != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  'Purchases vs Target',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black.withValues(alpha: 0.62),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${purchasesPercentage!.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (purchasesPercentage! / 100).clamp(0.0, 1.0),
+                minHeight: 8,
+                backgroundColor: Colors.grey[300],
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+              ),
+            ),
+          ],
         ],
       ),
     );

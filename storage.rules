@@ -1,0 +1,62 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return firestore.get(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      ).data;
+    }
+
+    function userExists() {
+      return firestore.exists(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      );
+    }
+
+    function role() {
+      return userDoc().role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userExists() && role() == 'admin';
+    }
+
+    function isManager() {
+      return isSignedIn() && userExists() && role() == 'manager';
+    }
+
+    function isSubManager() {
+      return isSignedIn() && userExists() && role() == 'subManager';
+    }
+
+    function isManagement() {
+      return isAdmin() || isManager();
+    }
+
+    function userPrimaryBranchId() {
+      return userDoc().branches[0].id;
+    }
+
+    function isSubManagerBranch(branchId) {
+      return isSubManager() &&
+          userDoc().branches is list &&
+          userDoc().branches.size() > 0 &&
+          userPrimaryBranchId() == branchId;
+    }
+
+    // Optional invoice files for purchases
+    match /branch_purchases/{branchId}/{fileName} {
+      // Management reads all, subManager reads only own branch
+      allow read: if isManagement() || isSubManagerBranch(branchId);
+
+      // subManager can upload/update files in own branch only.
+      // No delete in this workflow.
+      allow write: if isSubManagerBranch(branchId) && request.method != 'delete';
+      allow delete: if false;
+    }
+  }
+}

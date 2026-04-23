@@ -28,6 +28,9 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
   final List<ExpenseItem> allExpenses;
   final Map<String, BranchSummary> branchSummaries; // ملخص كل فرع
   final double? monthlyTarget; // الهدف الشهري الموحد
+  final Map<String, double> branchMonthlyTargets; // الهدف الشهري لكل فرع
+  final double totalPurchases; // إجمالي مشتريات الفروع لنفس الشهر
+  final Map<String, double> branchMonthlyPurchases; // مشتريات كل فرع لنفس الشهر
 
   ConsolidatedReportsLoaded({
     required this.totalSales,
@@ -41,6 +44,9 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
     required this.allExpenses,
     required this.branchSummaries,
     this.monthlyTarget,
+    this.branchMonthlyTargets = const {},
+    this.totalPurchases = 0.0,
+    this.branchMonthlyPurchases = const {},
   });
 }
 

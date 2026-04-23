@@ -1,1 +1,30 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"pharmacy-employee-system-new","appId":"1:412302383494:android:360ba81aeaaf9866257407","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"pharmacy-employee-system-new","configurations":{"android":"1:412302383494:android:360ba81aeaaf9866257407","ios":"1:412302383494:ios:81ffdc332be89fba257407","web":"1:412302383494:web:fbed773f585c2e70257407"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "pharmacy-employee-system-new",
+          "appId": "1:412302383494:android:360ba81aeaaf9866257407",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "pharmacy-employee-system-new",
+          "configurations": {
+            "android": "1:412302383494:android:360ba81aeaaf9866257407",
+            "ios": "1:412302383494:ios:81ffdc332be89fba257407",
+            "web": "1:412302383494:web:fbed773f585c2e70257407"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

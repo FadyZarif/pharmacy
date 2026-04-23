@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function role() {
+      return userDoc().role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userExists() && role() == 'admin';
+    }
+
+    function isManager() {
+      return isSignedIn() && userExists() && role() == 'manager';
+    }
+
+    function isSubManager() {
+      return isSignedIn() && userExists() && role() == 'subManager';
+    }
+
+    function isManagement() {
+      return isAdmin() || isManager();
+    }
+
+    // In this app, subManager effectively belongs to one branch (first branch in list).
+    function userPrimaryBranchId() {
+      return userDoc().branches[0].id;
+    }
+
+    function isSubManagerBranch(branchId) {
+      return isSubManager() &&
+          userDoc().branches is list &&
+          userDoc().branches.size() > 0 &&
+          userPrimaryBranchId() == branchId;
+    }
+
+    function validPurchaseCreateData() {
+      return request.resource.data.keys().hasAll([
+          'branchId',
+          'branchName',
+          'monthKey',
+          'amount',
+          'sourceType',
+          'supplierName',
+          'notes',
+          'invoiceUrl',
+          'purchaseDate',
+          'createdAt',
+          'updatedAt',
+          'createdByUid',
+          'createdByName',
+          'createdByRole'
+        ]) &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        (request.resource.data.sourceType == 'company' ||
+          request.resource.data.sourceType == 'warehouse') &&
+        request.resource.data.createdByUid == request.auth.uid &&
+        request.resource.data.createdByRole == 'subManager';
+    }
+
+    function validPurchaseUpdateData() {
+      return request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        (request.resource.data.sourceType == 'company' ||
+          request.resource.data.sourceType == 'warehouse') &&
+        // Submanager can edit only own record and cannot transfer ownership/branch
+        resource.data.createdByUid == request.auth.uid &&
+        request.resource.data.createdByUid == resource.data.createdByUid &&
+        request.resource.data.createdByRole == resource.data.createdByRole &&
+        request.resource.data.branchId == resource.data.branchId &&
+        request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /branch_purchases/{purchaseId} {
+      // Admin/manager can read all branches. Submanager can read own branch only.
+      allow get, list: if isManagement() ||
+        (isSubManager() && isSubManagerBranch(resource.data.branchId));
+
+      // Submanager can create in own branch only.
+      allow create: if isSubManager() &&
+        isSubManagerBranch(request.resource.data.branchId) &&
+        validPurchaseCreateData();
+
+      // Submanager can update own branch + own document only.
+      allow update: if isSubManager() &&
+        isSubManagerBranch(resource.data.branchId) &&
+        validPurchaseUpdateData();
+
+      // No delete for this workflow.
+      allow delete: if false;
+    }
+  }
+}
