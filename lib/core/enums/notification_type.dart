@@ -24,6 +24,9 @@ enum NotificationType {
   // Salary
   salaryAdded('salary_added'),
 
+  /// Quarterly incentives (admin Excel upload)
+  quarterlyIncentiveAdded('quarterly_incentive_added'),
+
   // Shift Reports
   newShiftReport('new_shift_report'),
   shiftReportUpdated('shift_report_updated'),

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/features/quarterly_incentives/ui/add_quarterly_incentives_screen.dart';
 import 'package:pharmacy/features/salary/data/models/month_salary_model.dart';
 import 'package:pharmacy/features/salary/logic/salary_cubit.dart';
 import 'package:pharmacy/features/salary/logic/salary_state.dart';
@@ -163,6 +165,17 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
               surfaceTintColor: Colors.transparent,
               elevation: 0,
               centerTitle: true,
+              actions: [
+                IconButton(
+                  tooltip: 'رفع حوافز ربع سنوية',
+                  icon: const Icon(Icons.table_chart_outlined),
+                  color: ColorsManger.primary,
+                  onPressed: () => navigateTo(
+                    context,
+                    const AddQuarterlyIncentivesScreen(),
+                  ),
+                ),
+              ],
               title: Text(
                 'Upload Salary Data',
                 style: TextStyle(

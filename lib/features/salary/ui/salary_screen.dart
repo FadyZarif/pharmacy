@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
+import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/features/quarterly_incentives/ui/quarterly_incentives_screen.dart';
 import 'package:pharmacy/features/salary/data/models/employee_monthly_salary.dart';
 import 'package:pharmacy/features/salary/data/models/month_salary_model.dart';
 import 'package:pharmacy/features/salary/logic/salary_cubit.dart';
@@ -58,6 +60,17 @@ class _SalaryScreenState extends State<SalaryScreen> {
               surfaceTintColor: Colors.transparent,
               elevation: 0,
               centerTitle: true,
+              actions: [
+                IconButton(
+                  tooltip: 'حوافز ربع سنوية',
+                  icon: const Icon(Icons.table_chart),
+                  color: ColorsManger.primary,
+                  onPressed: () => navigateTo(
+                    context,
+                    const QuarterlyIncentivesScreen(),
+                  ),
+                ),
+              ],
               title: Text(
                 'Salary',
                 style: TextStyle(

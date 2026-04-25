@@ -101,5 +101,18 @@ service cloud.firestore {
       // No delete for this workflow.
       allow delete: if false;
     }
+
+    // Quarterly incentives: admin uploads; employees read own row; management can read all rows.
+    match /quarterly_incentives/{periodId} {
+      allow read: if isSignedIn() && userExists();
+      allow create, update, delete: if isAdmin();
+
+      match /employees/{employeeUid} {
+        allow read: if isSignedIn() &&
+          userExists() &&
+          (request.auth.uid == employeeUid || isManagement());
+        allow create, update, delete: if isAdmin();
+      }
+    }
   }
 }
