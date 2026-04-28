@@ -167,12 +167,19 @@ class QuarterlyIncentivesCubit extends Cubit<QuarterlyIncentivesState> {
           final rate02 = totalExchange * 0.02;
           final expiry25Percent = expiryAmount * 0.25;
           final inventoryFinalValue = quantityAdjustments + inventoryIncreaseCode;
+          // Business rule:
+          // - If inventoryFinalValue (Y) is positive -> add AA.
+          // - If inventoryFinalValue (Y) is negative -> subtract AA.
+          final signedBranchAdjustment = inventoryFinalValue >= 0
+              ? branchAdjustment
+              : -branchAdjustment;
+          // "Total +- (AB)" follows the sheet formula baseline:
+          // AB = O + P + T - V (+/- AA by Y sign rule above).
           final totalPlusMinus = listIncentive +
               restIncrease +
               rate02 -
-              inventoryFinalValue +
-              deficitCarryover +
-              branchAdjustment;
+              expiry25Percent +
+              signedBranchAdjustment;
           final perCapitaShare = branchEmployeeCount > 0
               ? (totalPlusMinus / branchEmployeeCount)
               : 0.0;
