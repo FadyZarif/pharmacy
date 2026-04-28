@@ -334,6 +334,8 @@ class _IncentiveDetails extends StatelessWidget {
 
   Widget _row(String label, String value, {bool emphasize = false}) {
     if (label.isEmpty && value.isEmpty) return const SizedBox.shrink();
+    final numeric = _tryParseNumber(value);
+    final isNegative = numeric != null && numeric < 0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -353,18 +355,35 @@ class _IncentiveDetails extends StatelessWidget {
             ),
           Expanded(
             flex: 3,
-            child: Text(
-              value.isEmpty ? '—' : value,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
-                fontSize: emphasize ? 16 : 14,
-                color: emphasize ? ColorsManger.primary : Colors.black87,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isNegative
+                    ? Colors.red.withValues(alpha: 0.08)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                value.isEmpty ? '—' : value,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+                  fontSize: emphasize ? 16 : 14,
+                  color: isNegative
+                      ? Colors.red.shade700
+                      : (emphasize ? ColorsManger.primary : Colors.black87),
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  double? _tryParseNumber(String value) {
+    final cleaned = value.trim().replaceAll(',', '');
+    if (cleaned.isEmpty || cleaned == '—') return null;
+    return double.tryParse(cleaned);
   }
 }
