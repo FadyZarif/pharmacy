@@ -616,14 +616,22 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
   void _showConsolidatedReportsOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.86,
+        minChildSize: 0.62,
+        maxChildSize: 0.96,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             // Handle bar
             Container(
               width: 40,
@@ -697,7 +705,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 _selectMonthAndShowTargetReport(context);
               },
             ),
-          ],
+              // Bottom breathing space for small screens
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+            ],
+          ),
         ),
       ),
     );
@@ -1135,15 +1146,19 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Sales: ${branch.totalSales.toStringAsFixed(1)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Sales: EGP ${branch.totalSales.toStringAsFixed(1)}',
+                                  ),
                                 ),
-                                Text(
-                                  'Expenses: ${branch.totalExpenses.toStringAsFixed(1)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Expenses: EGP ${branch.totalExpenses.toStringAsFixed(1)}',
+                                  ),
                                 ),
                               ],
                             ),
@@ -1217,122 +1232,126 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.flag_circle, color: Colors.indigo, size: 30),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Branches Target Report',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                      ),
-                      Text(
-                        monthTitle,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            if (allTarget != null) ...[
-              _buildSummaryCard(
-                title: 'All Branches Target',
-                amount: allTarget,
-                icon: Icons.flag,
-                color: Colors.indigo,
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.24)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Sales vs Target',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        Text(
-                          'EGP ${state.totalSales.toStringAsFixed(1)} · ${salesPct!.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (salesPct / 100).clamp(0.0, 1.0),
-                        minHeight: 8,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.24)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Purchases vs Target',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        Text(
-                          'EGP ${state.totalPurchases.toStringAsFixed(1)} · ${purchasesPct!.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.deepPurple,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (purchasesPct / 100).clamp(0.0, 1.0),
-                        minHeight: 8,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                child: _buildBranchTargetsCard(state),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.flag_circle, color: Colors.indigo, size: 30),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Branches Target Report',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                              ),
+                              Text(
+                                monthTitle,
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    if (allTarget != null) ...[
+                      _buildSummaryCard(
+                        title: 'All Branches Target',
+                        amount: allTarget,
+                        icon: Icons.flag,
+                        color: Colors.indigo,
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.07),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.24)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Sales vs Target',
+                                    style: TextStyle(fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                Text(
+                                  'EGP ${state.totalSales.toStringAsFixed(1)} · ${salesPct!.toStringAsFixed(1)}%',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: (salesPct / 100).clamp(0.0, 1.0),
+                                minHeight: 8,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurple.withValues(alpha: 0.07),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.24)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Purchases vs Target',
+                                    style: TextStyle(fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                Text(
+                                  'EGP ${state.totalPurchases.toStringAsFixed(1)} · ${purchasesPct!.toStringAsFixed(1)}%',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: (purchasesPct / 100).clamp(0.0, 1.0),
+                                minHeight: 8,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    _buildBranchTargetsCard(state),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),
