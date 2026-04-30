@@ -161,7 +161,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                     actions: [
                       IconButton(
                         icon: const Icon(
-                          Icons.shopping_cart_checkout,
+                          Icons.shopping_cart,
                           color: ColorsManger.primary,
                         ),
                         tooltip: 'Branch Purchases',

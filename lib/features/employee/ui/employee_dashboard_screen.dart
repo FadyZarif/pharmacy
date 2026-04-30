@@ -128,7 +128,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                       navigateTo(context, const PurchasesScreen());
                     },
                     icon: Icon(
-                      Icons.shopping_cart_checkout,
+                      Icons.shopping_cart,
                       color: ColorsManger.primary.withValues(alpha: 0.95),
                     ),
                     tooltip: 'Branch Purchases',
