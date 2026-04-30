@@ -1102,6 +1102,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                             wallet: state.totalWalletExpenses,
                             visa: state.totalVisaExpenses,
                             total: state.totalElectronicPaymentExpenses,
+                            byBranch: state.branchElectronicBreakdowns,
                           );
                         },
                         borderRadius: BorderRadius.circular(12),
@@ -1116,11 +1117,22 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       const SizedBox(height: 16),
 
                       // Delivery total
-                      _buildSummaryCard(
-                        title: 'Delivery Total',
-                        amount: state.totalDeliveryExpenses,
-                        icon: Icons.delivery_dining,
-                        color: Colors.deepOrange,
+                      InkWell(
+                        onTap: () {
+                          _showDeliveryBreakdownBottomSheet(
+                            dialogContext,
+                            total: state.totalDeliveryExpenses,
+                            byBranch: state.branchDeliveryTotals,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildSummaryCard(
+                          title: 'Delivery Total',
+                          amount: state.totalDeliveryExpenses,
+                          icon: Icons.delivery_dining,
+                          color: Colors.deepOrange,
+                          subtitle: 'Tap to view details by branch',
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -1763,7 +1775,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     required double wallet,
     required double visa,
     required double total,
+    required Map<String, BranchElectronicBreakdown> byBranch,
   }) {
+    final sortedBranches = byBranch.values.toList()
+      ..sort((a, b) => a.branchName.compareTo(b.branchName));
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1772,7 +1787,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => FractionallySizedBox(
-        heightFactor: 0.52,
+        heightFactor: 0.72,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -1785,7 +1800,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               ),
             ],
           ),
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1828,6 +1843,66 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 const Divider(height: 1),
                 const SizedBox(height: 12),
                 _buildBreakdownRow('Total', total, Colors.black, bold: true),
+                if (byBranch.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'By Branch',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...sortedBranches.map((b) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      b.branchName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    'EGP ${b.total.toStringAsFixed(1)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Instapay: ${b.instapay.toStringAsFixed(1)}  •  Wallet: ${b.wallet.toStringAsFixed(1)}  •  Visa: ${b.visa.toStringAsFixed(1)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )),
+                ],
               ],
             ),
           ),
@@ -1869,6 +1944,101 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDeliveryBreakdownBottomSheet(
+    BuildContext context, {
+    required double total,
+    required Map<String, double> byBranch,
+  }) {
+    final sortedBranches = byBranch.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.72,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 18,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.deepOrange.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.deepOrange.withValues(alpha: 0.24),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.delivery_dining, color: Colors.deepOrange),
+                      SizedBox(width: 8),
+                      Text(
+                        'Delivery Total Breakdown',
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _buildBreakdownRow('Total Delivery', total, Colors.deepOrange, bold: true),
+                if (sortedBranches.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'By Branch',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...sortedBranches.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildBreakdownRow(
+                        entry.key,
+                        entry.value,
+                        Colors.deepOrange,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

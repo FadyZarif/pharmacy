@@ -26,6 +26,8 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
   final double totalWalletExpenses;
   final double totalVisaExpenses;
   final double totalDeliveryExpenses;
+  final Map<String, double> branchDeliveryTotals;
+  final Map<String, BranchElectronicBreakdown> branchElectronicBreakdowns;
   final double vaultAmount;
   final double totalSurplus;
   final double totalDeficit;
@@ -46,6 +48,8 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
     this.totalWalletExpenses = 0.0,
     this.totalVisaExpenses = 0.0,
     this.totalDeliveryExpenses = 0.0,
+    this.branchDeliveryTotals = const {},
+    this.branchElectronicBreakdowns = const {},
     required this.vaultAmount,
     required this.totalSurplus,
     required this.totalDeficit,
@@ -56,6 +60,24 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
     this.totalPurchases = 0.0,
     this.branchMonthlyPurchases = const {},
   });
+}
+
+class BranchElectronicBreakdown {
+  final String branchId;
+  final String branchName;
+  final double instapay;
+  final double wallet;
+  final double visa;
+
+  const BranchElectronicBreakdown({
+    required this.branchId,
+    required this.branchName,
+    this.instapay = 0.0,
+    this.wallet = 0.0,
+    this.visa = 0.0,
+  });
+
+  double get total => instapay + wallet + visa;
 }
 
 class ConsolidatedReportsError extends ConsolidatedReportsState {

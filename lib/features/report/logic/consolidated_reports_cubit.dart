@@ -55,6 +55,8 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       double totalDeficit = 0.0;
       List<ExpenseItem> allExpenses = [];
       Map<String, BranchSummary> branchSummaries = {};
+      final branchElectronicBreakdowns = <String, BranchElectronicBreakdown>{};
+      final branchDeliveryTotals = <String, double>{};
 
       for (var result in results) {
         if (result != null) {
@@ -66,6 +68,17 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           totalSurplus += result['surplus'] as double;
           totalDeficit += result['deficit'] as double;
           allExpenses.addAll(result['allExpenses'] as List<ExpenseItem>);
+          final branchElectronicBreakdown =
+              result['branchElectronicBreakdown'] as BranchElectronicBreakdown?;
+          if (branchElectronicBreakdown != null) {
+            branchElectronicBreakdowns[branchElectronicBreakdown.branchId] =
+                branchElectronicBreakdown;
+          }
+          final deliveryTotal = (result['deliveryExpenses'] as double?) ?? 0.0;
+          final branchId = (result['branchId'] as String?) ?? '';
+          if (branchId.isNotEmpty) {
+            branchDeliveryTotals[branchId] = deliveryTotal;
+          }
 
           final summary = result['summary'] as BranchSummary;
           branchSummaries[summary.branchId] = summary;
@@ -89,6 +102,8 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalWalletExpenses: electronicBreakdown.wallet,
         totalVisaExpenses: electronicBreakdown.visa,
         totalDeliveryExpenses: totalDeliveryExpenses,
+        branchDeliveryTotals: branchDeliveryTotals,
+        branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
@@ -148,6 +163,8 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       double totalDeficit = 0.0;
       List<ExpenseItem> allExpenses = [];
       Map<String, BranchSummary> branchSummaries = {};
+      final branchElectronicBreakdowns = <String, BranchElectronicBreakdown>{};
+      final branchDeliveryTotals = <String, double>{};
 
       for (var result in results) {
         if (result != null) {
@@ -159,6 +176,17 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           totalSurplus += result['surplus'] as double;
           totalDeficit += result['deficit'] as double;
           allExpenses.addAll(result['allExpenses'] as List<ExpenseItem>);
+          final branchElectronicBreakdown =
+              result['branchElectronicBreakdown'] as BranchElectronicBreakdown?;
+          if (branchElectronicBreakdown != null) {
+            branchElectronicBreakdowns[branchElectronicBreakdown.branchId] =
+                branchElectronicBreakdown;
+          }
+          final deliveryTotal = (result['deliveryExpenses'] as double?) ?? 0.0;
+          final branchId = (result['branchId'] as String?) ?? '';
+          if (branchId.isNotEmpty) {
+            branchDeliveryTotals[branchId] = deliveryTotal;
+          }
 
           final summary = result['summary'] as BranchSummary;
           branchSummaries[summary.branchId] = summary;
@@ -240,6 +268,8 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalWalletExpenses: electronicBreakdown.wallet,
         totalVisaExpenses: electronicBreakdown.visa,
         totalDeliveryExpenses: totalDeliveryExpenses,
+        branchDeliveryTotals: branchDeliveryTotals,
+        branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
@@ -301,6 +331,8 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       double totalDeficit = 0.0;
       List<ExpenseItem> allExpenses = [];
       Map<String, BranchSummary> branchSummaries = {};
+      final branchElectronicBreakdowns = <String, BranchElectronicBreakdown>{};
+      final branchDeliveryTotals = <String, double>{};
 
       for (var result in results) {
         if (result != null) {
@@ -312,6 +344,17 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           totalSurplus += result['surplus'] as double;
           totalDeficit += result['deficit'] as double;
           allExpenses.addAll(result['allExpenses'] as List<ExpenseItem>);
+          final branchElectronicBreakdown =
+              result['branchElectronicBreakdown'] as BranchElectronicBreakdown?;
+          if (branchElectronicBreakdown != null) {
+            branchElectronicBreakdowns[branchElectronicBreakdown.branchId] =
+                branchElectronicBreakdown;
+          }
+          final deliveryTotal = (result['deliveryExpenses'] as double?) ?? 0.0;
+          final branchId = (result['branchId'] as String?) ?? '';
+          if (branchId.isNotEmpty) {
+            branchDeliveryTotals[branchId] = deliveryTotal;
+          }
 
           final summary = result['summary'] as BranchSummary;
           branchSummaries[summary.branchId] = summary;
@@ -332,6 +375,8 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           allExpenses,
           ExpenseType.delivery,
         ),
+        branchDeliveryTotals: branchDeliveryTotals,
+        branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
@@ -407,7 +452,19 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         'vaultAmount': vaultAmount,
         'surplus': surplus,
         'deficit': deficit,
+        'branchId': branch.id,
+        'deliveryExpenses': _sumExpensesByType(expenses, ExpenseType.delivery),
         'allExpenses': expenses,
+        'branchElectronicBreakdown': BranchElectronicBreakdown(
+          branchId: branch.id,
+          branchName: branch.name,
+          instapay: _sumElectronicByMethod(
+            expenses,
+            ElectronicPaymentMethod.instapay,
+          ),
+          wallet: _sumElectronicByMethod(expenses, ElectronicPaymentMethod.wallet),
+          visa: _sumElectronicByMethod(expenses, ElectronicPaymentMethod.visa),
+        ),
         'summary': BranchSummary(
           branchId: branch.id,
           branchName: branch.name,
@@ -437,6 +494,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       double deficit = 0.0;
       double vaultAmount = 0.0;
       List<ExpenseItem> expenses = [];
+      double instapay = 0.0;
+      double wallet = 0.0;
+      double visa = 0.0;
 
       // Fetch all days in parallel
       final dayResults = await Future.wait(
@@ -459,6 +519,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           surplus += dayResult['surplus'] as double;
           deficit += dayResult['deficit'] as double;
           expenses.addAll(dayResult['allExpenses'] as List<ExpenseItem>);
+          instapay += (dayResult['instapay'] as double?) ?? 0.0;
+          wallet += (dayResult['wallet'] as double?) ?? 0.0;
+          visa += (dayResult['visa'] as double?) ?? 0.0;
         }
       }
 
@@ -470,7 +533,16 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         'vaultAmount': vaultAmount,
         'surplus': surplus,
         'deficit': deficit,
+        'branchId': branch.id,
+        'deliveryExpenses': _sumExpensesByType(expenses, ExpenseType.delivery),
         'allExpenses': expenses,
+        'branchElectronicBreakdown': BranchElectronicBreakdown(
+          branchId: branch.id,
+          branchName: branch.name,
+          instapay: instapay,
+          wallet: wallet,
+          visa: visa,
+        ),
         'summary': BranchSummary(
           branchId: branch.id,
           branchName: branch.name,
@@ -508,6 +580,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       double surplus = 0.0;
       double deficit = 0.0;
       List<ExpenseItem> expenses = [];
+      double instapay = 0.0;
+      double wallet = 0.0;
+      double visa = 0.0;
 
       for (var doc in shiftsSnapshot.docs) {
         final report = ShiftReportModel.fromJson(doc.data());
@@ -517,6 +592,13 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         medicinesExpenses += report.medicineExpenses;
         electronicPaymentExpenses += report.electronicWalletExpenses;
         expenses.addAll(report.expenses);
+        instapay += _sumElectronicByMethod(
+          report.expenses,
+          ElectronicPaymentMethod.instapay,
+        );
+        wallet +=
+            _sumElectronicByMethod(report.expenses, ElectronicPaymentMethod.wallet);
+        visa += _sumElectronicByMethod(report.expenses, ElectronicPaymentMethod.visa);
 
         if (report.computerDifferenceType == ComputerDifferenceType.excess) {
           surplus += report.computerDifference;
@@ -546,7 +628,11 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         'vaultAmount': vaultAmount,
         'surplus': surplus,
         'deficit': deficit,
+        'deliveryExpenses': _sumExpensesByType(expenses, ExpenseType.delivery),
         'allExpenses': expenses,
+        'instapay': instapay,
+        'wallet': wallet,
+        'visa': visa,
       };
     } catch (e) {
       return null;
@@ -567,6 +653,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       double deficit = 0.0;
       double vaultAmount = 0.0;
       final expenses = <ExpenseItem>[];
+      double instapay = 0.0;
+      double wallet = 0.0;
+      double visa = 0.0;
 
       for (DateTime day = fromDate;
           !day.isAfter(toDate);
@@ -581,6 +670,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         surplus += dayResult['surplus'] as double;
         deficit += dayResult['deficit'] as double;
         expenses.addAll(dayResult['allExpenses'] as List<ExpenseItem>);
+        instapay += (dayResult['instapay'] as double?) ?? 0.0;
+        wallet += (dayResult['wallet'] as double?) ?? 0.0;
+        visa += (dayResult['visa'] as double?) ?? 0.0;
       }
 
       return {
@@ -591,7 +683,16 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         'vaultAmount': vaultAmount,
         'surplus': surplus,
         'deficit': deficit,
+        'branchId': branch.id,
+        'deliveryExpenses': _sumExpensesByType(expenses, ExpenseType.delivery),
         'allExpenses': expenses,
+        'branchElectronicBreakdown': BranchElectronicBreakdown(
+          branchId: branch.id,
+          branchName: branch.name,
+          instapay: instapay,
+          wallet: wallet,
+          visa: visa,
+        ),
         'summary': BranchSummary(
           branchId: branch.id,
           branchName: branch.name,
@@ -608,6 +709,17 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
   double _sumExpensesByType(List<ExpenseItem> expenses, ExpenseType type) {
     return expenses
         .where((e) => e.type == type)
+        .fold(0.0, (acc, e) => acc + e.amount);
+  }
+
+  double _sumElectronicByMethod(
+    List<ExpenseItem> expenses,
+    ElectronicPaymentMethod method,
+  ) {
+    return expenses
+        .where(
+          (e) => e.type == ExpenseType.electronicPayment && e.electronicMethod == method,
+        )
         .fold(0.0, (acc, e) => acc + e.amount);
   }
 
