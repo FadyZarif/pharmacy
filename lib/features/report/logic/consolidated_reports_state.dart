@@ -22,6 +22,10 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
   final double netProfit;
   final double totalMedicinesExpenses;
   final double totalElectronicPaymentExpenses;
+  final double totalInstapayExpenses;
+  final double totalWalletExpenses;
+  final double totalVisaExpenses;
+  final double totalDeliveryExpenses;
   final double vaultAmount;
   final double totalSurplus;
   final double totalDeficit;
@@ -38,6 +42,10 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
     required this.netProfit,
     required this.totalMedicinesExpenses,
     required this.totalElectronicPaymentExpenses,
+    this.totalInstapayExpenses = 0.0,
+    this.totalWalletExpenses = 0.0,
+    this.totalVisaExpenses = 0.0,
+    this.totalDeliveryExpenses = 0.0,
     required this.vaultAmount,
     required this.totalSurplus,
     required this.totalDeficit,

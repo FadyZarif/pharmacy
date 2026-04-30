@@ -1093,12 +1093,34 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       ),
                       const SizedBox(height: 16),
 
-                      // Electronic Payment
+                      // Electronic Payment (tap for detailed breakdown)
+                      InkWell(
+                        onTap: () {
+                          _showElectronicPaymentBreakdownBottomSheet(
+                            dialogContext,
+                            instapay: state.totalInstapayExpenses,
+                            wallet: state.totalWalletExpenses,
+                            visa: state.totalVisaExpenses,
+                            total: state.totalElectronicPaymentExpenses,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildSummaryCard(
+                          title: 'Electronic Payment',
+                          amount: state.totalElectronicPaymentExpenses,
+                          icon: Icons.credit_card,
+                          color: Colors.teal,
+                          subtitle: 'Tap to view Instapay / Wallet / Visa',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Delivery total
                       _buildSummaryCard(
-                        title: 'Electronic Payment',
-                        amount: state.totalElectronicPaymentExpenses,
-                        icon: Icons.credit_card,
-                        color: Colors.teal,
+                        title: 'Delivery Total',
+                        amount: state.totalDeliveryExpenses,
+                        icon: Icons.delivery_dining,
+                        color: Colors.deepOrange,
                       ),
                       const SizedBox(height: 16),
 
@@ -1731,6 +1753,122 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showElectronicPaymentBreakdownBottomSheet(
+    BuildContext context, {
+    required double instapay,
+    required double wallet,
+    required double visa,
+    required double total,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.52,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 18,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.teal.withValues(alpha: 0.24)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.credit_card, color: Colors.teal),
+                      SizedBox(width: 8),
+                      Text(
+                        'Electronic Payment Breakdown',
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _buildBreakdownRow('Instapay', instapay, Colors.teal),
+                const SizedBox(height: 10),
+                _buildBreakdownRow('Wallet', wallet, Colors.indigo),
+                const SizedBox(height: 10),
+                _buildBreakdownRow('Visa', visa, Colors.purple),
+                const SizedBox(height: 14),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+                _buildBreakdownRow('Total', total, Colors.black, bold: true),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreakdownRow(
+    String label,
+    double amount,
+    Color color, {
+    bool bold = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            'EGP ${amount.toStringAsFixed(1)}',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

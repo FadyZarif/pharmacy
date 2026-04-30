@@ -73,6 +73,11 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       }
 
       final netProfit = totalSales - totalExpenses;
+      final electronicBreakdown = _computeElectronicBreakdown(allExpenses);
+      final totalDeliveryExpenses = _sumExpensesByType(
+        allExpenses,
+        ExpenseType.delivery,
+      );
 
       emit(ConsolidatedReportsLoaded(
         totalSales: totalSales,
@@ -80,6 +85,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
+        totalInstapayExpenses: electronicBreakdown.instapay,
+        totalWalletExpenses: electronicBreakdown.wallet,
+        totalVisaExpenses: electronicBreakdown.visa,
+        totalDeliveryExpenses: totalDeliveryExpenses,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
@@ -157,6 +166,11 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       }
 
       final netProfit = totalSales - totalExpenses;
+      final electronicBreakdown = _computeElectronicBreakdown(allExpenses);
+      final totalDeliveryExpenses = _sumExpensesByType(
+        allExpenses,
+        ExpenseType.delivery,
+      );
 
       // جلب الهدف الشهري الموحد (مجموع أهداف كل الفروع)
       double? monthlyTarget;
@@ -222,6 +236,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
+        totalInstapayExpenses: electronicBreakdown.instapay,
+        totalWalletExpenses: electronicBreakdown.wallet,
+        totalVisaExpenses: electronicBreakdown.visa,
+        totalDeliveryExpenses: totalDeliveryExpenses,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
@@ -300,12 +318,20 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         }
       }
 
+      final electronicBreakdown = _computeElectronicBreakdown(allExpenses);
       emit(ConsolidatedReportsLoaded(
         totalSales: totalSales,
         totalExpenses: totalExpenses,
         netProfit: totalSales - totalExpenses,
         totalMedicinesExpenses: totalMedicinesExpenses,
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
+        totalInstapayExpenses: electronicBreakdown.instapay,
+        totalWalletExpenses: electronicBreakdown.wallet,
+        totalVisaExpenses: electronicBreakdown.visa,
+        totalDeliveryExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.delivery,
+        ),
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
         totalDeficit: totalDeficit,
@@ -577,6 +603,37 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
     } catch (e) {
       return null;
     }
+  }
+
+  double _sumExpensesByType(List<ExpenseItem> expenses, ExpenseType type) {
+    return expenses
+        .where((e) => e.type == type)
+        .fold(0.0, (acc, e) => acc + e.amount);
+  }
+
+  ({double instapay, double wallet, double visa}) _computeElectronicBreakdown(
+    List<ExpenseItem> expenses,
+  ) {
+    double instapay = 0.0;
+    double wallet = 0.0;
+    double visa = 0.0;
+    for (final expense in expenses) {
+      if (expense.type != ExpenseType.electronicPayment) continue;
+      switch (expense.electronicMethod) {
+        case ElectronicPaymentMethod.instapay:
+          instapay += expense.amount;
+          break;
+        case ElectronicPaymentMethod.wallet:
+          wallet += expense.amount;
+          break;
+        case ElectronicPaymentMethod.visa:
+          visa += expense.amount;
+          break;
+        default:
+          break;
+      }
+    }
+    return (instapay: instapay, wallet: wallet, visa: visa);
   }
 }
 
