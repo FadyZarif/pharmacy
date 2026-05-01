@@ -121,6 +121,7 @@ class _AddQuarterlyIncentivesScreenState extends State<AddQuarterlyIncentivesScr
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
     return BlocProvider.value(
       value: _cubit,
       child: Scaffold(
@@ -192,7 +193,7 @@ class _AddQuarterlyIncentivesScreenState extends State<AddQuarterlyIncentivesScr
                 16,
                 topPad + kToolbarHeight + 12,
                 16,
-                24,
+                bottomPad + 24,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

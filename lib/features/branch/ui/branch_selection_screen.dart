@@ -981,6 +981,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     DateTime? rangeTo,
   }
   ) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final dateTitle = (rangeFrom != null && rangeTo != null)
         ? '${DateFormat('MMM dd, yyyy').format(rangeFrom)} → ${DateFormat('MMM dd, yyyy').format(rangeTo)}'
         : isMonthly
@@ -1221,6 +1222,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 ),
               ),
               const SizedBox(height: 16),
+              SizedBox(height: bottomInset),
 
               // Close Button
               SizedBox(
@@ -1255,6 +1257,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     ConsolidatedReportsLoaded state,
     DateTime selectedMonth,
   ) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final monthTitle = DateFormat('MMMM yyyy').format(selectedMonth);
     final allTarget = state.monthlyTarget;
     final salesPct = (allTarget != null && allTarget > 0)
@@ -1393,7 +1396,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12 + bottomInset),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1782,6 +1785,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     required double total,
     required Map<String, BranchElectronicBreakdown> byBranch,
   }) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final sortedBranches = byBranch.values.toList()
       ..sort((a, b) => a.branchName.compareTo(b.branchName));
     showModalBottomSheet(
@@ -1806,7 +1810,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
             ],
           ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            padding: EdgeInsets.fromLTRB(20, 14, 20, bottomInset + 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1959,6 +1963,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     required Map<String, double> byBranch,
     required Map<String, String> branchNamesById,
   }) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final sortedBranches = byBranch.entries.toList()
       ..sort((a, b) {
         final aName = branchNamesById[a.key] ?? a.key;
@@ -1984,7 +1989,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
             ],
           ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            padding: EdgeInsets.fromLTRB(20, 14, 20, bottomInset + 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
