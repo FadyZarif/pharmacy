@@ -1123,6 +1123,11 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                             dialogContext,
                             total: state.totalDeliveryExpenses,
                             byBranch: state.branchDeliveryTotals,
+                            branchNamesById: {
+                              for (final e
+                                  in state.branchElectronicBreakdowns.entries)
+                                e.key: e.value.branchName,
+                            },
                           );
                         },
                         borderRadius: BorderRadius.circular(12),
@@ -1952,9 +1957,14 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     BuildContext context, {
     required double total,
     required Map<String, double> byBranch,
+    required Map<String, String> branchNamesById,
   }) {
     final sortedBranches = byBranch.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
+      ..sort((a, b) {
+        final aName = branchNamesById[a.key] ?? a.key;
+        final bName = branchNamesById[b.key] ?? b.key;
+        return aName.compareTo(bName);
+      });
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2028,7 +2038,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                     (entry) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _buildBreakdownRow(
-                        entry.key,
+                        branchNamesById[entry.key] ?? entry.key,
                         entry.value,
                         Colors.deepOrange,
                       ),
