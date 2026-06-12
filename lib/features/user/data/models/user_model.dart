@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:pharmacy/core/helpers/special_access.dart';
 
 part 'user_model.g.dart';
 @JsonSerializable(explicitToJson: true)
@@ -19,6 +20,7 @@ class UserModel {
   final String? photoUrl;
   final bool isActive;
   final bool hasRequestsPermission;
+  final bool hasExtendedManagementAccess;
   final String? fcmToken;
 
   UserModel( {
@@ -37,6 +39,7 @@ class UserModel {
     required this.isActive,
     this.fcmToken,
     this.hasRequestsPermission = false,
+    this.hasExtendedManagementAccess = false,
   });
 
   /// fromJson & toJson
@@ -79,6 +82,10 @@ class UserModel {
   bool get isStaff{
     return role == Role.staff ;
   }
+
+  /// Staff/sub-manager with admin-like screens: branch hub, bank, all-branches reports, profit collection.
+  bool get hasSpecialManagementAccess =>
+      hasExtendedManagementAccess || hasLegacySpecialManagementAccess(uid);
 }
 
 @JsonEnum(alwaysCreate: true)

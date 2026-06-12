@@ -358,8 +358,8 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                         isCollected: _isCollected,
                                         onToggleCollect:
                                             (currentUser.isAdmin ||
-                                                currentUser.uid ==
-                                                    '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+                                                currentUser
+                                                    .hasSpecialManagementAccess)
                                             ? () =>
                                                   _showCollectionConfirmationDialog(
                                                     context,
@@ -420,8 +420,8 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                       isCollected: _isCollected,
                                       onToggleCollect:
                                           (currentUser.isAdmin ||
-                                              currentUser.uid ==
-                                                  '7DUwUuQ0rIUUb94NCK2vdnrZCLo1')
+                                              currentUser
+                                                  .hasSpecialManagementAccess)
                                           ? () =>
                                                 _showCollectionConfirmationDialog(
                                                   context,
@@ -632,7 +632,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 const SizedBox(height: 16),
               ],
               if (currentUser.isManagement ||
-                  currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+                  currentUser.hasSpecialManagementAccess) ...[
                 // Total Expenses Card (Clickable)
                 InkWell(
                   onTap: () {

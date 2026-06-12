@@ -25,6 +25,8 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   isActive: json['isActive'] as bool,
   fcmToken: json['fcmToken'] as String?,
   hasRequestsPermission: json['hasRequestsPermission'] as bool? ?? false,
+  hasExtendedManagementAccess:
+      json['hasExtendedManagementAccess'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -42,6 +44,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'photoUrl': instance.photoUrl,
   'isActive': instance.isActive,
   'hasRequestsPermission': instance.hasRequestsPermission,
+  'hasExtendedManagementAccess': instance.hasExtendedManagementAccess,
   'fcmToken': instance.fcmToken,
 };
 

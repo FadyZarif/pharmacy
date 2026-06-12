@@ -244,7 +244,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
 
               // Bank (Management Only) — open without selecting a branch
               if (currentUser.isManagement ||
-                  currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+                  currentUser.hasSpecialManagementAccess) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildBankCard(context),
@@ -254,7 +254,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
 
               // All Branches Monthly Report (Management Only)
               if (currentUser.isAdmin ||
-                  currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') ...[
+                  currentUser.hasSpecialManagementAccess) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildAllBranchesReportCard(context),

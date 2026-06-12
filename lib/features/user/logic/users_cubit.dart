@@ -230,6 +230,7 @@ class UsersCubit extends Cubit<UsersState> {
     required Role role,
     required bool isActive,
     bool? hasRequestsPermission,
+    bool? hasExtendedManagementAccess,
     List<Branch>? branches,
     Uint8List? imageBytes,
     String? imageName,
@@ -275,6 +276,10 @@ class UsersCubit extends Cubit<UsersState> {
       // Add hasRequestsPermission only if provided (for subManagers)
       if (hasRequestsPermission != null) {
         updatedData['hasRequestsPermission'] = hasRequestsPermission;
+      }
+
+      if (hasExtendedManagementAccess != null) {
+        updatedData['hasExtendedManagementAccess'] = hasExtendedManagementAccess;
       }
 
       if (newPhotoUrl != null) {

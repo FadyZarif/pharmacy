@@ -52,8 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   dialogType: DialogType.success,
                 ).then((value) {
                   if (!context.mounted) return;
-                  // Exception: specific user always sees branch selection first (then Bank card, reports, etc.)
-                  if (currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1') {
+                  if (currentUser.hasSpecialManagementAccess) {
                     navigateToReplacement(context, BranchSelectionScreen());
                     return;
                   }

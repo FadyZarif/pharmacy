@@ -91,9 +91,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (!isLogged) {
       next = const LoginScreen();
     } else {
-      // Exception: UID 7DUwUuQ0rIUUb94NCK2vdnrZCLo1 always sees branch selection first (web + mobile)
       final bool goToBranchSelection = !currentUser.isStaff ||
-          currentUser.uid == '7DUwUuQ0rIUUb94NCK2vdnrZCLo1';
+          currentUser.hasSpecialManagementAccess;
       next = goToBranchSelection
           ? const BranchSelectionScreen()
           : const EmployeeLayout();

@@ -34,6 +34,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   late Role _selectedRole;
   late bool _isActive;
   late bool _hasRequestsPermission;
+  late bool _hasExtendedManagementAccess;
   late Branch _selectedBranch;
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
@@ -54,6 +55,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     _selectedRole = widget.user.role;
     _isActive = widget.user.isActive;
     _hasRequestsPermission = widget.user.hasRequestsPermission;
+    _hasExtendedManagementAccess = widget.user.hasExtendedManagementAccess;
     _currentPhotoUrl = widget.user.photoUrl;
 
     // Branch selection:
@@ -486,6 +488,60 @@ class _EditUserScreenState extends State<EditUserScreen> {
                           ),
                         ),
 
+                        // Extended management access (admin grants to staff/sub-manager)
+                        if (!_isSelf &&
+                            currentUser.isAdmin &&
+                            (_selectedRole == Role.staff ||
+                                _selectedRole == Role.subManager)) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _hasExtendedManagementAccess
+                                            ? Icons.admin_panel_settings
+                                            : Icons.block,
+                                        color: _hasExtendedManagementAccess
+                                            ? Colors.teal
+                                            : Colors.grey,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          'Extended Management Access',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: _hasExtendedManagementAccess,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _hasExtendedManagementAccess = value;
+                                    });
+                                  },
+                                  activeTrackColor: ColorsManger.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
                         // Requests Permission Switch (Only for SubManagers)
                         if (_selectedRole == Role.subManager && currentUser.isManagement) ...[
                           const SizedBox(height: 16),
@@ -598,6 +654,13 @@ class _EditUserScreenState extends State<EditUserScreen> {
       role: _selectedRole,
       isActive: _isActive,
       hasRequestsPermission: _selectedRole == Role.subManager ? _hasRequestsPermission : null,
+      hasExtendedManagementAccess:
+          (!_isSelf &&
+                  currentUser.isAdmin &&
+                  (_selectedRole == Role.staff ||
+                      _selectedRole == Role.subManager))
+              ? _hasExtendedManagementAccess
+              : null,
       branches: (_selectedRole == Role.staff || _selectedRole == Role.subManager)
           ? [_selectedBranch]
           : null,

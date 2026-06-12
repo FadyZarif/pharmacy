@@ -283,6 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       role: widget.user.role, // Keep same
       isActive: widget.user.isActive, // Keep same
       hasRequestsPermission: widget.user.hasRequestsPermission, // Keep same
+      hasExtendedManagementAccess: widget.user.hasExtendedManagementAccess,
       imageBytes: _selectedImageBytes,
       imageName: _selectedImageName,
     );
