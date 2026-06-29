@@ -14,6 +14,7 @@ import '../../features/user/logic/users_cubit.dart';
 import '../../features/job_opportunity/logic/job_opportunity_cubit.dart';
 import '../../features/branch/logic/branch_target_cubit.dart';
 import '../../features/vault/logic/vault_cubit.dart';
+import '../../features/marketing/logic/marketing_cubit.dart';
 import '../services/notification_service.dart';
 
 
@@ -59,6 +60,9 @@ Future setupGetIt() async{
 
   ///Vault / Bank (البنك المركزي)
   getIt.registerFactory<VaultCubit>(()=>VaultCubit());
+
+  ///Marketing
+  getIt.registerLazySingleton<MarketingCubit>(()=>MarketingCubit());
 
   ///Notification Service
   getIt.registerLazySingleton<NotificationService>(()=>NotificationService());

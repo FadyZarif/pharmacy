@@ -6,6 +6,7 @@ import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import '../../../core/themes/colors.dart';
 import '../../repair/logic/repair_cubit.dart';
+import '../../marketing/logic/marketing_cubit.dart';
 import '../logic/employee_layout_state.dart';
 
 class EmployeeLayout extends StatelessWidget {
@@ -37,6 +38,9 @@ class EmployeeLayout extends StatelessWidget {
                 }
                 if (getIt.isRegistered<UsersCubit>()) {
                   await getIt.resetLazySingleton<UsersCubit>();
+                }
+                if (getIt.isRegistered<MarketingCubit>()) {
+                  await getIt.resetLazySingleton<MarketingCubit>();
                 }
               },
               child: AnimatedSwitcher(
@@ -121,7 +125,9 @@ class _GlassBottomNav extends StatelessWidget {
           child: NavigationBar(
             selectedIndex: selectedIndex,
             onDestinationSelected: onSelected,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            labelBehavior: destinations.length > 5
+                ? NavigationDestinationLabelBehavior.onlyShowSelected
+                : NavigationDestinationLabelBehavior.alwaysShow,
             height: 66,
             backgroundColor: Colors.transparent,
             indicatorColor: ColorsManger.primary.withValues(alpha: 0.14),

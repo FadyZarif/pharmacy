@@ -17,6 +17,7 @@ import '../../report/logic/consolidated_reports_cubit.dart';
 import '../../report/logic/consolidated_reports_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../report/data/models/daily_report_model.dart';
+import '../../marketing/ui/marketing_all_branches_report_dialog.dart';
 
 class BranchSelectionScreen extends StatefulWidget {
   static const _pagePadding = EdgeInsets.symmetric(
@@ -705,6 +706,18 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                 _selectMonthAndShowTargetReport(context);
               },
             ),
+            const SizedBox(height: 16),
+            _buildReportTypeCard(
+              context: context,
+              title: 'Marketing Report',
+              subtitle: 'Daily, monthly, or custom range by employee',
+              icon: Icons.campaign_outlined,
+              color: Colors.teal,
+              onTap: () {
+                Navigator.pop(context);
+                _showMarketingReportsOptions(context);
+              },
+            ),
               // Bottom breathing space for small screens
               SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
             ],
@@ -767,6 +780,147 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
         ),
       ),
     );
+  }
+
+  void _showMarketingReportsOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.62,
+        minChildSize: 0.45,
+        maxChildSize: 0.86,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Marketing Report',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Select report type',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              _buildReportTypeCard(
+                context: context,
+                title: 'Daily Report',
+                subtitle: 'Marketing entries for a single day',
+                icon: Icons.today,
+                color: Colors.teal,
+                onTap: () {
+                  Navigator.pop(context);
+                  _selectDateAndShowMarketingReport(context);
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildReportTypeCard(
+                context: context,
+                title: 'Monthly Report',
+                subtitle: 'Marketing entries for a full month',
+                icon: Icons.calendar_month,
+                color: Colors.green,
+                onTap: () {
+                  Navigator.pop(context);
+                  _selectMonthAndShowMarketingReport(context);
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildReportTypeCard(
+                context: context,
+                title: 'Custom Range',
+                subtitle: 'Marketing entries between two dates',
+                icon: Icons.date_range,
+                color: Colors.deepPurple,
+                onTap: () {
+                  Navigator.pop(context);
+                  _selectDateRangeAndShowMarketingReport(context);
+                },
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectDateAndShowMarketingReport(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2025),
+      lastDate: DateTime.now(),
+      helpText: 'Select Date For Marketing',
+    );
+    if (picked != null) {
+      await showMarketingAllBranchesReportDialog(
+        navigator.context,
+        scope: MarketingReportScope.daily,
+        referenceDate: picked,
+      );
+    }
+  }
+
+  Future<void> _selectMonthAndShowMarketingReport(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2025),
+      lastDate: DateTime.now(),
+      helpText: 'Select Month For Marketing',
+    );
+    if (picked != null) {
+      await showMarketingAllBranchesReportDialog(
+        navigator.context,
+        scope: MarketingReportScope.monthly,
+        referenceDate: DateTime(picked.year, picked.month, 1),
+      );
+    }
+  }
+
+  Future<void> _selectDateRangeAndShowMarketingReport(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2025),
+      lastDate: now,
+      initialDateRange: DateTimeRange(
+        start: now.subtract(const Duration(days: 6)),
+        end: now,
+      ),
+      helpText: 'Select Date Range For Marketing',
+    );
+    if (picked != null) {
+      await showMarketingAllBranchesReportDialog(
+        navigator.context,
+        scope: MarketingReportScope.range,
+        referenceDate: picked.start,
+        rangeFrom: picked.start,
+        rangeTo: picked.end,
+      );
+    }
   }
 
   /// اختيار التاريخ وعرض التقرير

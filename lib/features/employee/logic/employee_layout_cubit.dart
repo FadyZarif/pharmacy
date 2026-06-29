@@ -10,6 +10,8 @@ import '../../repair/ui/view_repairs_screen.dart';
 import '../../report/ui/add_shift_report_screen.dart';
 import '../../report/ui/view_reports_screen.dart';
 import '../../request/ui/manage_requests_screen.dart';
+import '../../marketing/ui/marketing_screen.dart';
+import '../../marketing/ui/view_marketing_screen.dart';
 import '../../salary/ui/add_salary_screen.dart';
 import '../../salary/ui/salary_screen.dart';
 import '../../user/ui/users_management_screen.dart';
@@ -29,6 +31,8 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
             icon: Icon(Icons.receipt_long), label: 'Reports'),
         BottomNavigationBarItem(
             icon: Icon(Icons.event_note), label: 'Requests'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.campaign_outlined), label: 'Marketing'),
         BottomNavigationBarItem(
             icon: Icon(Icons.attach_money), label: 'Salary'),
         BottomNavigationBarItem(
@@ -61,6 +65,8 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
       const BottomNavigationBarItem(
           icon: Icon(Icons.home), label: 'Dashboard'),
       const BottomNavigationBarItem(
+          icon: Icon(Icons.campaign_outlined), label: 'Marketing'),
+      const BottomNavigationBarItem(
           icon: Icon(Icons.attach_money), label: 'Salary'),
       const BottomNavigationBarItem(
           icon: Icon(Icons.person), label: 'Profile'),
@@ -74,6 +80,7 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
         const ViewRepairsScreen(),
         const ViewReportsScreen(),
         const ManageRequestsScreen(),
+        const ViewMarketingScreen(),
         currentUser.role==Role.admin? const AddSalaryScreen(): const SalaryScreen(),
         const UsersManagementScreen(),
       ];
@@ -95,6 +102,7 @@ class EmployeeLayoutCubit extends Cubit<EmployeeLayoutState> {
       const AddRepairScreen(),
       const AddShiftReportScreen(),
       const EmployeeDashboardScreen(),
+      const MarketingScreen(),
       const SalaryScreen(),
       ProfileScreen(user: currentUser),
     ];

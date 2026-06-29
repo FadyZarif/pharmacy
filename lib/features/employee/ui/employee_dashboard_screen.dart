@@ -21,6 +21,7 @@ import 'package:pharmacy/features/purchases/ui/purchases_screen.dart';
 import 'package:pharmacy/features/report/logic/view_reports_cubit.dart';
 import 'package:pharmacy/features/report/logic/view_reports_state.dart';
 import 'package:pharmacy/features/salary/logic/salary_cubit.dart';
+import 'package:pharmacy/features/marketing/logic/marketing_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_cubit.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
 
@@ -407,6 +408,9 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       }
       if (getIt.isRegistered<UsersCubit>()) {
         await getIt.resetLazySingleton<UsersCubit>();
+      }
+      if (getIt.isRegistered<MarketingCubit>()) {
+        await getIt.resetLazySingleton<MarketingCubit>();
       }
 
       // Update isLogged flag
