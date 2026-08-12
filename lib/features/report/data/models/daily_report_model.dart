@@ -40,6 +40,9 @@ enum ExpenseType {
   @JsonValue('medicines')
   medicines, // أدوية (تبديل نقدي)
 
+  @JsonValue('medicinesWithInvoices')
+  medicinesWithInvoices, // أدوية (بفواتير)
+
   @JsonValue('delivery')
   delivery, // ديلفري
 
@@ -198,10 +201,17 @@ class ShiftReportModel {
     return expenses.fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
-  /// حساب مصاريف تغير الادويه
+  /// حساب مصاريف الأدوية (تبديل نقدي)
   double get medicineExpenses {
     return expenses
         .where((expense) => expense.type == ExpenseType.medicines)
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  /// حساب مصاريف الأدوية بفواتير
+  double get medicineWithInvoicesExpenses {
+    return expenses
+        .where((expense) => expense.type == ExpenseType.medicinesWithInvoices)
         .fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
@@ -318,6 +328,8 @@ class ExpenseItem {
     switch (type) {
       case ExpenseType.medicines:
         return 'أدوية (تبديل نقدي)';
+      case ExpenseType.medicinesWithInvoices:
+        return 'أدوية (بفواتير)';
       case ExpenseType.delivery:
         return 'ديلفري - ${deliveryArea ?? "غير محدد"}';
       case ExpenseType.ahmedAboghonima:

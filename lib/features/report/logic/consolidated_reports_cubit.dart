@@ -97,6 +97,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalExpenses: totalExpenses,
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
+        totalMedicinesWithInvoicesExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.medicinesWithInvoices,
+        ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -263,6 +267,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalExpenses: totalExpenses,
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
+        totalMedicinesWithInvoicesExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.medicinesWithInvoices,
+        ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -367,6 +375,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalExpenses: totalExpenses,
         netProfit: totalSales - totalExpenses,
         totalMedicinesExpenses: totalMedicinesExpenses,
+        totalMedicinesWithInvoicesExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.medicinesWithInvoices,
+        ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,

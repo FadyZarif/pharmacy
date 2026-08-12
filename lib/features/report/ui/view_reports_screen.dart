@@ -660,12 +660,19 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Medicines Expenses Card
+                // Medicines Expenses Cards
                 _buildMonthlySummaryCard(
-                  title: 'Medicines Expenses',
+                  title: 'Medicines (Cash Alternative)',
                   amount: state.totalMedicinesExpenses,
                   icon: Icons.medication,
                   color: Colors.purple,
+                ),
+                const SizedBox(height: 16),
+                _buildMonthlySummaryCard(
+                  title: 'Medicines (With Invoices)',
+                  amount: state.totalMedicinesWithInvoicesExpenses,
+                  icon: Icons.receipt_long,
+                  color: Colors.deepPurple,
                 ),
                 const SizedBox(height: 16),
 
@@ -1765,10 +1772,14 @@ class _TotalsDockCard extends StatelessWidget {
     // حساب صافي الربح (Net Profit)
     final netProfit = totalSales - totalExpenses;
 
-    // حساب مجموع مصاريف تبديل الأدوية (Medicines Expenses)
+    // حساب مجموع مصاريف الأدوية (تبديل نقدي)
     final totalMedicinesExpenses = reports.fold<double>(0.0, (sum, report) {
-      final medicinesExpenses = report.medicineExpenses;
-      return sum + medicinesExpenses;
+      return sum + report.medicineExpenses;
+    });
+
+    // حساب مجموع مصاريف الأدوية بفواتير
+    final totalMedicinesWithInvoicesExpenses = reports.fold<double>(0.0, (sum, report) {
+      return sum + report.medicineWithInvoicesExpenses;
     });
 
     // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
@@ -1878,10 +1889,17 @@ class _TotalsDockCard extends StatelessWidget {
             ),
             _buildSummaryCard(
               egp: egp,
-              title: 'Medicines Exp.',
+              title: 'Med. Cash Alt.',
               amount: totalMedicinesExpenses,
               icon: Icons.medication,
               color: Colors.purple,
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'Med. Invoices',
+              amount: totalMedicinesWithInvoicesExpenses,
+              icon: Icons.receipt_long,
+              color: Colors.deepPurple,
             ),
             _buildSummaryCard(
               egp: egp,

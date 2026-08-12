@@ -1062,6 +1062,9 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                           case ExpenseType.medicines:
                             label = 'Medicines (Cash Alternative)';
                             break;
+                          case ExpenseType.medicinesWithInvoices:
+                            label = 'Medicines (With Invoices)';
+                            break;
                           case ExpenseType.delivery:
                             label = 'Delivery';
                             break;

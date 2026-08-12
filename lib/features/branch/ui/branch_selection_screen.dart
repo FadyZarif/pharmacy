@@ -1241,10 +1241,17 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
 
                       // Medicines Expenses
                       _buildSummaryCard(
-                        title: 'Medicines Expenses',
+                        title: 'Medicines (Cash Alternative)',
                         amount: state.totalMedicinesExpenses,
                         icon: Icons.medication,
                         color: Colors.purple,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSummaryCard(
+                        title: 'Medicines (With Invoices)',
+                        amount: state.totalMedicinesWithInvoicesExpenses,
+                        icon: Icons.receipt_long,
+                        color: Colors.deepPurple,
                       ),
                       const SizedBox(height: 16),
 
