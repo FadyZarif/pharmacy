@@ -660,19 +660,19 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Medicines Expenses Cards
                 _buildMonthlySummaryCard(
-                  title: 'Medicines (Cash Alternative)',
+                  title: 'تبديل نقدي',
                   amount: state.totalMedicinesExpenses,
                   icon: Icons.medication,
                   color: Colors.purple,
                 ),
                 const SizedBox(height: 16),
+
                 _buildMonthlySummaryCard(
-                  title: 'Medicines (With Invoices)',
-                  amount: state.totalMedicinesWithInvoicesExpenses,
-                  icon: Icons.receipt_long,
-                  color: Colors.deepPurple,
+                  title: 'شراء بضاعه بفاتوره',
+                  amount: state.totalWarehouseCollectionExpenses,
+                  icon: Icons.inventory_2,
+                  color: Colors.deepOrange,
                 ),
                 const SizedBox(height: 16),
 
@@ -1772,14 +1772,14 @@ class _TotalsDockCard extends StatelessWidget {
     // حساب صافي الربح (Net Profit)
     final netProfit = totalSales - totalExpenses;
 
-    // حساب مجموع مصاريف الأدوية (تبديل نقدي)
+    // حساب مجموع التبديل النقدي
     final totalMedicinesExpenses = reports.fold<double>(0.0, (sum, report) {
       return sum + report.medicineExpenses;
     });
 
-    // حساب مجموع مصاريف الأدوية بفواتير
-    final totalMedicinesWithInvoicesExpenses = reports.fold<double>(0.0, (sum, report) {
-      return sum + report.medicineWithInvoicesExpenses;
+    // حساب مجموع شراء بضاعه بفاتوره
+    final totalWarehouseCollectionExpenses = reports.fold<double>(0.0, (sum, report) {
+      return sum + report.warehouseCollectionExpenses;
     });
 
     // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
@@ -1889,17 +1889,17 @@ class _TotalsDockCard extends StatelessWidget {
             ),
             _buildSummaryCard(
               egp: egp,
-              title: 'Med. Cash Alt.',
+              title: 'تبديل نقدي',
               amount: totalMedicinesExpenses,
               icon: Icons.medication,
               color: Colors.purple,
             ),
             _buildSummaryCard(
               egp: egp,
-              title: 'Med. Invoices',
-              amount: totalMedicinesWithInvoicesExpenses,
-              icon: Icons.receipt_long,
-              color: Colors.deepPurple,
+              title: 'شراء بضاعه بفاتوره',
+              amount: totalWarehouseCollectionExpenses,
+              icon: Icons.inventory_2,
+              color: Colors.deepOrange,
             ),
             _buildSummaryCard(
               egp: egp,

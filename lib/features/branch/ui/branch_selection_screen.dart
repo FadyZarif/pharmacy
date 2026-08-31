@@ -1239,19 +1239,19 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       ),
                       const SizedBox(height: 16),
 
-                      // Medicines Expenses
                       _buildSummaryCard(
-                        title: 'Medicines (Cash Alternative)',
+                        title: 'تبديل نقدي',
                         amount: state.totalMedicinesExpenses,
                         icon: Icons.medication,
                         color: Colors.purple,
                       ),
                       const SizedBox(height: 16),
+
                       _buildSummaryCard(
-                        title: 'Medicines (With Invoices)',
-                        amount: state.totalMedicinesWithInvoicesExpenses,
-                        icon: Icons.receipt_long,
-                        color: Colors.deepPurple,
+                        title: 'شراء بضاعه بفاتوره',
+                        amount: state.totalWarehouseCollectionExpenses,
+                        icon: Icons.inventory_2,
+                        color: Colors.deepOrange,
                       ),
                       const SizedBox(height: 16),
 

@@ -91,16 +91,17 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         allExpenses,
         ExpenseType.delivery,
       );
+      final totalWarehouseCollectionExpenses = _sumExpensesByType(
+        allExpenses,
+        ExpenseType.warehouseCollection,
+      );
 
       emit(ConsolidatedReportsLoaded(
         totalSales: totalSales,
         totalExpenses: totalExpenses,
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
-        totalMedicinesWithInvoicesExpenses: _sumExpensesByType(
-          allExpenses,
-          ExpenseType.medicinesWithInvoices,
-        ),
+        totalWarehouseCollectionExpenses: totalWarehouseCollectionExpenses,
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -203,6 +204,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         allExpenses,
         ExpenseType.delivery,
       );
+      final totalWarehouseCollectionExpenses = _sumExpensesByType(
+        allExpenses,
+        ExpenseType.warehouseCollection,
+      );
 
       // جلب الهدف الشهري الموحد (مجموع أهداف كل الفروع)
       double? monthlyTarget;
@@ -267,10 +272,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalExpenses: totalExpenses,
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
-        totalMedicinesWithInvoicesExpenses: _sumExpensesByType(
-          allExpenses,
-          ExpenseType.medicinesWithInvoices,
-        ),
+        totalWarehouseCollectionExpenses: totalWarehouseCollectionExpenses,
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -375,9 +377,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalExpenses: totalExpenses,
         netProfit: totalSales - totalExpenses,
         totalMedicinesExpenses: totalMedicinesExpenses,
-        totalMedicinesWithInvoicesExpenses: _sumExpensesByType(
+        totalWarehouseCollectionExpenses: _sumExpensesByType(
           allExpenses,
-          ExpenseType.medicinesWithInvoices,
+          ExpenseType.warehouseCollection,
         ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,

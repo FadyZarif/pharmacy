@@ -38,10 +38,7 @@ enum ComputerDifferenceType {
 @JsonEnum(alwaysCreate: true)
 enum ExpenseType {
   @JsonValue('medicines')
-  medicines, // أدوية (تبديل نقدي)
-
-  @JsonValue('medicinesWithInvoices')
-  medicinesWithInvoices, // أدوية (بفواتير)
+  medicines, // تبديل نقدي
 
   @JsonValue('delivery')
   delivery, // ديلفري
@@ -53,7 +50,7 @@ enum ExpenseType {
   companyCollection, // تحصيل شركات
 
   @JsonValue('warehouseCollection')
-  warehouseCollection, // تحصيل مخازن
+  warehouseCollection, // شراء بضاعه بفاتوره
 
   @JsonValue('electronicPayment')
   electronicPayment, // دفع إلكتروني
@@ -201,17 +198,17 @@ class ShiftReportModel {
     return expenses.fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
-  /// حساب مصاريف الأدوية (تبديل نقدي)
+  /// حساب مصاريف التبديل النقدي
   double get medicineExpenses {
     return expenses
         .where((expense) => expense.type == ExpenseType.medicines)
         .fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
-  /// حساب مصاريف الأدوية بفواتير
-  double get medicineWithInvoicesExpenses {
+  /// حساب مصاريف شراء بضاعه بفاتوره
+  double get warehouseCollectionExpenses {
     return expenses
-        .where((expense) => expense.type == ExpenseType.medicinesWithInvoices)
+        .where((expense) => expense.type == ExpenseType.warehouseCollection)
         .fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
@@ -327,9 +324,7 @@ class ExpenseItem {
   String get description {
     switch (type) {
       case ExpenseType.medicines:
-        return 'أدوية (تبديل نقدي)';
-      case ExpenseType.medicinesWithInvoices:
-        return 'أدوية (بفواتير)';
+        return 'تبديل نقدي';
       case ExpenseType.delivery:
         return 'ديلفري - ${deliveryArea ?? "غير محدد"}';
       case ExpenseType.ahmedAboghonima:
@@ -337,7 +332,9 @@ class ExpenseItem {
       case ExpenseType.companyCollection:
         return 'تحصيل شركات - ${companyName ?? "غير محدد"}';
       case ExpenseType.warehouseCollection:
-        return 'تحصيل مخازن - ${warehouseName ?? "غير محدد"}';
+        return warehouseName != null && warehouseName!.trim().isNotEmpty
+            ? 'شراء بضاعه بفاتوره - $warehouseName'
+            : 'شراء بضاعه بفاتوره';
       case ExpenseType.electronicPayment:
         String method = '';
         switch (electronicMethod) {

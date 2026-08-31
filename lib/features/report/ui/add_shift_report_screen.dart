@@ -1060,10 +1060,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                         String label;
                         switch (type) {
                           case ExpenseType.medicines:
-                            label = 'Medicines (Cash Alternative)';
-                            break;
-                          case ExpenseType.medicinesWithInvoices:
-                            label = 'Medicines (With Invoices)';
+                            label = 'تبديل نقدي';
                             break;
                           case ExpenseType.delivery:
                             label = 'Delivery';
@@ -1075,7 +1072,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
                             label = 'Company Collection';
                             break;
                           case ExpenseType.warehouseCollection:
-                            label = 'Warehouse Collection';
+                            label = 'شراء بضاعه بفاتوره';
                             break;
                           case ExpenseType.electronicPayment:
                             label = 'Electronic Payment';

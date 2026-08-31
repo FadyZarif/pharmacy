@@ -254,9 +254,9 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                         const SizedBox(height: 24),
 
                         if (!_isEditMode)...[
-                          ShiftReportWidgets.buildSummaryCard(icon: Icons.currency_exchange, label: 'Medicines (Cash Alternative)', value:  widget.report.medicineExpenses, color: Colors.purple),
+                          ShiftReportWidgets.buildSummaryCard(icon: Icons.currency_exchange, label: 'تبديل نقدي', value:  widget.report.medicineExpenses, color: Colors.purple),
                           const SizedBox(height: 16),
-                          ShiftReportWidgets.buildSummaryCard(icon: Icons.receipt_long, label: 'Medicines (With Invoices)', value:  widget.report.medicineWithInvoicesExpenses, color: Colors.deepPurple),
+                          ShiftReportWidgets.buildSummaryCard(icon: Icons.inventory_2, label: 'شراء بضاعه بفاتوره', value: widget.report.warehouseCollectionExpenses, color: Colors.deepOrange),
                           const SizedBox(height: 16),
                           ShiftReportWidgets.buildSummaryCard(icon: Icons.add_card, label: 'Total Electronic Expenses', value:  widget.report.electronicWalletExpenses, color: Colors.cyan),
                           const SizedBox(height: 24),
@@ -354,10 +354,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                         String label;
                         switch (type) {
                           case ExpenseType.medicines:
-                            label = 'Medicines (Cash Alternative)';
-                            break;
-                          case ExpenseType.medicinesWithInvoices:
-                            label = 'Medicines (With Invoices)';
+                            label = 'تبديل نقدي';
                             break;
                           case ExpenseType.delivery:
                             label = 'Delivery';
@@ -369,7 +366,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                             label = 'Company Collection';
                             break;
                           case ExpenseType.warehouseCollection:
-                            label = 'Warehouse Collection';
+                            label = 'شراء بضاعه بفاتوره';
                             break;
                           case ExpenseType.electronicPayment:
                             label = 'Electronic Payment';
