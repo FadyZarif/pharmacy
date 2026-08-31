@@ -1239,19 +1239,59 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       ),
                       const SizedBox(height: 16),
 
-                      _buildSummaryCard(
-                        title: 'تبديل نقدي',
-                        amount: state.totalMedicinesExpenses,
-                        icon: Icons.medication,
-                        color: Colors.purple,
+                      InkWell(
+                        onTap: () {
+                          _showBranchTotalsBreakdownBottomSheet(
+                            dialogContext,
+                            title: 'تبديل نقدي',
+                            headerIcon: Icons.medication,
+                            color: Colors.purple,
+                            total: state.totalMedicinesExpenses,
+                            expenseType: ExpenseType.medicines,
+                            byBranch: state.branchMedicinesTotals,
+                            branchExpenses: state.branchExpenses,
+                            branchNamesById: {
+                              for (final e in state.branchSummaries.entries)
+                                e.key: e.value.branchName,
+                            },
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildSummaryCard(
+                          title: 'تبديل نقدي',
+                          amount: state.totalMedicinesExpenses,
+                          icon: Icons.medication,
+                          color: Colors.purple,
+                          subtitle: 'Tap branch for details',
+                        ),
                       ),
                       const SizedBox(height: 16),
 
-                      _buildSummaryCard(
-                        title: 'شراء بضاعه بفاتوره',
-                        amount: state.totalWarehouseCollectionExpenses,
-                        icon: Icons.inventory_2,
-                        color: Colors.deepOrange,
+                      InkWell(
+                        onTap: () {
+                          _showBranchTotalsBreakdownBottomSheet(
+                            dialogContext,
+                            title: 'شراء بضاعه بفاتوره',
+                            headerIcon: Icons.inventory_2,
+                            color: Colors.deepOrange,
+                            total: state.totalWarehouseCollectionExpenses,
+                            expenseType: ExpenseType.warehouseCollection,
+                            byBranch: state.branchWarehouseCollectionTotals,
+                            branchExpenses: state.branchExpenses,
+                            branchNamesById: {
+                              for (final e in state.branchSummaries.entries)
+                                e.key: e.value.branchName,
+                            },
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildSummaryCard(
+                          title: 'شراء بضاعه بفاتوره',
+                          amount: state.totalWarehouseCollectionExpenses,
+                          icon: Icons.inventory_2,
+                          color: Colors.deepOrange,
+                          subtitle: 'Tap branch for details',
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -1833,11 +1873,16 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
   /// عرض المصاريف في bottom sheet
   void _showExpensesBottomSheet(
     BuildContext context,
-    List<ExpenseItem> expenses,
-  ) {
+    List<ExpenseItem> expenses, {
+    String title = 'All Expenses',
+    IconData icon = Icons.receipt_long,
+    Color? color,
+  }) {
+    final accent = color ?? ColorsManger.primary;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1863,9 +1908,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.receipt_long,
-                    color: ColorsManger.primary,
+                  Icon(
+                    icon,
+                    color: accent,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
@@ -1873,9 +1918,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'All Expenses',
-                          style: TextStyle(
+                        Text(
+                          title,
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1892,10 +1937,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                   ),
                   Text(
                     'EGP ${expenses.fold<double>(0.0, (sum, e) => sum + e.amount).toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: ColorsManger.primary,
+                      color: accent,
                     ),
                   ),
                 ],
@@ -2086,6 +2131,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
     double amount,
     Color color, {
     bool bold = false,
+    Widget? trailing,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -2113,7 +2159,145 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               color: color,
             ),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 4),
+            trailing,
+          ],
         ],
+      ),
+    );
+  }
+
+  void _showBranchTotalsBreakdownBottomSheet(
+    BuildContext context, {
+    required String title,
+    required IconData headerIcon,
+    required Color color,
+    required double total,
+    required ExpenseType expenseType,
+    required Map<String, double> byBranch,
+    required Map<String, List<ExpenseItem>> branchExpenses,
+    required Map<String, String> branchNamesById,
+  }) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final sortedBranches = byBranch.entries.toList()
+      ..sort((a, b) {
+        final aName = branchNamesById[a.key] ?? a.key;
+        final bName = branchNamesById[b.key] ?? b.key;
+        return aName.compareTo(bName);
+      });
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.72,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 18,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(20, 14, 20, bottomInset + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: color.withValues(alpha: 0.24)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(headerIcon, color: color),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _buildBreakdownRow('Total', total, color, bold: true),
+                if (sortedBranches.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'By Branch (tap for details)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...sortedBranches.map(
+                    (entry) {
+                      final branchName =
+                          branchNamesById[entry.key] ?? entry.key;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          onTap: () {
+                            final items = (branchExpenses[entry.key] ?? [])
+                                .where((e) => e.type == expenseType)
+                                .toList();
+                            _showExpensesBottomSheet(
+                              context,
+                              items,
+                              title: '$title - $branchName',
+                              icon: headerIcon,
+                              color: color,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: _buildBreakdownRow(
+                            branchName,
+                            entry.value,
+                            color,
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              color: color.withValues(alpha: 0.7),
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -57,6 +57,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       Map<String, BranchSummary> branchSummaries = {};
       final branchElectronicBreakdowns = <String, BranchElectronicBreakdown>{};
       final branchDeliveryTotals = <String, double>{};
+      final branchMedicinesTotals = <String, double>{};
+      final branchWarehouseCollectionTotals = <String, double>{};
+      final branchExpenses = <String, List<ExpenseItem>>{};
 
       for (var result in results) {
         if (result != null) {
@@ -78,6 +81,15 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           final branchId = (result['branchId'] as String?) ?? '';
           if (branchId.isNotEmpty) {
             branchDeliveryTotals[branchId] = deliveryTotal;
+            branchMedicinesTotals[branchId] =
+                result['medicinesExpenses'] as double;
+            branchWarehouseCollectionTotals[branchId] = _sumExpensesByType(
+              result['allExpenses'] as List<ExpenseItem>,
+              ExpenseType.warehouseCollection,
+            );
+            branchExpenses[branchId] = List<ExpenseItem>.from(
+              result['allExpenses'] as List<ExpenseItem>,
+            );
           }
 
           final summary = result['summary'] as BranchSummary;
@@ -108,6 +120,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalVisaExpenses: electronicBreakdown.visa,
         totalDeliveryExpenses: totalDeliveryExpenses,
         branchDeliveryTotals: branchDeliveryTotals,
+        branchMedicinesTotals: branchMedicinesTotals,
+        branchWarehouseCollectionTotals: branchWarehouseCollectionTotals,
+        branchExpenses: branchExpenses,
         branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
@@ -170,6 +185,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       Map<String, BranchSummary> branchSummaries = {};
       final branchElectronicBreakdowns = <String, BranchElectronicBreakdown>{};
       final branchDeliveryTotals = <String, double>{};
+      final branchMedicinesTotals = <String, double>{};
+      final branchWarehouseCollectionTotals = <String, double>{};
+      final branchExpenses = <String, List<ExpenseItem>>{};
 
       for (var result in results) {
         if (result != null) {
@@ -191,6 +209,15 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           final branchId = (result['branchId'] as String?) ?? '';
           if (branchId.isNotEmpty) {
             branchDeliveryTotals[branchId] = deliveryTotal;
+            branchMedicinesTotals[branchId] =
+                result['medicinesExpenses'] as double;
+            branchWarehouseCollectionTotals[branchId] = _sumExpensesByType(
+              result['allExpenses'] as List<ExpenseItem>,
+              ExpenseType.warehouseCollection,
+            );
+            branchExpenses[branchId] = List<ExpenseItem>.from(
+              result['allExpenses'] as List<ExpenseItem>,
+            );
           }
 
           final summary = result['summary'] as BranchSummary;
@@ -279,6 +306,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         totalVisaExpenses: electronicBreakdown.visa,
         totalDeliveryExpenses: totalDeliveryExpenses,
         branchDeliveryTotals: branchDeliveryTotals,
+        branchMedicinesTotals: branchMedicinesTotals,
+        branchWarehouseCollectionTotals: branchWarehouseCollectionTotals,
+        branchExpenses: branchExpenses,
         branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,
@@ -343,6 +373,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       Map<String, BranchSummary> branchSummaries = {};
       final branchElectronicBreakdowns = <String, BranchElectronicBreakdown>{};
       final branchDeliveryTotals = <String, double>{};
+      final branchMedicinesTotals = <String, double>{};
+      final branchWarehouseCollectionTotals = <String, double>{};
+      final branchExpenses = <String, List<ExpenseItem>>{};
 
       for (var result in results) {
         if (result != null) {
@@ -364,6 +397,15 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           final branchId = (result['branchId'] as String?) ?? '';
           if (branchId.isNotEmpty) {
             branchDeliveryTotals[branchId] = deliveryTotal;
+            branchMedicinesTotals[branchId] =
+                result['medicinesExpenses'] as double;
+            branchWarehouseCollectionTotals[branchId] = _sumExpensesByType(
+              result['allExpenses'] as List<ExpenseItem>,
+              ExpenseType.warehouseCollection,
+            );
+            branchExpenses[branchId] = List<ExpenseItem>.from(
+              result['allExpenses'] as List<ExpenseItem>,
+            );
           }
 
           final summary = result['summary'] as BranchSummary;
@@ -390,6 +432,9 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           ExpenseType.delivery,
         ),
         branchDeliveryTotals: branchDeliveryTotals,
+        branchMedicinesTotals: branchMedicinesTotals,
+        branchWarehouseCollectionTotals: branchWarehouseCollectionTotals,
+        branchExpenses: branchExpenses,
         branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,

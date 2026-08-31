@@ -372,6 +372,14 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                                   .expand((r) => r.expenses)
                                                   .toList(),
                                             ),
+                                        onShowTypedExpenses: (type) =>
+                                            _showTypedExpensesBottomSheet(
+                                              context,
+                                              state.reports
+                                                  .expand((r) => r.expenses)
+                                                  .toList(),
+                                              type,
+                                            ),
                                       );
                                     },
                                   );
@@ -433,6 +441,14 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                                             state.reports
                                                 .expand((r) => r.expenses)
                                                 .toList(),
+                                          ),
+                                      onShowTypedExpenses: (type) =>
+                                          _showTypedExpensesBottomSheet(
+                                            context,
+                                            state.reports
+                                                .expand((r) => r.expenses)
+                                                .toList(),
+                                            type,
                                           ),
                                     ),
                                   ],
@@ -660,19 +676,43 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                _buildMonthlySummaryCard(
-                  title: 'تبديل نقدي',
-                  amount: state.totalMedicinesExpenses,
-                  icon: Icons.medication,
-                  color: Colors.purple,
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showTypedExpensesBottomSheet(
+                      context,
+                      state.allExpenses,
+                      ExpenseType.medicines,
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildMonthlySummaryCard(
+                    title: 'تبديل نقدي',
+                    amount: state.totalMedicinesExpenses,
+                    icon: Icons.medication,
+                    color: Colors.purple,
+                    subtitle: 'Tap to view details',
+                  ),
                 ),
                 const SizedBox(height: 16),
 
-                _buildMonthlySummaryCard(
-                  title: 'شراء بضاعه بفاتوره',
-                  amount: state.totalWarehouseCollectionExpenses,
-                  icon: Icons.inventory_2,
-                  color: Colors.deepOrange,
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showTypedExpensesBottomSheet(
+                      context,
+                      state.allExpenses,
+                      ExpenseType.warehouseCollection,
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildMonthlySummaryCard(
+                    title: 'شراء بضاعه بفاتوره',
+                    amount: state.totalWarehouseCollectionExpenses,
+                    icon: Icons.inventory_2,
+                    color: Colors.deepOrange,
+                    subtitle: 'Tap to view details',
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -939,14 +979,34 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     );
   }
 
+  void _showTypedExpensesBottomSheet(
+    BuildContext context,
+    List<ExpenseItem> allExpenses,
+    ExpenseType type,
+  ) {
+    final isWarehouse = type == ExpenseType.warehouseCollection;
+    _showExpensesBottomSheet(
+      context,
+      allExpenses.where((e) => e.type == type).toList(),
+      title: isWarehouse ? 'شراء بضاعه بفاتوره' : 'تبديل نقدي',
+      icon: isWarehouse ? Icons.inventory_2 : Icons.medication,
+      color: isWarehouse ? Colors.deepOrange : Colors.purple,
+    );
+  }
+
   /// عرض المصاريف في bottom sheet
   void _showExpensesBottomSheet(
     BuildContext context,
-    List<ExpenseItem> expenses,
-  ) {
+    List<ExpenseItem> expenses, {
+    String title = 'All Expenses',
+    IconData icon = Icons.receipt_long,
+    Color? color,
+  }) {
+    final accent = color ?? ColorsManger.primary;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -972,9 +1032,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.receipt_long,
-                    color: ColorsManger.primary,
+                  Icon(
+                    icon,
+                    color: accent,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
@@ -982,9 +1042,9 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'All Expenses',
-                          style: TextStyle(
+                        Text(
+                          title,
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1001,10 +1061,10 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                   ),
                   Text(
                     'EGP ${expenses.fold<double>(0.0, (sum, e) => sum + e.amount).toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: ColorsManger.primary,
+                      color: accent,
                     ),
                   ),
                 ],
@@ -1746,6 +1806,7 @@ class _TotalsDockCard extends StatelessWidget {
   final bool isCollected;
   final VoidCallback? onToggleCollect;
   final VoidCallback onShowExpenses;
+  final void Function(ExpenseType type) onShowTypedExpenses;
 
   const _TotalsDockCard({
     required this.reports,
@@ -1753,6 +1814,7 @@ class _TotalsDockCard extends StatelessWidget {
     required this.isCollected,
     required this.onToggleCollect,
     required this.onShowExpenses,
+    required this.onShowTypedExpenses,
   });
 
   @override
@@ -1893,6 +1955,7 @@ class _TotalsDockCard extends StatelessWidget {
               amount: totalMedicinesExpenses,
               icon: Icons.medication,
               color: Colors.purple,
+              onTap: () => onShowTypedExpenses(ExpenseType.medicines),
             ),
             _buildSummaryCard(
               egp: egp,
@@ -1900,6 +1963,7 @@ class _TotalsDockCard extends StatelessWidget {
               amount: totalWarehouseCollectionExpenses,
               icon: Icons.inventory_2,
               color: Colors.deepOrange,
+              onTap: () => onShowTypedExpenses(ExpenseType.warehouseCollection),
             ),
             _buildSummaryCard(
               egp: egp,

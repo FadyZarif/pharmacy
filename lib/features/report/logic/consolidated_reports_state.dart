@@ -28,6 +28,9 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
   final double totalVisaExpenses;
   final double totalDeliveryExpenses;
   final Map<String, double> branchDeliveryTotals;
+  final Map<String, double> branchMedicinesTotals;
+  final Map<String, double> branchWarehouseCollectionTotals;
+  final Map<String, List<ExpenseItem>> branchExpenses;
   final Map<String, BranchElectronicBreakdown> branchElectronicBreakdowns;
   final double vaultAmount;
   final double totalSurplus;
@@ -51,6 +54,9 @@ class ConsolidatedReportsLoaded extends ConsolidatedReportsState {
     this.totalVisaExpenses = 0.0,
     this.totalDeliveryExpenses = 0.0,
     this.branchDeliveryTotals = const {},
+    this.branchMedicinesTotals = const {},
+    this.branchWarehouseCollectionTotals = const {},
+    this.branchExpenses = const {},
     this.branchElectronicBreakdowns = const {},
     required this.vaultAmount,
     required this.totalSurplus,
