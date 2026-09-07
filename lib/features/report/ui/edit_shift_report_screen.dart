@@ -350,7 +350,9 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                         labelText: 'Expense Type *',
                         border: OutlineInputBorder(),
                       ),
-                      items: ExpenseType.values.map((type) {
+                      items: ExpenseType.values
+                          .where((type) => type != ExpenseType.companyCollection)
+                          .map((type) {
                         String label;
                         switch (type) {
                           case ExpenseType.medicines:
@@ -412,23 +414,6 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter delivery area';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    if (selectedType == ExpenseType.companyCollection) ...[
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Company Name *',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (value) => companyName = value,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter company name';
                           }
                           return null;
                         },
