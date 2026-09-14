@@ -1,14 +1,17 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/features/report/data/models/daily_report_model.dart';
 import 'package:pharmacy/features/report/logic/edit_report_cubit.dart';
 import 'package:pharmacy/features/report/logic/edit_report_state.dart';
+import 'package:pharmacy/features/report/logic/shift_report_cubit.dart';
 import 'package:pharmacy/features/report/ui/widgets/shift_report_widgets.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -39,6 +42,8 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
 
   late ComputerDifferenceType _computerDifferenceType;
   late List<ExpenseItem> _expenses;
+  late List<String> _attachmentUrls;
+  final List<AttachmentFileData> _newAttachmentFiles = [];
 
   // Map to store files locally before upload (expenseId -> PlatformFile)
   final Map<String, PlatformFile> _expenseFiles = {};
@@ -54,6 +59,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
     _notesController = TextEditingController(text: widget.report.notes ?? '');
     _computerDifferenceType = widget.report.computerDifferenceType ?? ComputerDifferenceType.none;
     _expenses = List.from(widget.report.expenses);
+    _attachmentUrls = List<String>.from(widget.report.attachmentUrls);
 
     // Add listener to update UI when drawer amount changes
     _drawerAmountController.addListener(() {
@@ -234,12 +240,13 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Attachments Section
-                        if (widget.report.attachmentUrls.isNotEmpty)
-                          _buildAttachmentsSection(widget.report.attachmentUrls),
-
-                        if (widget.report.attachmentUrls.isNotEmpty)
+                        // Attachments Section (always editable in edit mode)
+                        if (_isEditMode ||
+                            _attachmentUrls.isNotEmpty ||
+                            _newAttachmentFiles.isNotEmpty) ...[
+                          _buildAttachmentsSection(),
                           const SizedBox(height: 24),
+                        ],
 
                         ShiftReportWidgets.buildExpensesSection(
                           expenses: _expenses,
@@ -689,10 +696,23 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
   void _saveReport(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
-    List<ExpenseItem> finalExpenses = _expenses;
+    if (_attachmentUrls.isEmpty && _newAttachmentFiles.isEmpty) {
+      defToast2(
+        context: context,
+        msg: 'Please add at least one attachment',
+        dialogType: DialogType.error,
+      );
+      return;
+    }
 
-    // Upload expense files if any
-    if (_expenseFiles.isNotEmpty) {
+    List<ExpenseItem> finalExpenses = _expenses;
+    List<String> finalAttachmentUrls = List<String>.from(_attachmentUrls);
+
+    final needsUpload =
+        _expenseFiles.isNotEmpty || _newAttachmentFiles.isNotEmpty;
+
+    // Upload expense files / new report attachments if any
+    if (needsUpload) {
       // Show loading
       showDialog(
         context: context,
@@ -703,7 +723,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
       );
 
       try {
-        // Upload all files and update expenses with real URLs
+        // Upload all expense files and update expenses with real URLs
         final updatedExpenses = <ExpenseItem>[];
 
         for (var expense in _expenses) {
@@ -746,6 +766,11 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
 
         finalExpenses = updatedExpenses;
 
+        // Upload new report attachments
+        for (final file in _newAttachmentFiles) {
+          finalAttachmentUrls.add(await _uploadReportAttachment(file));
+        }
+
         // Close loading dialog
         if (mounted) Navigator.pop(context);
       } catch (e) {
@@ -768,15 +793,46 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
       electronicWalletAmount: double.tryParse(_electronicWalletController.text),
       notes: _notesController.text.isEmpty ? null : _notesController.text,
       expenses: finalExpenses,
+      attachmentUrls: finalAttachmentUrls,
     );
 
     context.read<EditReportCubit>().updateReport(updatedReport, widget.date);
   }
 
-  Widget _buildAttachmentsSection(List<String> attachmentUrls) {
-    if (attachmentUrls.isEmpty) {
-      return const SizedBox.shrink();
+  Future<String> _uploadReportAttachment(AttachmentFileData fileData) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final extension = fileData.name.split('.').last;
+    final fileName =
+        '${timestamp}_${widget.report.shiftType.name}.$extension';
+    final storageRef = FirebaseStorage.instance.ref().child(
+      'shift_reports/${widget.report.branchId}/${widget.date}/$fileName',
+    );
+
+    final uploadTask = await storageRef.putData(
+      fileData.bytes,
+      SettableMetadata(contentType: _getContentType(extension)),
+    );
+    return uploadTask.ref.getDownloadURL();
+  }
+
+  String _getContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      default:
+        return 'application/octet-stream';
     }
+  }
+
+  Widget _buildAttachmentsSection() {
+    final totalAttachments =
+        _newAttachmentFiles.length + _attachmentUrls.length;
+    final itemCount = _isEditMode ? totalAttachments + 1 : totalAttachments;
 
     return _PanelCard(
       child: Column(
@@ -785,129 +841,491 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Attachments',
-                style: TextStyle(
+              Text(
+                _isEditMode
+                    ? 'Attachments (Images or PDFs)'
+                    : 'Attachments',
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
                   color: Colors.black87,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: ColorsManger.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: ColorsManger.primary.withValues(alpha: 0.18),
+              if (totalAttachments > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: ColorsManger.primary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: ColorsManger.primary.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: Text(
+                    '$totalAttachments file(s)',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: ColorsManger.primary,
+                    ),
                   ),
                 ),
-                child: Text(
-                  '${attachmentUrls.length} file(s)',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: ColorsManger.primary,
-                  ),
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1,
+          if (_isEditMode) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Add, remove, or replace files then save',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            itemCount: attachmentUrls.length,
-            itemBuilder: (context, index) {
-              final url = attachmentUrls[index];
-              final isPdf = url.toLowerCase().contains('.pdf');
+          ],
+          const SizedBox(height: 12),
+          if (itemCount == 0)
+            Text(
+              'No attachments',
+              style: TextStyle(color: Colors.grey.shade600),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1,
+              ),
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                if (_isEditMode && index == totalAttachments) {
+                  return InkWell(
+                    onTap: _showAttachmentPicker,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: ColorsManger.primary.withValues(alpha: 0.24),
+                          width: 2,
+                        ),
+                        boxShadow: _panelShadow(),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate,
+                            color: ColorsManger.primary,
+                            size: 30,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Add',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: ColorsManger.primary,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
 
-              return InkWell(
-                onTap: () => _openAttachment(url),
+                return _buildAttachmentTile(index);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentTile(int index) {
+    final isLocalFile = index < _newAttachmentFiles.length;
+    final bool isPdf;
+    final String fileName;
+    final Uint8List? imageBytes;
+    final String? imageUrl;
+
+    if (isLocalFile) {
+      final file = _newAttachmentFiles[index];
+      final extension = file.name.split('.').last.toLowerCase();
+      isPdf = extension == 'pdf';
+      fileName = file.name;
+      imageBytes = isPdf ? null : file.bytes;
+      imageUrl = null;
+    } else {
+      final urlIndex = index - _newAttachmentFiles.length;
+      final url = _attachmentUrls[urlIndex];
+      final extension = url.split('.').last.toLowerCase();
+      isPdf = extension.contains('pdf');
+      fileName = 'File ${urlIndex + 1}';
+      imageBytes = null;
+      imageUrl = isPdf ? null : url;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.16)),
+        boxShadow: _panelShadow(),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: InkWell(
+              onTap: () {
+                if (!isLocalFile) {
+                  final urlIndex = index - _newAttachmentFiles.length;
+                  _openAttachment(_attachmentUrls[urlIndex]);
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.16)),
-                    boxShadow: _panelShadow(),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: isPdf
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.picture_as_pdf,
-                                size: 40,
-                                color: ColorsManger.primary,
+                child: isPdf
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.picture_as_pdf,
+                            size: 40,
+                            color: ColorsManger.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              fileName,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
                               ),
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: Text(
-                                  'PDF ${index + 1}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Image.network(
-                            url,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      )
+                    : (imageBytes != null
+                        ? Image.memory(
+                            imageBytes,
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'Tap to open',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.grey,
+                          )
+                        : (imageUrl != null
+                            ? Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress
+                                                  .expectedTotalBytes !=
+                                              null
+                                          ? loadingProgress
+                                                  .cumulativeBytesLoaded /
+                                              loadingProgress
+                                                  .expectedTotalBytes!
+                                          : null,
                                     ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          size: 40, color: Colors.grey),
+                                      SizedBox(height: 6),
+                                      Text(
+                                        'Tap to open',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              )
+                            : const Center(
+                                child: Icon(Icons.image,
+                                    size: 40, color: ColorsManger.primary),
+                              ))),
+              ),
+            ),
+          ),
+          if (_isEditMode) ...[
+            Positioned(
+              top: 4,
+              right: 4,
+              child: InkWell(
+                onTap: () => _removeAttachment(index),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 16,
                   ),
                 ),
-              );
-            },
+              ),
+            ),
+            Positioned(
+              top: 4,
+              left: 4,
+              child: InkWell(
+                onTap: () => _replaceAttachment(index),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: ColorsManger.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.edit,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          Positioned(
+            bottom: 4,
+            left: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isLocalFile ? Colors.orange : Colors.green,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isLocalFile ? 'New' : 'Saved',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _removeAttachment(int index) {
+    setState(() {
+      if (index < _newAttachmentFiles.length) {
+        _newAttachmentFiles.removeAt(index);
+      } else {
+        final urlIndex = index - _newAttachmentFiles.length;
+        if (urlIndex >= 0 && urlIndex < _attachmentUrls.length) {
+          _attachmentUrls.removeAt(urlIndex);
+        }
+      }
+    });
+  }
+
+  Future<void> _replaceAttachment(int index) async {
+    final picked = await _pickAttachmentFile();
+    if (picked == null) return;
+    setState(() {
+      if (index < _newAttachmentFiles.length) {
+        _newAttachmentFiles[index] = picked;
+      } else {
+        final urlIndex = index - _newAttachmentFiles.length;
+        if (urlIndex >= 0 && urlIndex < _attachmentUrls.length) {
+          _attachmentUrls.removeAt(urlIndex);
+          _newAttachmentFiles.add(picked);
+        }
+      }
+    });
+  }
+
+  void _showAttachmentPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Select Attachment',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: ColorsManger.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.camera_alt, color: ColorsManger.primary),
+              ),
+              title: const Text('Take Photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                final file = await _pickImage(ImageSource.camera);
+                if (file != null) {
+                  setState(() => _newAttachmentFiles.add(file));
+                }
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.photo_library, color: Colors.green),
+              ),
+              title: const Text('Choose from Gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final files = await _pickImagesFromGallery();
+                if (files.isNotEmpty) {
+                  setState(() => _newAttachmentFiles.addAll(files));
+                }
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+              ),
+              title: const Text('Choose PDF / File'),
+              onTap: () async {
+                Navigator.pop(context);
+                final file = await _pickPdfOrImageFile();
+                if (file != null) {
+                  setState(() => _newAttachmentFiles.add(file));
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<AttachmentFileData?> _pickAttachmentFile() async {
+    // Used by replace — open same chooser options via file picker for simplicity
+    return _pickPdfOrImageFile();
+  }
+
+  Future<AttachmentFileData?> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: source, imageQuality: 85);
+      if (image == null) return null;
+      final bytes = await image.readAsBytes();
+      return AttachmentFileData(
+        name: image.name,
+        bytes: bytes,
+        path: kIsWeb ? null : image.path,
+      );
+    } catch (e) {
+      if (!mounted) return null;
+      defToast2(
+        context: context,
+        msg: 'Error picking image: $e',
+        dialogType: DialogType.error,
+      );
+      return null;
+    }
+  }
+
+  Future<List<AttachmentFileData>> _pickImagesFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final images = await picker.pickMultiImage(imageQuality: 85);
+      final files = <AttachmentFileData>[];
+      for (final image in images) {
+        final bytes = await image.readAsBytes();
+        files.add(
+          AttachmentFileData(
+            name: image.name,
+            bytes: bytes,
+            path: kIsWeb ? null : image.path,
+          ),
+        );
+      }
+      return files;
+    } catch (e) {
+      if (!mounted) return [];
+      defToast2(
+        context: context,
+        msg: 'Error picking images: $e',
+        dialogType: DialogType.error,
+      );
+      return [];
+    }
+  }
+
+  Future<AttachmentFileData?> _pickPdfOrImageFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return null;
+      final file = result.files.first;
+      if (file.bytes == null) {
+        throw Exception('File bytes not available');
+      }
+      return AttachmentFileData(
+        name: file.name,
+        bytes: file.bytes!,
+        path: file.path,
+      );
+    } catch (e) {
+      if (!mounted) return null;
+      defToast2(
+        context: context,
+        msg: 'Error picking file: $e',
+        dialogType: DialogType.error,
+      );
+      return null;
+    }
   }
 
   Future<void> _openAttachment(String url) async {
