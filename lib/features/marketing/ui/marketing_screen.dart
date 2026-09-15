@@ -266,7 +266,7 @@ class _MarketingScreenState extends State<MarketingScreen> {
           final isLoading = state is MarketingLoading && !_initialized;
           final bottomPad = MediaQuery.of(context).padding.bottom;
           // Hosted inside `EmployeeLayout` (`extendBody: true`, glass nav 66 + padding 14).
-          const glassNavHeight = 66.0;
+          const glassNavHeight = 110.0; // nav + powered-by branding
           const glassNavOuterPadding = 14.0;
           final navOverlap = bottomPad + glassNavHeight + glassNavOuterPadding;
           final showSaveBar = _isViewingToday && !_isReadOnly;

@@ -156,7 +156,7 @@ class _AddShiftReportScreenState extends State<AddShiftReportScreen> {
           final cubit = context.read<ShiftReportCubit>();
           final isLoading = state is ShiftReportLoading;
           final bottomPad = MediaQuery.of(context).padding.bottom;
-          const kBottomNavHeight = 80.0; // NavigationBar 66 + padding
+          const kBottomNavHeight = 130.0; // nav 66 + powered-by + padding
 
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,

@@ -13,6 +13,7 @@ import '../../../core/helpers/app_regex.dart';
 import '../../../core/helpers/constants.dart';
 import '../../../core/widgets/app_text_form_field.dart';
 import '../../../core/widgets/loading_button.dart';
+import '../../../core/widgets/powered_by_cowdlly.dart';
 import '../../user/data/models/user_model.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -291,25 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 18),
-                                        Text(
-                                          'Powered by Double Click',
-                                          textAlign: TextAlign.center,
-                                          style: GoogleFonts.cairo(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black.withValues(alpha: 0.55),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(16.0),
-                                          child: Image.asset(
-                                            'assets/images/3bb522e6-c73d-42ea-b903-8205085c8fbb.png',
-                                            width: 120.0,
-                                            height: 120.0,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
+                                        const PoweredByCowdlly(),
                                       ],
                                     ),
                                   ),

@@ -102,7 +102,7 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
         builder: (context, state) {
           final isLoading = state is EditReportLoading;
           final bottomPad = MediaQuery.of(context).padding.bottom;
-          const kBottomNavHeight = 80.0; // NavigationBar 66 + padding
+          const kBottomNavHeight = 130.0; // nav 66 + powered-by + padding
 
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,

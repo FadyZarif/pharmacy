@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/core/widgets/powered_by_cowdlly.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// شاشة إجبار التحديث: لا يمكن استخدام التطبيق حتى يتم التحديث من المتجر.
@@ -24,8 +25,8 @@ class ForceUpdateScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const Spacer(),
               Icon(
                 Icons.system_update,
                 size: 80,
@@ -62,6 +63,8 @@ class ForceUpdateScreen extends StatelessWidget {
                   textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
+              const Spacer(),
+              const PoweredByCowdlly(compact: true),
             ],
           ),
         ),

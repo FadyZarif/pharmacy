@@ -268,7 +268,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         }
 
                         // Reserve space for FAB + glass bottom nav (EmployeeLayout)
-                        final navOverlap = MediaQuery.of(context).padding.bottom + 66.0 + 14.0;
+                        final navOverlap = MediaQuery.of(context).padding.bottom + 110.0 + 14.0;
                         final listBottom = navOverlap + 80.0; // FAB height + margin
                         return ListView.separated(
                           padding: EdgeInsets.fromLTRB(16, 0, 16, listBottom),
@@ -298,9 +298,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           // icon: const Icon(Icons.person_add, color: Colors.white),
           // label: const Text('Add User', style: TextStyle(color: Colors.white)),
         ),
-        // Keep FAB above the glass bottom nav (EmployeeLayout: 66 + 14 + safe area).
+        // Keep FAB above the glass bottom nav (EmployeeLayout: nav + powered-by + padding).
         floatingActionButtonLocation: _FabAboveNavLocation(
-          MediaQuery.of(context).padding.bottom + 66.0 + 14.0,
+          MediaQuery.of(context).padding.bottom + 110.0 + 14.0,
         ),
       ),
     );

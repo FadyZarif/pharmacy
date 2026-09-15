@@ -119,7 +119,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
             // This screen is hosted inside `EmployeeLayout` which uses `extendBody: true`
             // with a glass bottom navigation (height: 66 + outer padding: 14). Add enough
             // bottom padding so content won't be covered on mobile.
-            const glassNavHeight = 66.0;
+            const glassNavHeight = 110.0; // nav + powered-by branding
             const glassNavOuterPadding = 14.0;
             // Space that the glass nav overlaps with the body (inside EmployeeLayout).
             final navOverlap =

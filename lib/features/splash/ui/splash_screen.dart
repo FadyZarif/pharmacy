@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/core/widgets/powered_by_cowdlly.dart';
 import 'package:pharmacy/features/branch/ui/branch_selection_screen.dart';
 import 'package:pharmacy/features/employee/ui/employee_layout.dart';
 import 'package:pharmacy/features/login/ui/login_screen.dart';
@@ -164,10 +165,12 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             child: SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+              child: Stack(
+                children: [
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                     // Animated blobs behind the logo to make background more attractive.
                     SizedBox(
                       width: 320,
@@ -283,8 +286,16 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                     ),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 16,
+                    child: PoweredByCowdlly(compact: true),
+                  ),
+                ],
               ),
             ),
           );

@@ -50,7 +50,7 @@ class _ManageRequestsBody extends StatelessWidget {
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
     // EmployeeLayout glass bottom nav: 66 + 14 + safe area
-    const glassNavHeight = 66.0;
+    const glassNavHeight = 110.0; // nav + powered-by branding
     const glassNavOuterPadding = 14.0;
     final navOverlap = bottomPad + glassNavHeight + glassNavOuterPadding;
 
@@ -323,7 +323,7 @@ class _ManageRequestsBody extends StatelessWidget {
         }
 
         final bottomPad = MediaQuery.of(context).padding.bottom;
-        const glassNavH = 66.0;
+        const glassNavH = 110.0;
         const glassNavPad = 14.0;
         final listBottom = bottomPad + glassNavH + glassNavPad + 12;
         return ListView.builder(
