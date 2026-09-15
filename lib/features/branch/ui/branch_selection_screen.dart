@@ -346,7 +346,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
               ),
               const PoweredByCowdlly(
                 compact: true,
-                padding: EdgeInsets.fromLTRB(16, 4, 16, 10),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
               ),
             ],
           ),

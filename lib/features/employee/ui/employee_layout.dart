@@ -127,7 +127,7 @@ class _GlassBottomNav extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Padding(
-                padding: EdgeInsets.fromLTRB(8, 8, 8, 0),
+                padding: EdgeInsets.fromLTRB(10, 10, 10, 2),
                 child: PoweredByCowdlly(compact: true),
               ),
               NavigationBar(

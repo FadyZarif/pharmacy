@@ -139,7 +139,7 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
     // Screen is hosted inside EmployeeLayout which uses a glass bottom nav.
-    const glassNavHeight = 110.0; // nav + powered-by branding
+    const glassNavHeight = 118.0; // nav + powered-by branding
     const glassNavOuterPadding = 14.0;
     final navOverlap = bottomPad + glassNavHeight + glassNavOuterPadding;
 
