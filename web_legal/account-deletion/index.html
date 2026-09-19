@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حذف الحساب — صيدليات د. عماد فوزي</title>
+<meta name="description" content="كيفية طلب حذف حسابك وبياناتك من تطبيق صيدليات د. عماد فوزي.">
+<meta name="robots" content="noindex, follow">
+<style>
+:root{
+  --brand:#00B4D8; --brand-d:#0086a3; --fg:#14202b; --muted:#5d6b7a;
+  --bg:#f1f4f8; --card:#fff; --border:#dde4ec;
+  --shadow:0 1px 2px rgba(16,32,64,.06),0 10px 30px rgba(16,32,64,.07);
+  --sans:system-ui,-apple-system,"Segoe UI","Noto Naskh Arabic","Noto Sans Arabic",Tahoma,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--fg:#e7eef6;--muted:#9bacbd;--bg:#0c1219;--card:#141d27;--border:#243140;
+        --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 30px rgba(0,0,0,.4);--brand:#38cdea;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);
+     line-height:1.85;font-size:16px;-webkit-text-size-adjust:100%}
+.wrap{max-width:820px;margin:0 auto;padding:24px 16px 72px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;
+           padding-block:20px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:1.05rem;letter-spacing:.2px}
+.brand span{color:var(--brand)}
+button.lang{font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;
+            background:var(--card);color:var(--fg);border:1px solid var(--border);
+            border-radius:999px;padding:7px 16px}
+button.lang:hover{border-color:var(--brand);color:var(--brand)}
+main{background:var(--card);border:1px solid var(--border);border-radius:16px;
+     padding:clamp(20px,4vw,40px);box-shadow:var(--shadow)}
+h1{font-size:clamp(1.5rem,4vw,2rem);margin:0 0 6px;line-height:1.35}
+.updated{color:var(--muted);font-size:.86rem;margin:0 0 28px}
+h2{font-size:1.15rem;margin:34px 0 10px;padding-top:4px}
+h2:first-of-type{margin-top:8px}
+p,li{color:var(--fg)}
+ul{padding-inline-start:22px;margin:10px 0}
+li{margin:7px 0}
+a{color:var(--brand-d)}
+@media (prefers-color-scheme:dark){a{color:var(--brand)}}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.93rem;display:block;overflow-x:auto}
+th,td{border:1px solid var(--border);padding:9px 12px;text-align:start;vertical-align:top}
+th{background:rgba(0,180,216,.08);font-weight:700}
+.note{background:rgba(0,180,216,.07);border:1px solid var(--border);
+      border-inline-start:3px solid var(--brand);border-radius:10px;
+      padding:14px 18px;margin:18px 0}
+footer{color:var(--muted);font-size:.84rem;text-align:center;margin-top:28px}
+footer a{color:var(--muted)}
+[data-lang="ar"] .en,[data-lang="en"] .ar{display:none}
+[data-lang="en"] {direction:ltr}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="brand">صيدليات د. <span>عماد فوزي</span></div>
+  <button class="lang" onclick="tgl()"><span class="ar">English</span><span class="en">العربية</span></button>
+</header>
+<main>
+<div class="ar">
+
+<h1>حذف الحساب والبيانات</h1>
+<p class="updated">آخر تحديث: 16 سبتمبر 2026</p>
+
+<div class="note">
+<p>تطبيق <strong>Dr Emad Fawzy Pharmacy</strong> لا يتيح التسجيل الذاتي. الحسابات تُنشئها إدارة الصيدليات وتُسلَّم للموظف، ولذلك يتم الحذف عبر الإدارة وليس من داخل التطبيق.</p>
+</div>
+
+<h2>كيف تطلب الحذف</h2>
+<ul>
+<li><strong>من داخل الشركة:</strong> اطلب من الإدارة حذف حسابك. تستطيع الإدارة حذف أي حساب موظف مباشرة من شاشة «الموظفين» داخل التطبيق.</li>
+<li><strong>بالبريد الإلكتروني:</strong> راسلنا على <a href="mailto:cowdlly.ds@gmail.com?subject=%D8%B7%D9%84%D8%A8%20%D8%AD%D8%B0%D9%81%20%D8%AD%D8%B3%D8%A7%D8%A8">cowdlly.ds@gmail.com</a> من بريدك المسجَّل في التطبيق، واكتب اسمك والفرع. نؤكد الطلب ونُنفّذه خلال ٣٠ يومًا.</li>
+</ul>
+
+<h2>ما الذي يُحذف</h2>
+<ul>
+<li>بيانات الدخول (البريد وكلمة المرور) في Firebase Authentication.</li>
+<li>ملفك الشخصي: الاسم، الهاتف، الصورة الشخصية، الدور، الفرع، كود الطباعة، رمز الإشعارات.</li>
+</ul>
+
+<h2>ما الذي يبقى، ولماذا</h2>
+<p>سجلات العمل التي أنشأتها &mdash; تقارير الورديات، مصروفات وإيداعات الخزنة، المشتريات، كشوف الرواتب والحوافز &mdash; هي سجلات محاسبية وتشغيلية للشركة. يُحتفظ بها للمدة التي تفرضها المتطلبات القانونية والمحاسبية، حتى بعد حذف الحساب، ولا يمكن حذفها بناءً على طلب فردي.</p>
+
+<h2>التواصل</h2>
+<p><a href="mailto:cowdlly.ds@gmail.com">cowdlly.ds@gmail.com</a></p>
+
+</div>
+<div class="en">
+
+<h1>Account and data deletion</h1>
+<p class="updated">Last updated: 16 September 2026</p>
+
+<div class="note">
+<p><strong>Dr Emad Fawzy Pharmacy</strong> has no self sign-up. Accounts are created by pharmacy management and handed to the employee, so deletion goes through management rather than from inside the app.</p>
+</div>
+
+<h2>How to request deletion</h2>
+<ul>
+<li><strong>Inside the company:</strong> ask management to delete your account. Management can delete any employee account directly from the "Employees" screen in the app.</li>
+<li><strong>By email:</strong> write to <a href="mailto:cowdlly.ds@gmail.com?subject=Account%20deletion%20request">cowdlly.ds@gmail.com</a> from the address registered in the app, stating your name and branch. We confirm the request and carry it out within 30 days.</li>
+</ul>
+
+<h2>What is deleted</h2>
+<ul>
+<li>Sign-in credentials (email and password) in Firebase Authentication.</li>
+<li>Your profile: name, phone, profile photo, role, branch, print code, push notification token.</li>
+</ul>
+
+<h2>What is kept, and why</h2>
+<p>The work records you created &mdash; shift reports, vault expenses and deposits, purchases, salary and incentive statements &mdash; are the company's accounting and operational records. They are retained for as long as legal and accounting requirements demand, even after the account is deleted, and cannot be removed on an individual request.</p>
+
+<h2>Contact</h2>
+<p><a href="mailto:cowdlly.ds@gmail.com">cowdlly.ds@gmail.com</a></p>
+
+</div>
+</main>
+<footer>
+  <span class="ar">صيدليات د. عماد فوزي &middot; <a href="/">كل المستندات</a></span>
+  <span class="en">Dr Emad Fawzy Pharmacy &middot; <a href="/">All documents</a></span>
+</footer>
+</div>
+<script>
+var T={ar:"حذف الحساب — صيدليات د. عماد فوزي",en:"Account Deletion — Dr Emad Fawzy Pharmacy"};
+function set(l){var d=document.documentElement;d.setAttribute('data-lang',l);
+  d.setAttribute('lang',l);d.setAttribute('dir',l==='ar'?'rtl':'ltr');
+  document.title=T[l];try{localStorage.setItem('pl',l)}catch(e){}}
+function tgl(){set(document.documentElement.getAttribute('data-lang')==='ar'?'en':'ar')}
+(function(){var c=null;try{var q=new URLSearchParams(location.search).get('lang');
+  if(q==='ar'||q==='en')c=q;if(!c){var s=localStorage.getItem('pl');
+  if(s==='ar'||s==='en')c=s}}catch(e){}set(c||'ar')})();
+</script>
+</body></html>

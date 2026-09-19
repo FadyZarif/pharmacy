@@ -13,7 +13,7 @@
           "projectId": "pharmacy-employee-system-new",
           "configurations": {
             "android": "1:412302383494:android:360ba81aeaaf9866257407",
-            "ios": "1:412302383494:ios:81ffdc332be89fba257407",
+            "ios": "1:412302383494:ios:359d31c7635676b1257407",
             "web": "1:412302383494:web:fbed773f585c2e70257407"
           }
         }
@@ -26,5 +26,15 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": "web_legal",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
   }
 }

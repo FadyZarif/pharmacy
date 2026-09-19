@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Export must be MANUAL. An App Store Connect API key with the App Manager
+	  role cannot use Apple's cloud-managed signing, so signingStyle=automatic
+	  fails here with "Cloud signing permission error" no matter the setup.
+	-->
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>teamID</key>
+	<string>C64KS6GF44</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.cowdlly.emadFawzyPharmacy</key>
+		<string>Emad Fawzy Pharmacy App Store</string>
+	</dict>
+	<key>uploadSymbols</key>
+	<true/>
+	<key>destination</key>
+	<string>export</string>
+</dict>
+</plist>

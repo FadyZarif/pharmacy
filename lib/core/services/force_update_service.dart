@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -12,7 +14,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 class ForceUpdateService {
   static const String _configPath = 'app_config';
   static const String _docId = 'version';
-  static const String _fieldMinBuildNumber = 'minimum_build_number';
+  // أرقام البناء في iOS و Android مستقلة تمامًا، فلكل منصة حقلها.
+  // لو استُخدم حقل واحد مشترك، ضبط الحد الأدنى لأندرويد يقفل تطبيق الآيفون على كل المستخدمين.
+  static String get _fieldMinBuildNumber =>
+      Platform.isIOS ? 'ios_minimum_build_number' : 'minimum_build_number';
 
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 

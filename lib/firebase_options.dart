@@ -66,11 +66,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAJ3Mk4mR_A04MuPoQXYJJ2SKdxsrS-nPc',
-    appId: '1:412302383494:ios:81ffdc332be89fba257407',
+    appId: '1:412302383494:ios:359d31c7635676b1257407',
     messagingSenderId: '412302383494',
     projectId: 'pharmacy-employee-system-new',
     storageBucket: 'pharmacy-employee-system-new.firebasestorage.app',
-    iosBundleId: 'com.emadfawzy.pharmacies',
+    iosBundleId: 'com.cowdlly.emadFawzyPharmacy',
   );
 
 }

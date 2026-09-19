@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<!--
+		  Privacy manifest for the Runner target's own code only.
+
+		  Apple aggregates this with the manifests shipped inside each pod, so
+		  the Firebase SDKs declare their own collection and plugins such as
+		  path_provider / image_picker declare their own required-reason API
+		  use. Runner does nothing beyond hosting the Flutter engine and
+		  setting the notification-centre delegate — hence the empty arrays.
+
+		  Add entries the moment custom Swift/ObjC in Runner touches
+		  UserDefaults, file timestamps, disk space, active keyboards or
+		  system boot time.
+		-->
+		<key>NSPrivacyTracking</key>
+		<false/>
+		<key>NSPrivacyTrackingDomains</key>
+		<array/>
+		<key>NSPrivacyCollectedDataTypes</key>
+		<array/>
+		<key>NSPrivacyAccessedAPITypes</key>
+		<array/>
+	</dict>
+</plist>

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/powered_by_cowdlly.dart';
@@ -9,9 +11,12 @@ class ForceUpdateScreen extends StatelessWidget {
 
   static const String _playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.emadfawzy.pharmacies';
+  // ponytail: App Store id doesn't exist yet; swap in the real one after the first iOS release.
+  static const String _appStoreUrl =
+      'https://apps.apple.com/search?term=Dr%20Emad%20Fawzy%20Pharmacy';
 
   Future<void> _openPlayStore(BuildContext context) async {
-    final uri = Uri.parse(_playStoreUrl);
+    final uri = Uri.parse(Platform.isIOS ? _appStoreUrl : _playStoreUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
