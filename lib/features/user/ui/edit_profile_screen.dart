@@ -1,12 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/helpers/extensions.dart';
-import 'package:pharmacy/core/helpers/file_helper.dart' as file_helper;
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/app_text_form_field.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -290,29 +288,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp'],
-      allowMultiple: false,
-      withData: true, // Important for web
-    );
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image == null) return;
 
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      Uint8List? bytes;
-
-      if (file.bytes != null) {
-        bytes = file.bytes!;
-      } else if (file.path != null && !kIsWeb) {
-        bytes = await file_helper.readFileBytes(file.path!);
-      }
-
-      if (bytes != null) {
-        setState(() {
-          _selectedImageBytes = bytes;
-          _selectedImageName = file.name;
-        });
-      }
+      final bytes = await image.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _selectedImageBytes = bytes;
+        _selectedImageName = image.name;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      defToast2(
+        context: context,
+        msg: 'Error picking image: $e',
+        dialogType: DialogType.error,
+      );
     }
   }
 }
