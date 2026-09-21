@@ -2,11 +2,9 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:pharmacy/core/widgets/legal_links.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
-import 'package:pharmacy/core/widgets/powered_by_cowdlly.dart';
 import 'package:pharmacy/core/widgets/profile_circle.dart';
 import 'package:pharmacy/features/request/data/models/request_model.dart';
 import 'package:pharmacy/features/user/data/models/user_model.dart';
@@ -345,11 +343,6 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                         ),
                 ),
               ),
-              const PoweredByCowdlly(
-                compact: true,
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
-              ),
-              const LegalLinks(padding: EdgeInsets.only(bottom: 6)),
             ],
           ),
         ),

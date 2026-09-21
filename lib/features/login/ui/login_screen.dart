@@ -1,6 +1,5 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:pharmacy/core/widgets/legal_links.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pharmacy/core/themes/colors.dart';
@@ -294,7 +293,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                         const SizedBox(height: 18),
                                         const PoweredByCowdlly(),
-                                        const LegalLinks(padding: EdgeInsets.only(bottom: 6)),
                                       ],
                                     ),
                                   ),

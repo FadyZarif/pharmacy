@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/di/dependency_injection.dart';
-import 'package:pharmacy/core/widgets/powered_by_cowdlly.dart';
 import 'package:pharmacy/features/employee/logic/employee_layout_cubit.dart';
 import 'package:pharmacy/features/request/logic/request_cubit.dart';
 import 'package:pharmacy/features/user/logic/users_cubit.dart';
@@ -126,10 +125,6 @@ class _GlassBottomNav extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(10, 10, 10, 2),
-                child: PoweredByCowdlly(compact: true),
-              ),
               NavigationBar(
                 selectedIndex: selectedIndex,
                 onDestinationSelected: onSelected,
