@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:pharmacy/core/themes/colors.dart';
 import 'package:pharmacy/core/widgets/powered_by_cowdlly.dart';
@@ -9,14 +9,26 @@ import 'package:url_launcher/url_launcher.dart';
 class ForceUpdateScreen extends StatelessWidget {
   const ForceUpdateScreen({super.key});
 
+  /// ضع App Store ID هنا بعد النشر (الرقم من رابط التطبيق على App Store).
+  /// مثال: لو الرابط apps.apple.com/app/id1234567890 → ضع '1234567890'
+  static const String _appStoreId = '';
+
+  static String get _appStoreUrl {
+    if (_appStoreId.isNotEmpty) {
+      return 'https://apps.apple.com/app/id$_appStoreId';
+    }
+    // Fallback حتى يتم ضبط الـ ID
+    return 'https://apps.apple.com/search?term=Emad%20Fawzy%20Pharmacy';
+  }
+
   static const String _playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.emadfawzy.pharmacies';
-  // ponytail: App Store id doesn't exist yet; swap in the real one after the first iOS release.
-  static const String _appStoreUrl =
-      'https://apps.apple.com/search?term=Dr%20Emad%20Fawzy%20Pharmacy';
 
-  Future<void> _openPlayStore(BuildContext context) async {
-    final uri = Uri.parse(Platform.isIOS ? _appStoreUrl : _playStoreUrl);
+  static bool get _isIos =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  Future<void> _openStore(BuildContext context) async {
+    final uri = Uri.parse(_isIos ? _appStoreUrl : _playStoreUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -24,6 +36,8 @@ class ForceUpdateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final storeName = _isIos ? 'App Store' : 'Google Play';
+
     return Scaffold(
       backgroundColor: ColorsManger.primaryBackground,
       body: SafeArea(
@@ -49,7 +63,7 @@ class ForceUpdateScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'نسخة التطبيق الحالية قديمة. يرجى التحديث من متجر Google Play لاستمرار الاستخدام.',
+                'نسخة التطبيق الحالية قديمة. يرجى التحديث من $storeName لاستمرار الاستخدام.',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[700],
@@ -59,13 +73,17 @@ class ForceUpdateScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               FilledButton.icon(
-                onPressed: () => _openPlayStore(context),
+                onPressed: () => _openStore(context),
                 icon: const Icon(Icons.open_in_new),
-                label: const Text('فتح متجر Google Play'),
+                label: Text('فتح $storeName'),
                 style: FilledButton.styleFrom(
                   backgroundColor: ColorsManger.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const Spacer(),

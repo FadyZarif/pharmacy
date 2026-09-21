@@ -1,34 +1,48 @@
-import 'dart:io' show Platform;
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// يتحقق من إجبار التحديث: إذا كان إصدار التطبيق الحالي أقل من الحد الأدنى المخزن في Firestore.
 ///
-/// إعداد Firestore:
-/// 1. أنشئ مجموعة (collection) باسم: app_config
-/// 2. أنشئ مستنداً (document) بمعرف: version
-/// 3. أضف حقلاً (field): minimum_build_number (رقم صحيح)
-/// 4. عند رفع تحديث جديد على Play Store، ضع قيمة minimum_build_number = رقم البناء (build number) الجديد
-///    مثال: لو النسخة 1.1.1+11 فضع 11. كل من لديه build أقل من 11 سيرى شاشة "تحديث مطلوب".
+/// إعداد Firestore (`app_config` / `version`):
+/// - `minimum_build_number` (int): الحد الأدنى لأندرويد (و Web)
+/// - `minimum_build_number_ios` (int): الحد الأدنى لـ iOS
+///
+/// عند رفع تحديث جديد:
+/// - Android: ضع `minimum_build_number` = رقم البناء (مثلاً 19 من `1.2.5+19`)
+/// - iOS: ضع `minimum_build_number_ios` = رقم البناء (CFBundleVersion)
 class ForceUpdateService {
   static const String _configPath = 'app_config';
   static const String _docId = 'version';
-  // أرقام البناء في iOS و Android مستقلة تمامًا، فلكل منصة حقلها.
-  // لو استُخدم حقل واحد مشترك، ضبط الحد الأدنى لأندرويد يقفل تطبيق الآيفون على كل المستخدمين.
-  static String get _fieldMinBuildNumber =>
-      Platform.isIOS ? 'ios_minimum_build_number' : 'minimum_build_number';
+  static const String _fieldMinBuildAndroid = 'minimum_build_number';
+  static const String _fieldMinBuildIos = 'minimum_build_number_ios';
 
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  static bool get _isIos =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  static String get _minBuildField =>
+      _isIos ? _fieldMinBuildIos : _fieldMinBuildAndroid;
+
   /// ينشئ مستند الإصدار في Firestore إذا كان غير موجود، بقيمة 0 (لا إجبار تحديث).
-  /// بعد نزول التحديث على Play Store غيّر في Firebase Console قيمة minimum_build_number إلى رقم البناء (مثلاً 11).
+  /// لو المستند موجود بدون حقل iOS، يضيف `minimum_build_number_ios: 0`.
   static Future<void> createVersionDocumentIfMissing() async {
     try {
       final ref = _firestore.collection(_configPath).doc(_docId);
       final doc = await ref.get();
       if (!doc.exists) {
-        await ref.set({_fieldMinBuildNumber: 0});
+        await ref.set({
+          _fieldMinBuildAndroid: 0,
+          _fieldMinBuildIos: 0,
+        });
+        return;
+      }
+
+      final data = doc.data() ?? {};
+      if (!data.containsKey(_fieldMinBuildIos)) {
+        await ref.set({_fieldMinBuildIos: 0}, SetOptions(merge: true));
       }
     } catch (_) {
       // تجاهل الأخطاء (مثلاً عدم الصلاحيات)
@@ -44,10 +58,12 @@ class ForceUpdateService {
       final doc = await _firestore.collection(_configPath).doc(_docId).get();
       if (!doc.exists || doc.data() == null) return false;
 
-      final minBuild = doc.data()![_fieldMinBuildNumber];
+      final data = doc.data()!;
+      final minBuild = data[_minBuildField];
       if (minBuild == null) return false;
 
-      final minimumBuild = minBuild is int ? minBuild : int.tryParse(minBuild.toString()) ?? 0;
+      final minimumBuild =
+          minBuild is int ? minBuild : int.tryParse(minBuild.toString()) ?? 0;
       return currentBuild < minimumBuild;
     } catch (_) {
       return false;

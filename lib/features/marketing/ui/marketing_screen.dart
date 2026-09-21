@@ -265,15 +265,12 @@ class _MarketingScreenState extends State<MarketingScreen> {
           final isSaving = state is MarketingSaveLoading;
           final isLoading = state is MarketingLoading && !_initialized;
           final bottomPad = MediaQuery.of(context).padding.bottom;
-          // Hosted inside `EmployeeLayout` (`extendBody: true`, glass nav 66 + padding 14).
-          const glassNavHeight = 118.0; // nav + powered-by branding
+          // Hosted inside `EmployeeLayout` (`extendBody: true`, glass nav + powered-by).
+          const glassNavHeight = 118.0;
           const glassNavOuterPadding = 14.0;
           final navOverlap = bottomPad + glassNavHeight + glassNavOuterPadding;
           final showSaveBar = _isViewingToday && !_isReadOnly;
-          const saveBarHeight = 68.0;
-          final listBottomPad = showSaveBar
-              ? 16.0
-              : navOverlap + 24;
+          final listBottomPad = navOverlap + 24;
 
           return Scaffold(
             backgroundColor: ColorsManger.primaryBackground,
@@ -290,12 +287,9 @@ class _MarketingScreenState extends State<MarketingScreen> {
                   )
                 : Form(
                     key: _formKey,
-                    child: Column(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPad),
                       children: [
-                        Expanded(
-                          child: ListView(
-                            padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPad),
-                            children: [
                         if (_monthSummary != null) ...[
                           _MonthStatsCard(
                             month: _selectedMonth,
@@ -312,7 +306,9 @@ class _MarketingScreenState extends State<MarketingScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                _isViewingToday ? 'سجل اليوم' : 'سجل يوم سابق',
+                                _isViewingToday
+                                    ? 'سجل اليوم'
+                                    : 'سجل يوم سابق',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -395,53 +391,40 @@ class _MarketingScreenState extends State<MarketingScreen> {
                             );
                           }),
                         ],
-                            ],
-                          ),
-                        ),
-                        if (showSaveBar)
-                          Container(
+                        if (showSaveBar) ...[
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 52,
                             width: double.infinity,
-                            padding: EdgeInsets.fromLTRB(
-                              16,
-                              10,
-                              16,
-                              navOverlap + 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ColorsManger.primaryBackground,
-                              border: Border(
-                                top: BorderSide(
-                                  color: ColorsManger.primary.withValues(alpha: 0.12),
-                                ),
+                            child: ElevatedButton.icon(
+                              onPressed: isSaving ? null : _submit,
+                              icon: isSaving
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.save),
+                              label: Text(
+                                _existing == null
+                                    ? 'حفظ سجل اليوم'
+                                    : 'تحديث السجل',
                               ),
-                            ),
-                            child: SizedBox(
-                              height: saveBarHeight - 20,
-                              child: ElevatedButton.icon(
-                                onPressed: isSaving ? null : _submit,
-                                icon: isSaving
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Icon(Icons.save),
-                                label: Text(
-                                  _existing == null ? 'حفظ سجل اليوم' : 'تحديث السجل',
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: ColorsManger.primary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: ColorsManger.primary,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor:
+                                    ColorsManger.primary.withValues(alpha: 0.7),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ),
