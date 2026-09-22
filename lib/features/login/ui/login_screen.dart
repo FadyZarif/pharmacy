@@ -13,6 +13,7 @@ import '../../../core/helpers/app_regex.dart';
 import '../../../core/helpers/constants.dart';
 import '../../../core/widgets/app_text_form_field.dart';
 import '../../../core/widgets/loading_button.dart';
+import '../../../core/widgets/legal_links.dart';
 import '../../../core/widgets/powered_by_cowdlly.dart';
 import '../../user/data/models/user_model.dart';
 
@@ -293,6 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                         const SizedBox(height: 18),
                                         const PoweredByCowdlly(),
+                                        const LegalLinks(padding: EdgeInsets.only(bottom: 6)),
                                       ],
                                     ),
                                   ),
