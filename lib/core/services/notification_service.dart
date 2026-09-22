@@ -4,7 +4,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import '../enums/notification_type.dart';
 
 // Background message handler - must be top-level function
@@ -43,6 +44,8 @@ class NotificationService {
   bool _initialized = false;
   String? _accessToken;
   DateTime? _tokenExpiry;
+  bool _tokenRefreshBound = false;
+  String? _tokenUserId;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -152,24 +155,66 @@ class NotificationService {
     print('NotificationService initialized');
   }
 
+  static bool get _isIos =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// APNs registration is asynchronous. On a cold first launch it lands a moment
+  /// after the permission prompt, so polling briefly beats giving up on the
+  /// first null — otherwise the device never registers a token at all.
+  Future<String?> _waitForApnsToken() async {
+    for (var i = 0; i < 10; i++) {
+      final apnsToken = await _fcm.getAPNSToken();
+      if (apnsToken != null) return apnsToken;
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    return null;
+  }
+
   Future<String?> getToken() async {
     try {
+      // FCM cannot mint a token on iOS until APNs has handed one over.
+      if (_isIos && await _waitForApnsToken() == null) {
+        print('APNs token unavailable - device cannot receive push yet');
+        return null;
+      }
+
       String? token = await _fcm.getToken();
       if (token != null) {
         print('FCM Token: $token');
         return token;
       } else {
-        print('FCM Token is null - Google Play Services may not be available');
+        print('FCM Token is null - push notifications unavailable');
         return null;
       }
     } catch (e) {
       print('Error getting FCM token: $e');
-      print('This is normal on emulators without Google Play Services');
       return null;
     }
   }
 
+  /// FCM rotates tokens (reinstall, restore from backup). Without this the
+  /// stored token goes stale and notifications stop with no error anywhere.
+  void _bindTokenRefresh() {
+    if (_tokenRefreshBound || kIsWeb) return;
+    _tokenRefreshBound = true;
+    _fcm.onTokenRefresh.listen((token) async {
+      final userId = _tokenUserId;
+      if (userId == null || token.isEmpty) return;
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .update({'fcmToken': token});
+        print('FCM token refreshed for user: $userId');
+      } catch (e) {
+        print('Error persisting refreshed FCM token: $e');
+      }
+    });
+  }
+
   Future<void> updateUserToken(String userId) async {
+    _tokenUserId = userId;
+    _bindTokenRefresh();
     try {
       String? token = await getToken();
       if (token != null && token.isNotEmpty) {
