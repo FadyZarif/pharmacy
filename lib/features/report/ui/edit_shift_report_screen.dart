@@ -265,6 +265,8 @@ class _EditShiftReportScreenState extends State<EditShiftReportScreen> {
                           const SizedBox(height: 16),
                           ShiftReportWidgets.buildSummaryCard(icon: Icons.inventory_2, label: 'شراء بضاعه بفاتوره', value: widget.report.warehouseCollectionExpenses, color: Colors.deepOrange),
                           const SizedBox(height: 16),
+                          ShiftReportWidgets.buildSummaryCard(icon: Icons.account_balance, label: 'مصاريف حسابات', value: widget.report.accountingExpenses, color: Colors.indigo),
+                          const SizedBox(height: 16),
                           ShiftReportWidgets.buildSummaryCard(icon: Icons.add_card, label: 'Total Electronic Expenses', value:  widget.report.electronicWalletExpenses, color: Colors.cyan),
                           const SizedBox(height: 24),
                           Divider(color: Colors.grey.shade300),

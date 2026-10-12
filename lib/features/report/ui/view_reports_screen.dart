@@ -716,6 +716,26 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showTypedExpensesBottomSheet(
+                      context,
+                      state.allExpenses,
+                      ExpenseType.accounting,
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildMonthlySummaryCard(
+                    title: 'مصاريف حسابات',
+                    amount: state.totalAccountingExpenses,
+                    icon: Icons.account_balance,
+                    color: Colors.indigo,
+                    subtitle: 'Tap to view details',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Electronic Payment Expenses Card
                 _buildMonthlySummaryCard(
                   title: 'Electronic Payment Expenses',
@@ -984,13 +1004,27 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
     List<ExpenseItem> allExpenses,
     ExpenseType type,
   ) {
-    final isWarehouse = type == ExpenseType.warehouseCollection;
+    final title = switch (type) {
+      ExpenseType.warehouseCollection => 'شراء بضاعه بفاتوره',
+      ExpenseType.accounting => 'مصاريف حسابات',
+      _ => 'تبديل نقدي',
+    };
+    final icon = switch (type) {
+      ExpenseType.warehouseCollection => Icons.inventory_2,
+      ExpenseType.accounting => Icons.account_balance,
+      _ => Icons.medication,
+    };
+    final color = switch (type) {
+      ExpenseType.warehouseCollection => Colors.deepOrange,
+      ExpenseType.accounting => Colors.indigo,
+      _ => Colors.purple,
+    };
     _showExpensesBottomSheet(
       context,
       allExpenses.where((e) => e.type == type).toList(),
-      title: isWarehouse ? 'شراء بضاعه بفاتوره' : 'تبديل نقدي',
-      icon: isWarehouse ? Icons.inventory_2 : Icons.medication,
-      color: isWarehouse ? Colors.deepOrange : Colors.purple,
+      title: title,
+      icon: icon,
+      color: color,
     );
   }
 
@@ -1844,6 +1878,10 @@ class _TotalsDockCard extends StatelessWidget {
       return sum + report.warehouseCollectionExpenses;
     });
 
+    final totalAccountingExpenses = reports.fold<double>(0.0, (sum, report) {
+      return sum + report.accountingExpenses;
+    });
+
     // حساب مجموع مصاريف الدفع الإلكتروني (Electronic Payment Expenses)
     final totalElectronicPaymentExpenses = reports.fold<double>(0.0, (
       sum,
@@ -1964,6 +2002,14 @@ class _TotalsDockCard extends StatelessWidget {
               icon: Icons.inventory_2,
               color: Colors.deepOrange,
               onTap: () => onShowTypedExpenses(ExpenseType.warehouseCollection),
+            ),
+            _buildSummaryCard(
+              egp: egp,
+              title: 'مصاريف حسابات',
+              amount: totalAccountingExpenses,
+              icon: Icons.account_balance,
+              color: Colors.indigo,
+              onTap: () => onShowTypedExpenses(ExpenseType.accounting),
             ),
             _buildSummaryCard(
               egp: egp,

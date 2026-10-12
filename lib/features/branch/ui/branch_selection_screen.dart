@@ -1300,6 +1300,34 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen>
                       ),
                       const SizedBox(height: 16),
 
+                      InkWell(
+                        onTap: () {
+                          _showBranchTotalsBreakdownBottomSheet(
+                            dialogContext,
+                            title: 'مصاريف حسابات',
+                            headerIcon: Icons.account_balance,
+                            color: Colors.indigo,
+                            total: state.totalAccountingExpenses,
+                            expenseType: ExpenseType.accounting,
+                            byBranch: state.branchAccountingTotals,
+                            branchExpenses: state.branchExpenses,
+                            branchNamesById: {
+                              for (final e in state.branchSummaries.entries)
+                                e.key: e.value.branchName,
+                            },
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildSummaryCard(
+                          title: 'مصاريف حسابات',
+                          amount: state.totalAccountingExpenses,
+                          icon: Icons.account_balance,
+                          color: Colors.indigo,
+                          subtitle: 'Tap branch for details',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
                       // Electronic Payment (tap for detailed breakdown)
                       InkWell(
                         onTap: () {

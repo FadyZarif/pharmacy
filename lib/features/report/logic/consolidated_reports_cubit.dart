@@ -59,6 +59,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       final branchDeliveryTotals = <String, double>{};
       final branchMedicinesTotals = <String, double>{};
       final branchWarehouseCollectionTotals = <String, double>{};
+      final branchAccountingTotals = <String, double>{};
       final branchExpenses = <String, List<ExpenseItem>>{};
 
       for (var result in results) {
@@ -87,6 +88,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
               result['allExpenses'] as List<ExpenseItem>,
               ExpenseType.warehouseCollection,
             );
+            branchAccountingTotals[branchId] = _sumExpensesByType(
+              result['allExpenses'] as List<ExpenseItem>,
+              ExpenseType.accounting,
+            );
             branchExpenses[branchId] = List<ExpenseItem>.from(
               result['allExpenses'] as List<ExpenseItem>,
             );
@@ -114,6 +119,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
         totalWarehouseCollectionExpenses: totalWarehouseCollectionExpenses,
+        totalAccountingExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.accounting,
+        ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -122,6 +131,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         branchDeliveryTotals: branchDeliveryTotals,
         branchMedicinesTotals: branchMedicinesTotals,
         branchWarehouseCollectionTotals: branchWarehouseCollectionTotals,
+        branchAccountingTotals: branchAccountingTotals,
         branchExpenses: branchExpenses,
         branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
@@ -187,6 +197,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       final branchDeliveryTotals = <String, double>{};
       final branchMedicinesTotals = <String, double>{};
       final branchWarehouseCollectionTotals = <String, double>{};
+      final branchAccountingTotals = <String, double>{};
       final branchExpenses = <String, List<ExpenseItem>>{};
 
       for (var result in results) {
@@ -214,6 +225,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
             branchWarehouseCollectionTotals[branchId] = _sumExpensesByType(
               result['allExpenses'] as List<ExpenseItem>,
               ExpenseType.warehouseCollection,
+            );
+            branchAccountingTotals[branchId] = _sumExpensesByType(
+              result['allExpenses'] as List<ExpenseItem>,
+              ExpenseType.accounting,
             );
             branchExpenses[branchId] = List<ExpenseItem>.from(
               result['allExpenses'] as List<ExpenseItem>,
@@ -300,6 +315,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         netProfit: netProfit,
         totalMedicinesExpenses: totalMedicinesExpenses,
         totalWarehouseCollectionExpenses: totalWarehouseCollectionExpenses,
+        totalAccountingExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.accounting,
+        ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -308,6 +327,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         branchDeliveryTotals: branchDeliveryTotals,
         branchMedicinesTotals: branchMedicinesTotals,
         branchWarehouseCollectionTotals: branchWarehouseCollectionTotals,
+        branchAccountingTotals: branchAccountingTotals,
         branchExpenses: branchExpenses,
         branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,
@@ -375,6 +395,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
       final branchDeliveryTotals = <String, double>{};
       final branchMedicinesTotals = <String, double>{};
       final branchWarehouseCollectionTotals = <String, double>{};
+      final branchAccountingTotals = <String, double>{};
       final branchExpenses = <String, List<ExpenseItem>>{};
 
       for (var result in results) {
@@ -403,6 +424,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
               result['allExpenses'] as List<ExpenseItem>,
               ExpenseType.warehouseCollection,
             );
+            branchAccountingTotals[branchId] = _sumExpensesByType(
+              result['allExpenses'] as List<ExpenseItem>,
+              ExpenseType.accounting,
+            );
             branchExpenses[branchId] = List<ExpenseItem>.from(
               result['allExpenses'] as List<ExpenseItem>,
             );
@@ -423,6 +448,10 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
           allExpenses,
           ExpenseType.warehouseCollection,
         ),
+        totalAccountingExpenses: _sumExpensesByType(
+          allExpenses,
+          ExpenseType.accounting,
+        ),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         totalInstapayExpenses: electronicBreakdown.instapay,
         totalWalletExpenses: electronicBreakdown.wallet,
@@ -434,6 +463,7 @@ class ConsolidatedReportsCubit extends Cubit<ConsolidatedReportsState> {
         branchDeliveryTotals: branchDeliveryTotals,
         branchMedicinesTotals: branchMedicinesTotals,
         branchWarehouseCollectionTotals: branchWarehouseCollectionTotals,
+        branchAccountingTotals: branchAccountingTotals,
         branchExpenses: branchExpenses,
         branchElectronicBreakdowns: branchElectronicBreakdowns,
         vaultAmount: vaultAmount,

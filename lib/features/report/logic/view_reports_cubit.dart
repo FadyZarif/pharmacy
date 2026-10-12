@@ -121,6 +121,9 @@ class ViewReportsCubit extends Cubit<ViewReportsState> {
         totalWarehouseCollectionExpenses: allExpenses
             .where((e) => e.type == ExpenseType.warehouseCollection)
             .fold(0.0, (sum, e) => sum + e.amount),
+        totalAccountingExpenses: allExpenses
+            .where((e) => e.type == ExpenseType.accounting)
+            .fold(0.0, (sum, e) => sum + e.amount),
         totalElectronicPaymentExpenses: totalElectronicPaymentExpenses,
         vaultAmount: vaultAmount,
         totalSurplus: totalSurplus,

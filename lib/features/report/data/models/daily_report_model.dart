@@ -212,6 +212,13 @@ class ShiftReportModel {
         .fold(0.0, (sum, expense) => sum + expense.amount);
   }
 
+  /// حساب مصاريف الحسابات
+  double get accountingExpenses {
+    return expenses
+        .where((expense) => expense.type == ExpenseType.accounting)
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
   /// حساب مصاريف المحفظة الإلكترونية
   double get electronicWalletExpenses {
     return expenses
