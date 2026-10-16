@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/helpers/constants.dart';
 import 'package:pharmacy/core/themes/colors.dart';
+import 'package:pharmacy/features/branch/ui/branch_selection_screen.dart';
 import 'package:pharmacy/features/employee/logic/employee_layout_cubit.dart';
 import 'package:pharmacy/features/login/ui/login_screen.dart';
 import 'package:pharmacy/features/repair/logic/repair_cubit.dart';
@@ -175,6 +176,16 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                         name: currentUser.name,
                         branchName: currentUser.currentBranch.name,
                         photoUrl: currentUser.photoUrl,
+                        canSwitchBranch: currentUser.branches.length > 1,
+                        onSwitchBranch: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BranchSelectionScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        },
                         onView: () => context
                             .read<EmployeeLayoutCubit>()
                             .changeBottomNav(4),
@@ -693,12 +704,16 @@ class _UserHeaderCard extends StatelessWidget {
   final String name;
   final String branchName;
   final String? photoUrl;
+  final bool canSwitchBranch;
+  final VoidCallback onSwitchBranch;
   final VoidCallback onView;
 
   const _UserHeaderCard({
     required this.name,
     required this.branchName,
     required this.photoUrl,
+    required this.canSwitchBranch,
+    required this.onSwitchBranch,
     required this.onView,
   });
 
@@ -730,27 +745,38 @@ class _UserHeaderCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.store,
-                      size: 14,
-                      color: Colors.black.withValues(alpha: 0.45),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        branchName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black.withValues(alpha: 0.55),
+                InkWell(
+                  onTap: canSwitchBranch ? onSwitchBranch : null,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.store,
+                        size: 14,
+                        color: Colors.black.withValues(alpha: 0.45),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          branchName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black.withValues(alpha: 0.55),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      if (canSwitchBranch) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.swap_horiz,
+                          size: 16,
+                          color: ColorsManger.primary.withValues(alpha: 0.8),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),

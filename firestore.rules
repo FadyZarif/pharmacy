@@ -33,16 +33,18 @@ service cloud.firestore {
       return isAdmin() || isManager();
     }
 
-    // In this app, subManager effectively belongs to one branch (first branch in list).
-    function userPrimaryBranchId() {
-      return userDoc().branches[0].id;
+    function assignedBranch(branchId) {
+      return userDoc().branches is list && (
+        (userDoc().branches.size() > 0 && userDoc().branches[0].id == branchId) ||
+        (userDoc().branches.size() > 1 && userDoc().branches[1].id == branchId) ||
+        (userDoc().branches.size() > 2 && userDoc().branches[2].id == branchId) ||
+        (userDoc().branches.size() > 3 && userDoc().branches[3].id == branchId) ||
+        (userDoc().branches.size() > 4 && userDoc().branches[4].id == branchId)
+      );
     }
 
     function isSubManagerBranch(branchId) {
-      return isSubManager() &&
-          userDoc().branches is list &&
-          userDoc().branches.size() > 0 &&
-          userPrimaryBranchId() == branchId;
+      return isSubManager() && assignedBranch(branchId);
     }
 
     function validPurchaseCreateData() {

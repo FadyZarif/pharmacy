@@ -64,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       navigateToReplacement(context, BranchSelectionScreen());
                       break;
                     case Role.subManager:
+                      navigateToReplacement(context, BranchSelectionScreen());
+                      break;
                     case Role.staff:
                       navigateToReplacement(context, EmployeeLayout());
                       break;
